@@ -1,0 +1,1013 @@
+{
+  "name": "Sincronización de Contactos",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sync-labels-final",
+        "options": {}
+      },
+      "id": "b612abea-21cd-4453-8750-405a0d896294",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1600,
+        1312
+      ],
+      "webhookId": "e51dfd3b-41ac-46a5-bd85-db90360ca926"
+    },
+    {
+      "parameters": {
+        "tableId": "labels",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('1. Get User Profile1').item.json.id }}"
+            },
+            {
+              "fieldId": "evolution_label_id",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $json.name }}"
+            },
+            {
+              "fieldId": "color",
+              "fieldValue": "={{ $json.color }}"
+            }
+          ]
+        }
+      },
+      "id": "39263d5a-9df8-4b97-8577-e7de68f39f8f",
+      "name": "5. Intenta Crear Etiqueta",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        1360
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "labels",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.user_id }}"
+            },
+            {
+              "keyName": "evolution_label_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $json.name }}"
+            },
+            {
+              "fieldId": "color",
+              "fieldValue": "={{ $json.color }}"
+            }
+          ]
+        }
+      },
+      "id": "5cd900e8-81b5-4d02-8cff-1766c3f8654d",
+      "name": "6. Actualiza si Falló",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        688,
+        1072
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Webhook').item.json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "id": "02a2d319-b0ce-45b2-8363-427cceb39cfc",
+      "name": "1. Get User Profile1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        1312
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://evolutionapi-evolution-api.mcjhhb.easypanel.host/label/findLabels/{{ $('1. Get User Profile1').item.json.evolution_instance_name }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('1. Get User Profile1').item.json.evolution_api_key }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "59f048ae-7184-4140-8451-855ff4b32214",
+      "name": "2. Get Evolution Lables1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -880,
+        1312
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const labels = $input.all();\n\n// 1. Depuramos la lista para eliminar duplicados\nconst uniqueLabelsMap = labels.reduce((acc, current) => {\n  if (!acc[current.json.id]) {\n    acc[current.json.id] = current.json;\n  }\n  return acc;\n}, {});\n\n// 2. Devolvemos el array de objetos únicos\nreturn Object.values(uniqueLabelsMap);"
+      },
+      "id": "75cba9a5-e483-444b-8228-989cd3b99430",
+      "name": "3. Depurar Etiquetas1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -656,
+        1312
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "81ec4f25-0af0-4ae3-a32a-a941035d57b1",
+      "name": "4. Loop (Cada Etiqueta)1",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -432,
+        1312
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "95b657fa-6df7-4a0a-ad91-e8886a709229",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -208,
+        1168
+      ],
+      "id": "47287063-c51b-4816-9841-aaac1c68dbe7",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "url": "=https://evolutionapi-evolution-api.mcjhhb.easypanel.host/label/findLabels/{{ $('1. Get User Profile1').item.json.evolution_instance_name }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('1. Get User Profile1').item.json.evolution_api_key }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d594d3b6-a8a5-463b-be26-68251c50c143",
+      "name": "2. Get Evolution Lables2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        1072
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const labels = $input.all();\n// Obtenemos el ID del usuario una sola vez al principio\nconst userId = $('1. Get User Profile2').first().json.id;\n\n// 1. Depuramos la lista para eliminar duplicados\nconst uniqueLabelsMap = labels.reduce((acc, current) => {\n  if (!acc[current.json.id]) {\n    acc[current.json.id] = current.json;\n  }\n  return acc;\n}, {});\n\n// 2. Convertimos el mapa de objetos únicos a un array\nconst uniqueLabelsArray = Object.values(uniqueLabelsMap);\n\n// 3. INYECTAMOS el user_id en cada objeto del array\nconst finalResult = uniqueLabelsArray.map(label => ({\n  ...label, // Copia todas las propiedades de la etiqueta (id, name, color, etc.)\n  user_id: userId // Y añade la nueva propiedad user_id\n}));\n\n// 4. Devolvemos el resultado final\nreturn finalResult;"
+      },
+      "id": "bfa1cc85-a195-4e7c-999b-1a19710a2f49",
+      "name": "3. Depurar Etiquetas2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        1072
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Webhook').item.json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "id": "e8a71f68-06b6-418d-bb47-1b32870a611e",
+      "name": "1. Get User Profile2",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        16,
+        1072
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evolutionapi-evolution-api.mcjhhb.easypanel.host/chat/findContacts/{{ $('1. Get User Profile2').item.json.evolution_instance_name }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('1. Get User Profile2').item.json.evolution_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        912,
+        1072
+      ],
+      "id": "47882155-8adf-4831-b0a2-b4e977fbb71d",
+      "name": "Get Evolution Contacts1",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normaliza y estandariza números para MX (E.164 / WhatsApp)\nconst items = $input.all();\nconst out = [];\nconst seen = new Set();\n\nconst normalize = (s) => {\n  let num = (s ?? '').toString().trim();\n  if (num.includes('@s.whatsapp.net')) num = num.split('@')[0];\n  // quita todo menos dígitos\n  num = num.replace(/[^\\d]/g, '');\n  return num;\n};\n\nfor (const { json } of items) {\n  const raw =\n    json?.number ??\n    json?.phone ??\n    json?.phoneNumber ??\n    json?.contact?.number ??\n    json?.contact?.phone ??\n    json?.jid ??\n    json?.remoteJid ??\n    null;\n\n  const fullName =\n    json?.pushName ??\n    json?.name ??\n    json?.contact?.name ??\n    null;\n\n  if (!raw) continue;\n\n  let digits = normalize(raw);\n\n  // Casos aceptados: 10, 12 (52 + 10), 13 (521 + 10)\n  if (/^\\d{10}$/.test(digits)) {\n    // 10 dígitos (MX sin LADA ni '1' de WhatsApp)\n    digits = '521' + digits;\n  } else if (/^52\\d{10}$/.test(digits)) {\n    // 52 + 10 => forzamos el '1' de WhatsApp\n    digits = '521' + digits.slice(2);\n  } else if (/^521\\d{10}$/.test(digits)) {\n    // ya viene correcto\n  } else {\n    // formato no soportado → saltar\n    continue;\n  }\n\n  // Validación correcta: 521 + 10 dígitos = 13\n  if (!/^521\\d{10}$/.test(digits)) continue;\n\n  const finalNumber = '+' + digits;\n\n  if (!seen.has(finalNumber)) {\n    seen.add(finalNumber);\n    out.push({ json: { number: finalNumber, full_name: fullName } });\n  }\n}\n\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        1072
+      ],
+      "id": "f5d5ed2b-cd4e-449c-a1c4-0c6b82ff49ce",
+      "name": "Extraer Números de Teléfono1",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recibimos todos los contactos ya limpios\nconst items = $input.all();\n\n// --- 1. Leemos el perfil del usuario una sola vez ---\nconst prof = $('1. Get User Profile2').first().json;\nconst row = Array.isArray(prof) ? prof[0] : prof;\n\n// --- 2. Extraemos todos los IDs y credenciales que necesitamos ---\nconst userId = row?.id;\nconst instName = row?.evolution_instance_name;\nconst apiKey = row?.evolution_api_key;\n\n// --- 3. Validamos que los datos indispensables existan ---\nif (!userId || !instName || !apiKey) {\n  // Si falta algún dato crítico, detenemos el flujo con un error claro\n  throw new Error('Faltan datos indispensables en el perfil del usuario (ID, Evolution Instance, o API Key).');\n}\n\n// --- 4. Inyectamos todos los datos en cada contacto ---\n// Usamos .map() para devolver un nuevo array con los datos enriquecidos\nreturn items.map(i => ({\n  json: {\n    ...i.json, // Mantiene los datos originales del contacto (número, nombre)\n    user_id: userId, // Añade el user_id\n    evolution_instance_name: instName,\n    evolution_api_key: apiKey\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        1072
+      ],
+      "id": "55c7d588-4d83-4221-8a3a-7eeeeab06bf1",
+      "name": "Set account_id (Code)1"
+    },
+    {
+      "parameters": {
+        "batchSize": 100,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1584,
+        1072
+      ],
+      "id": "e692e1e0-cdc0-43f3-b15b-db0eba270aec",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://mytvwfbijlgbihlegmfg.supabase.co/rest/v1/contacts?on_conflict=user_id,phone_number",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDQxODk5MCwiZXhwIjoyMDY5OTk0OTkwfQ.07-JQs9AXJlqKYMDxk4tOL_6zOEGQTddaKlQmKQe14U"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDQxODk5MCwiZXhwIjoyMDY5OTk0OTkwfQ.07-JQs9AXJlqKYMDxk4tOL_6zOEGQTddaKlQmKQe14U"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(\n  $items().map(i => ({\n    user_id: i.json.user_id,\n    phone_number: String(i.json.number),\n    full_name: i.json.full_name ?? null,\n    created_at: i.json.created_at ?? new Date().toISOString()\n  }))\n) }}\n\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1840,
+        1152
+      ],
+      "id": "231865e6-22da-47a9-8552-bc17a194554a",
+      "name": "Upsert a Supabase",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evolutionapi-evolution-api.mcjhhb.easypanel.host/chat/findContacts/{{ $('1. Get User Profile1').item.json.evolution_instance_name }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('1. Get User Profile1').item.json.evolution_api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        48,
+        1264
+      ],
+      "id": "4047a854-c97b-4919-94d8-439ccf0f1629",
+      "name": "Get Evolution Contacts",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normaliza y estandariza números para MX (E.164 / WhatsApp)\nconst items = $input.all();\nconst out = [];\nconst seen = new Set();\n\nconst normalize = (s) => {\n  let num = (s ?? '').toString().trim();\n  if (num.includes('@s.whatsapp.net')) num = num.split('@')[0];\n  // quita todo menos dígitos\n  num = num.replace(/[^\\d]/g, '');\n  return num;\n};\n\nfor (const { json } of items) {\n  const raw =\n    json?.number ??\n    json?.phone ??\n    json?.phoneNumber ??\n    json?.contact?.number ??\n    json?.contact?.phone ??\n    json?.jid ??\n    json?.remoteJid ??\n    null;\n\n  const fullName =\n    json?.pushName ??\n    json?.name ??\n    json?.contact?.name ??\n    null;\n\n  if (!raw) continue;\n\n  let digits = normalize(raw);\n\n  // Casos aceptados: 10, 12 (52 + 10), 13 (521 + 10)\n  if (/^\\d{10}$/.test(digits)) {\n    // 10 dígitos (MX sin LADA ni '1' de WhatsApp)\n    digits = '521' + digits;\n  } else if (/^52\\d{10}$/.test(digits)) {\n    // 52 + 10 => forzamos el '1' de WhatsApp\n    digits = '521' + digits.slice(2);\n  } else if (/^521\\d{10}$/.test(digits)) {\n    // ya viene correcto\n  } else {\n    // formato no soportado → saltar\n    continue;\n  }\n\n  // Validación correcta: 521 + 10 dígitos = 13\n  if (!/^521\\d{10}$/.test(digits)) continue;\n\n  const finalNumber = '+' + digits;\n\n  if (!seen.has(finalNumber)) {\n    seen.add(finalNumber);\n    out.push({ json: { number: finalNumber, full_name: fullName } });\n  }\n}\n\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        1264
+      ],
+      "id": "72b58641-cc5a-4feb-9fa7-93099b47bcb7",
+      "name": "Extraer Números de Teléfono",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recibimos todos los contactos ya limpios\nconst items = $input.all();\n\n// --- 1. Leemos el perfil del usuario una sola vez ---\nconst prof = $('1. Get User Profile1').first().json;\nconst row = Array.isArray(prof) ? prof[0] : prof;\n\n// --- 2. Extraemos todos los IDs y credenciales que necesitamos ---\nconst userId = row?.id;\nconst instName = row?.evolution_instance_name;\nconst apiKey = row?.evolution_api_key;\n\n// --- 3. Validamos que los datos indispensables existan ---\nif (!userId || !instName || !apiKey) {\n  // Si falta algún dato crítico, detenemos el flujo con un error claro\n  throw new Error('Faltan datos indispensables en el perfil del usuario (ID, Evolution Instance, o API Key).');\n}\n\n// --- 4. Inyectamos todos los datos en cada contacto ---\n// Usamos .map() para devolver un nuevo array con los datos enriquecidos\nreturn items.map(i => ({\n  json: {\n    ...i.json, // Mantiene los datos originales del contacto (número, nombre)\n    user_id: userId, // Añade el user_id\n    evolution_instance_name: instName,\n    evolution_api_key: apiKey\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        1264
+      ],
+      "id": "de0e3d69-ad18-48e3-a794-5a6d8050f982",
+      "name": "Set account_id (Code)"
+    },
+    {
+      "parameters": {
+        "batchSize": 100,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        720,
+        1264
+      ],
+      "id": "63e4197e-d643-4670-a4bb-ea3f7b9c6809",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://mytvwfbijlgbihlegmfg.supabase.co/rest/v1/contacts?on_conflict=user_id,phone_number",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDQxODk5MCwiZXhwIjoyMDY5OTk0OTkwfQ.07-JQs9AXJlqKYMDxk4tOL_6zOEGQTddaKlQmKQe14U"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDQxODk5MCwiZXhwIjoyMDY5OTk0OTkwfQ.07-JQs9AXJlqKYMDxk4tOL_6zOEGQTddaKlQmKQe14U"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(\n  $items().map(i => ({\n    user_id: i.json.user_id,\n    phone_number: String(i.json.number),\n    full_name: i.json.full_name ?? null,\n    created_at: i.json.created_at ?? new Date().toISOString()\n  }))\n) }}\n\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        944,
+        1264
+      ],
+      "id": "338ef498-944e-4995-a636-0e80d88f056d",
+      "name": "Upsert a Supabase1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "sync_status",
+              "fieldValue": "completed"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3856,
+        1264
+      ],
+      "id": "7903b5c4-bc1b-4941-9a4b-4d4e6ad614eb",
+      "name": "Update a row",
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.body.user_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "sync_status",
+              "fieldValue": "Cargando"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1328,
+        1200
+      ],
+      "id": "40de572f-790f-491f-b6a7-8f749a0c84fc",
+      "name": "Update a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cac250fd-a73c-4b06-9e15-d609464a2548",
+              "name": "id",
+              "value": "={{ $('1. Get User Profile2').first().json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3584,
+        1280
+      ],
+      "id": "b6f8fadb-a2f3-4025-b170-d34c19dd0705",
+      "name": "Edit Fields",
+      "executeOnce": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3232,
+        1136
+      ],
+      "id": "6c89001c-cac2-40ca-b218-e532cb1a5c77",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2352,
+        1152
+      ],
+      "id": "1a2961c1-04dd-4d9a-9cce-f750d0ab2f5b",
+      "name": "Edit Fields1",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2048,
+        1152
+      ],
+      "id": "049a077c-fa61-440f-bd30-c391e8188efd",
+      "name": "Aggregate"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n-n8n.mcjhhb.easypanel.host",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+            "content-length": "50",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "es-ES,es;q=0.9",
+            "cache-control": "no-cache",
+            "content-type": "application/json",
+            "origin": "https://app.elinaia.com.mx",
+            "pragma": "no-cache",
+            "priority": "u=1, i",
+            "referer": "https://app.elinaia.com.mx/",
+            "sec-ch-ua": "\"Chromium\";v=\"142\", \"Google Chrome\";v=\"142\", \"Not_A Brand\";v=\"99\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "189.162.152.156",
+            "x-forwarded-host": "n8n-n8n.mcjhhb.easypanel.host",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "30f54e9e965a",
+            "x-real-ip": "189.162.152.156"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "user_id": "f2ef49c6-4646-42f8-8130-aa5cd0d3c84f"
+          },
+          "webhookUrl": "https://n8n-n8n.mcjhhb.easypanel.host/webhook/sync-labels-final",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Update a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Get User Profile1": {
+      "main": [
+        [
+          {
+            "node": "2. Get Evolution Lables1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Get Evolution Lables1": {
+      "main": [
+        [
+          {
+            "node": "3. Depurar Etiquetas1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Depurar Etiquetas1": {
+      "main": [
+        [
+          {
+            "node": "4. Loop (Cada Etiqueta)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Loop (Cada Etiqueta)1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "5. Intenta Crear Etiqueta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Intenta Crear Etiqueta": {
+      "main": [
+        [
+          {
+            "node": "4. Loop (Cada Etiqueta)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "1. Get User Profile2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Evolution Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Get Evolution Lables2": {
+      "main": [
+        [
+          {
+            "node": "3. Depurar Etiquetas2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Depurar Etiquetas2": {
+      "main": [
+        [
+          {
+            "node": "6. Actualiza si Falló",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Get User Profile2": {
+      "main": [
+        [
+          {
+            "node": "2. Get Evolution Lables2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Actualiza si Falló": {
+      "main": [
+        [
+          {
+            "node": "Get Evolution Contacts1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Evolution Contacts1": {
+      "main": [
+        [
+          {
+            "node": "Extraer Números de Teléfono1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Números de Teléfono1": {
+      "main": [
+        [
+          {
+            "node": "Set account_id (Code)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set account_id (Code)1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Upsert a Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert a Supabase": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Evolution Contacts": {
+      "main": [
+        [
+          {
+            "node": "Extraer Números de Teléfono",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Números de Teléfono": {
+      "main": [
+        [
+          {
+            "node": "Set account_id (Code)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set account_id (Code)": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Upsert a Supabase1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert a Supabase1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row1": {
+      "main": [
+        [
+          {
+            "node": "1. Get User Profile1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "648c51a2-7690-409e-b905-55bd8e0737fd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "32906a5f2bdc653e88c8f6fde14f7365d097573b5e9053a6781ad64c78a4c371"
+  },
+  "id": "TICi2QlLlGnqKi4j",
+  "tags": []
+}

@@ -1,0 +1,144 @@
+{
+  "name": "Promos Inteligentes",
+  "nodes": [
+    {
+      "id": "Webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "promos-inteligentes",
+        "responseMode": "onReceived",
+        "responseData": "json",
+        "responseBody": "ok"
+      },
+      "webhookId": ""
+    },
+    {
+      "id": "FetchPromos",
+      "name": "HTTP Request (Supabase)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3.1,
+      "position": [480, 300],
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/smart_promotions",
+        "responseFormat": "json",
+        "options": {
+          "queryParametersUi": {
+            "parameter": [
+              { "name": "select", "value": "*" },
+              { "name": "is_active", "value": "eq.true" },
+              { "name": "user_id", "value": "eq.{{$json[\"body\"][\"userId\"]}}" }
+            ]
+          },
+          "headers": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
+            { "name": "Authorization", "value": "Bearer {{$env.SUPABASE_KEY}}" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "supabase-api-key", "name": "Supabase Header Auth" }
+      }
+    },
+    {
+      "id": "FilterPromos",
+      "name": "Function (Elegir promo)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [760, 300],
+      "parameters": {
+        "functionCode": "const promos = items[0].json;\nif (!Array.isArray(promos) || !promos.length) {\n  return [];\n}\nconst now = new Date();\nconst selected = promos.find(promo => {\n  if (!promo.is_active) return false;\n  if (!promo.no_schedule) {\n    if (promo.start_at && new Date(promo.start_at) > now) return false;\n    if (promo.end_at && new Date(promo.end_at) < now) return false;\n  }\n  return true;\n});\nif (!selected) {\n  return [];\n}\nreturn [{ json: { promo: selected, contactId: $json[\"body\"][\"contactId\"], userId: $json[\"body\"][\"userId\"], messages: $json[\"body\"][\"messages\"], explicitPromoRequest: $json[\"body\"][\"explicitPromoRequest\"] }}];"
+      }
+    },
+    {
+      "id": "OpenAiWriter",
+      "name": "OpenAI (Promo Writer)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1040, 300],
+      "parameters": {
+        "operation": "chat",
+        "model": "gpt-4o-mini",
+        "messages": [
+          {
+            "text": "Eres un asesor comercial. Genera una respuesta breve y amable. Historial: {{$json[\"messages\"] || []}}  \\nPromoción: {{$json[\"promo\"]}}  \\nSi explicitPromoRequest es true, responde afirmativamente. Máximo 80 palabras.",
+            "role": "user"
+          }
+        ]
+      },
+      "credentials": {
+        "openAiApi": { "id": "openai-default", "name": "OpenAI API" }
+      }
+    },
+    {
+      "id": "IFPromo",
+      "name": "IF (¿Hay promo?)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1280, 260],
+      "parameters": {
+        "conditions": {
+          "boolean": [],
+          "collection": [
+            {
+              "field": "={{$json[\"promo\"]}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "SendPromo",
+      "name": "HTTP Request (Enviar Promo)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3.1,
+      "position": [1520, 160],
+      "parameters": {
+        "url": "={{$env.BOT_ENDPOINT}}/api/promos",
+        "method": "POST",
+        "responseFormat": "json",
+        "jsonBody": {
+          "userId": "={{$json[\"userId\"]}}",
+          "contactId": "={{$json[\"contactId\"]}}",
+          "promoId": "={{$json[\"promo\"][\"id\"]}}",
+          "message": "={{$json[\"data\"][0][\"content\"]}}"
+        }
+      }
+    },
+    {
+      "id": "NoPromo",
+      "name": "Set (Sin Promo)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [1520, 360],
+      "parameters": {
+        "values": { "string": [{ "name": "info", "value": "Sin promo disponible" }] },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "FetchPromos", "type": "main", "index": 0 }]] },
+    "FetchPromos": { "main": [[{ "node": "FilterPromos", "type": "main", "index": 0 }]] },
+    "FilterPromos": { "main": [[{ "node": "OpenAI (Promo Writer)", "type": "main", "index": 0 }]] },
+    "OpenAI (Promo Writer)": { "main": [[{ "node": "IF (¿Hay promo?)", "type": "main", "index": 0 }]] },
+    "IF (¿Hay promo?)": {
+      "main": [
+        [{ "node": "Set (Sin Promo)", "type": "main", "index": 0 }],
+        [{ "node": "HTTP Request (Enviar Promo)", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "promos-inteligentes-v1"
+}

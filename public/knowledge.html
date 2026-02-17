@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base de Conocimiento | Elina IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F8FAFC;
+            color: #1E293B;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 p-6 md:p-10">
+
+    <div class="max-w-5xl mx-auto space-y-8">
+
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900">Cerebro de Elina 🧠</h1>
+                <p class="text-slate-500 mt-1">Administra lo que tu IA sabe sobre tu negocio.</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="dashboard.html"
+                    class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium flex items-center gap-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        <!-- Generador IA -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-violet-600 to-indigo-600 p-6 text-white">
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i> Generador Automático de Conocimiento
+                </h2>
+                <p class="text-violet-100 text-sm mt-1">Pega cualquier texto de tu negocio (descripción, manual, correos
+                    viejos) y la IA extraerá las preguntas frecuentes automáticamente.</p>
+            </div>
+            <div class="p-6 space-y-4">
+                <textarea id="raw-text-input" rows="6"
+                    class="w-full rounded-xl border-slate-200 bg-slate-50 focus:border-violet-500 focus:ring-violet-500 text-slate-700 placeholder:text-slate-400 p-4"
+                    placeholder="Ej: Somos una pizzería fundada en 1990. Nuestro horario es de 1pm a 11pm. Ofrecemos peperoni, hawaiana y vegetariana. Hacemos envíos a toda la ciudad por $30 pesos..."></textarea>
+
+                <div class="flex justify-end">
+                    <button id="btn-generate" onclick="generateFaqs()"
+                        class="bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg shadow-violet-200 flex items-center gap-2">
+                        <i data-lucide="wand-2" class="w-5 h-5"></i>
+                        <span>Generar FAQs con IA</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="border-b border-slate-200">
+            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                <button onclick="switchTab('faqs')" id="tab-faqs"
+                    class="border-violet-500 text-violet-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+                    <i data-lucide="message-circle-question" class="w-4 h-4"></i> Preguntas Frecuentes
+                </button>
+                <button onclick="switchTab('files')" id="tab-files"
+                    class="border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-4 h-4"></i> Archivos Densos (PDFs)
+                </button>
+            </nav>
+        </div>
+
+        <!-- Content: FAQs -->
+        <div id="content-faqs" class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Tus FAQs Activas</h3>
+                <button onclick="openFaqModal()"
+                    class="text-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-2 px-4 rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Agregar Manualmente
+                </button>
+            </div>
+
+            <div id="faq-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Loader -->
+                <div class="col-span-full py-12 flex justify-center text-slate-400">
+                    <i data-lucide="loader-2" class="w-8 h-8 animate-spin"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content: Files -->
+        <div id="content-files" class="hidden space-y-6">
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 text-blue-800 text-sm">
+                <i data-lucide="info" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
+                <div>
+                    <p class="font-bold">¿Cuándo usar archivos?</p>
+                    <p>Usa esta sección solo para manuales técnicos largos, listas de precios extensas o documentos
+                        legales. Para información puntual, usa las FAQs.</p>
+                </div>
+            </div>
+
+            <div class="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer group"
+                onclick="document.getElementById('file-upload').click()">
+                <div
+                    class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-slate-300 transition-colors text-slate-500">
+                    <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+                </div>
+                <h3 class="font-bold text-slate-700">Sube tus documentos aquí</h3>
+                <p class="text-slate-500 text-sm mt-1">PDF, DOCX o TXT (Máx 10MB)</p>
+                <input type="file" id="file-upload" class="hidden" accept=".pdf,.docx,.txt"
+                    onchange="handleFileUpload(this)">
+            </div>
+
+            <div id="file-list" class="space-y-3">
+                <!-- File items -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FAQ Modal -->
+    <div id="faq-modal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="font-bold text-lg">Editar Conocimiento</h3>
+                <button onclick="closeFaqModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"
+                        class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Pregunta (Trigger)</label>
+                    <input type="text" id="modal-question"
+                        class="w-full rounded-lg border-slate-300 focus:ring-violet-500 focus:border-violet-500"
+                        placeholder="¿Cuál es el precio?">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Respuesta IA</label>
+                    <textarea id="modal-answer" rows="4"
+                        class="w-full rounded-lg border-slate-300 focus:ring-violet-500 focus:border-violet-500"
+                        placeholder="El precio es..."></textarea>
+                </div>
+            </div>
+            <div class="p-6 bg-slate-50 flex justify-end gap-3">
+                <button onclick="closeFaqModal()"
+                    class="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg font-medium">Cancelar</button>
+                <button onclick="saveFaq()"
+                    class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-bold">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logic -->
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+        // ⚠️ REPLACE WITH YOUR PROJECT CREDENTIALS OR INJECT FROM ENV
+        const SUPABASE_URL = 'https://mytvwfbijlgbihlegmfg.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2MjIxNTYsImV4cCI6MjA1NDE5ODE1Nn0.Cb2C0wUv-JkK2_7PzX2y9u8qM6Qd_tE4L9u2I8i0t8' // Fill this from your persistent context if needed, usually passed securely
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+        let faqs = []
+        let files = []
+
+        // Initial Load
+        window.addEventListener('load', async () => {
+            lucide.createIcons();
+            await loadContent();
+        });
+
+        async function loadContent() {
+            renderLoading()
+
+            // Fetch Files from DB (we filter by filename prefix 'faq_' to separate)
+            const { data: { user } } = await supabase.auth.getUser()
+
+            if (!user) {
+                // Determine redirect or show login
+                console.warn('No user logged in')
+                // For demo purposes assume auth is handled or redirect
+                // window.location.href = 'auth.html'
+                // return
+            }
+
+            const { data, error } = await supabase
+                .from('knowledge_files')
+                .select('*')
+                .eq('user_id', user?.id)
+                .order('created_at', { ascending: false })
+
+            if (data) {
+                // Split into FAQs (virtual files) and Real Files
+                faqs = data.filter(f => f.filename.startsWith('faq_'))
+                    .map(f => parseFaqFromText(f))
+
+                files = data.filter(f => !f.filename.startsWith('faq_'))
+
+                renderFaqs()
+                renderFiles()
+            }
+        }
+
+        // Helper to parse "P: ... R: ..." format
+        function parseFaqFromText(fileRecord) {
+            const text = fileRecord.extracted_text || ''
+            const pMatch = text.match(/P:\s*(.*?)(?=\nR:|$)/xs)
+            const rMatch = text.match(/R:\s*(.*)/xs)
+            return {
+                id: fileRecord.id,
+                question: pMatch ? pMatch[1].trim() : 'Pregunta sin título',
+                answer: rMatch ? rMatch[1].trim() : text,
+                timestamp: new Date(fileRecord.created_at).toLocaleDateString()
+            }
+        }
+
+        function renderLoading() {
+            document.getElementById('faq-list').innerHTML = `<div class="col-span-full py-12 flex justify-center text-slate-400"><i data-lucide="loader-2" class="w-8 h-8 animate-spin"></i></div>`
+        }
+
+        function renderFaqs() {
+            const container = document.getElementById('faq-list')
+            if (faqs.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-300">
+                        <i data-lucide="message-square-dashed" class="w-12 h-12 mx-auto mb-3 opacity-50"></i>
+                        <p>No tienes preguntas frecuentes aún.</p>
+                        <p class="text-sm">Usa el generador arriba o agrega una manualmente.</p>
+                    </div>
+                `
+            } else {
+                container.innerHTML = faqs.map(faq => `
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow group relative">
+                        <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="editFaq('${faq.id}')" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                            <button onclick="deleteFaq('${faq.id}')" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                        <h4 class="font-bold text-slate-800 pr-16 mb-2 text-lg">"${faq.question}"</h4>
+                        <p class="text-slate-600 text-sm leading-relaxed">${faq.answer}</p>
+                        <div class="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between text-xs text-slate-400">
+                             <span>Creado: ${faq.timestamp}</span>
+                             <span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">Activo</span>
+                        </div>
+                    </div>
+                `).join('')
+                lucide.createIcons()
+            }
+        }
+
+        function renderFiles() {
+            const container = document.getElementById('file-list')
+            if (files.length === 0) {
+                container.innerHTML = '<p class="text-center text-slate-400 text-sm italic">No hay archivos subidos.</p>'
+            } else {
+                container.innerHTML = files.map(file => `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-500">
+                                <i data-lucide="file-text" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-700 text-sm truncate max-w-[200px]">${file.filename}</h4>
+                                <p class="text-xs text-slate-400">${(file.file_size / 1024).toFixed(1)} KB • ${new Date(file.created_at).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-bold ${file.status === 'ready' ? 'text-emerald-500' : 'text-amber-500'}">
+                                ${file.status === 'ready' ? 'Listo' : 'Procesando...'}
+                            </span>
+                            <button onclick="deleteFile('${file.id}')" class="text-slate-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                `).join('')
+                lucide.createIcons()
+            }
+        }
+
+        // --- ACTIONS ---
+
+        window.generateFaqs = async () => {
+            const text = document.getElementById('raw-text-input').value
+            if (!text || text.length < 50) {
+                Swal.fire('Texto muy corto', 'Escribe al menos 50 caracteres para que la IA entienda tu negocio.', 'warning')
+                return
+            }
+
+            const btn = document.getElementById('btn-generate')
+            const originalContent = btn.innerHTML
+            btn.disabled = true
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Generando...`
+            lucide.createIcons()
+
+            try {
+                // Get Session
+                const { data: { session } } = await supabase.auth.getSession()
+
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/knowledge-files/generate-faqs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({ rawText: text })
+                })
+
+                if (!response.ok) throw new Error(await response.text())
+
+                const result = await response.json()
+
+                Swal.fire({
+                    title: '¡Éxito!',
+                    text: `Se generaron ${result.count} preguntas frecuentes.`,
+                    icon: 'success',
+                    timer: 2000
+                })
+
+                document.getElementById('raw-text-input').value = '' // clear
+                await loadContent() // reload
+
+            } catch (e) {
+                console.error(e)
+                Swal.fire('Error', 'No se pudieron generar las FAQs. ' + e.message, 'error')
+            } finally {
+                btn.disabled = false
+                btn.innerHTML = originalContent
+                lucide.createIcons()
+            }
+        }
+
+        // Tab Switching
+        window.switchTab = (tab) => {
+            if (tab === 'faqs') {
+                document.getElementById('content-faqs').classList.remove('hidden')
+                document.getElementById('content-files').classList.add('hidden')
+                document.getElementById('tab-faqs').classList.add('border-violet-500', 'text-violet-600')
+                document.getElementById('tab-faqs').classList.remove('border-transparent', 'text-slate-500')
+                document.getElementById('tab-files').classList.remove('border-violet-500', 'text-violet-600')
+                document.getElementById('tab-files').classList.add('border-transparent', 'text-slate-500')
+            } else {
+                document.getElementById('content-faqs').classList.add('hidden')
+                document.getElementById('content-files').classList.remove('hidden')
+                document.getElementById('tab-files').classList.add('border-violet-500', 'text-violet-600')
+                document.getElementById('tab-files').classList.remove('border-transparent', 'text-slate-500')
+                document.getElementById('tab-faqs').classList.remove('border-violet-500', 'text-violet-600')
+                document.getElementById('tab-faqs').classList.add('border-transparent', 'text-slate-500')
+            }
+        }
+
+        // File Upload Stub
+        window.handleFileUpload = async (input) => {
+            const file = input.files[0]
+            if (!file) return
+
+            // Similar logic to generate but using FormData
+            const { data: { session } } = await supabase.auth.getSession()
+            const formData = new FormData()
+            formData.append('file', file)
+
+            // Show Toast
+            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 })
+            Toast.fire({ icon: 'info', title: 'Subiendo archivo...' })
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/knowledge-files`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`
+                    },
+                    body: formData
+                })
+
+                if (!response.ok) throw new Error(await response.text())
+
+                await loadContent()
+                Toast.fire({ icon: 'success', title: 'Archivo subido' })
+
+            } catch (e) {
+                Swal.fire('Error', e.message, 'error')
+            }
+        }
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin - Elina IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+  <script type="module" crossorigin src="/assets/superadmin-B8SXfXFm.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/auth-PYTeCFgn.js">
+</head>
+<body class="bg-slate-900 text-slate-200">
+    <div id="loader" class="fixed inset-0 bg-slate-900 flex items-center justify-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-cyan-400"></div>
+    </div>
+
+    <div id="app-container" class="hidden">
+        <header class="bg-slate-800/50 backdrop-blur-lg border-b border-slate-700 p-4 flex justify-between items-center sticky top-0 z-10">
+            <h1 class="text-2xl font-bold text-white">Panel de Super Administrador</h1>
+            <a href="/dashboard.html" class="bg-cyan-500 text-slate-900 font-bold py-2 px-4 rounded-lg hover:bg-cyan-400">Volver al Dashboard</a>
+        </header>
+
+        <main class="p-4 sm:p-6 lg:p-8 space-y-12">
+            <!-- Sección de Planes -->
+            <section id="plans-section">
+                <h2 class="text-3xl font-bold text-white mb-6">Gestión de Planes</h2>
+                <div id="plans-container" class="space-y-8">
+                    <!-- Los formularios de los planes se cargarán aquí -->
+                </div>
+            </section>
+
+            <!-- Sección de Usuarios -->
+            <section id="users-section" class="pt-4">
+                <h2 class="text-3xl font-bold text-white mb-6">Gestión de Usuarios</h2>
+                <div class="mb-4">
+                    <input type="search" id="user-search" placeholder="Buscar usuario por email..." class="w-full max-w-md bg-slate-800 border-slate-700 rounded-lg p-3">
+                </div>
+                <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-700/50">
+                            <tr>
+                                <th class="p-4 font-semibold">Email</th>
+                                <th class="p-4 font-semibold">Plan Actual</th>
+                                <th class="p-4 font-semibold">Estado</th>
+                                <th class="p-4 font-semibold">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body" class="divide-y divide-slate-700">
+                            <tr id="users-loader">
+                                <td colspan="4" class="p-8 text-center text-slate-400">Cargando usuarios...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+
+    
+    <!-- Modal para Cambiar Plan -->
+    <div id="change-plan-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6 border-b border-slate-700">
+                <h3 class="text-xl font-bold">Cambiar Plan de Usuario</h3>
+                <p class="text-sm text-slate-400" id="modal-user-email"></p>
+                <input type="hidden" id="modal-user-id">
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label for="modal-plan-select" class="block text-sm font-medium text-slate-300">Nuevo Plan</label>
+                    <select id="modal-plan-select" class="mt-1 w-full bg-slate-700 border-slate-600 rounded p-2">
+                        <option value="grow">Grow</option>
+                        <option value="business">Business</option>
+                    </select>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="modal-override-payment" class="h-4 w-4 rounded bg-slate-700 border-slate-600 text-cyan-500 focus:ring-cyan-500">
+                    <label for="modal-override-payment" class="ml-2 block text-sm text-slate-300">Forzar cambio (sin pasar por pago)</label>
+                </div>
+            </div>
+            <div class="p-6 bg-slate-900/50 flex justify-end gap-3 rounded-b-lg">
+                <button type="button" id="cancel-change-plan-btn" class="bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-500">Cancelar</button>
+                <button type="button" id="confirm-change-plan-btn" class="bg-cyan-600 text-slate-900 font-bold py-2 px-4 rounded-lg hover:bg-cyan-500">Guardar Cambio</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</body>
+</html>

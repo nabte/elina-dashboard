@@ -1,0 +1,749 @@
+<!-- Settings con Tabs Modernos -->
+<div class="h-full flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
+    <!-- Header Fijo -->
+    <div class="bg-white border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <i data-lucide="settings" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-slate-900">Configuración</h1>
+                        <p class="text-xs text-slate-500">Personaliza tu experiencia</p>
+                    </div>
+                </div>
+                <button type="button" id="settings-save-safe-btn" data-settings-primary="true"
+                    class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center gap-2 text-sm">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation Fijos -->
+    <div class="bg-white border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex gap-2 overflow-x-auto custom-scrollbar pb-px" id="settings-tabs">
+                <button onclick="window.switchSettingsTab('company')" data-tab="company"
+                    class="settings-tab active px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-all flex items-center gap-2">
+                    <i data-lucide="building-2" class="w-4 h-4"></i>
+                    Mi Negocio
+                </button>
+                <button onclick="window.switchSettingsTab('payment')" data-tab="payment"
+                    class="settings-tab px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-all flex items-center gap-2">
+                    <i data-lucide="credit-card" class="w-4 h-4"></i>
+                    Pagos
+                </button>
+                <button onclick="window.switchSettingsTab('branding')" data-tab="branding"
+                    class="settings-tab px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-all flex items-center gap-2">
+                    <i data-lucide="palette" class="w-4 h-4"></i>
+                    Branding
+                </button>
+                <button onclick="window.switchSettingsTab('ai')" data-tab="ai"
+                    class="settings-tab px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-all flex items-center gap-2">
+                    <i data-lucide="bot" class="w-4 h-4"></i>
+                    IA & Automatización
+                </button>
+                <button onclick="window.switchSettingsTab('team')" data-tab="team"
+                    class="settings-tab px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-all flex items-center gap-2">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    Equipo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido de Tabs con Scroll -->
+    <div class="flex-1 overflow-y-auto custom-scrollbar">
+        <form id="settings-form" class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- TAB: Mi Negocio -->
+        <div id="tab-company" class="settings-tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- Información Básica -->
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg border-2 border-blue-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i data-lucide="info" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Información Básica</h3>
+                                <p class="text-xs text-blue-100">Datos principales de tu empresa</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label for="company-name" class="block text-sm font-bold text-slate-800 mb-2">
+                                Nombre de la Empresa <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="company-name" placeholder="Ej: Mi Empresa S.A."
+                                class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 outline-none transition-all" required>
+                            <p class="text-xs text-slate-500 mt-1.5">Aparecerá en cotizaciones y comunicaciones</p>
+                        </div>
+
+                        <div>
+                            <label for="company-slug" class="block text-sm font-bold text-slate-800 mb-2">
+                                Link Personalizado
+                            </label>
+                            <div class="flex rounded-xl border-2 border-slate-200 overflow-hidden focus-within:border-blue-500 transition-all">
+                                <span class="bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600 border-r border-slate-200">
+                                    elinaia.com.mx/
+                                </span>
+                                <input type="text" id="company-slug" placeholder="mi-empresa"
+                                    class="flex-1 px-4 py-3 border-none outline-none">
+                            </div>
+                            <p id="slug-validation-msg" class="text-xs mt-1.5 hidden"></p>
+                            <p class="text-xs text-slate-500 mt-1.5">Para agendar citas. Solo letras, números y guiones</p>
+                        </div>
+
+                        <div>
+                            <label for="company-description" class="block text-sm font-bold text-slate-800 mb-2">
+                                ¿Qué vendes? <span class="text-red-500">*</span>
+                            </label>
+                            <textarea id="company-description" rows="5"
+                                class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 outline-none resize-none transition-all"
+                                placeholder="Ej: Tienda de electrónica especializada en Arduino, Raspberry Pi y filamentos 3D. NO vendemos celulares ni computadoras armadas."></textarea>
+                            <p class="text-xs text-slate-500 mt-1.5">La IA usará esto para saber qué SÍ y qué NO vendes</p>
+                        </div>
+
+                        <div>
+                            <label for="business-type" class="block text-sm font-bold text-slate-800 mb-2">
+                                Tipo de Negocio <span class="text-red-500">*</span>
+                            </label>
+                            <select id="business-type" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 outline-none transition-all" required>
+                                <option value="both">🛍️ Ambos (E-commerce y Servicios)</option>
+                                <option value="ecommerce">📦 E-commerce (Productos Físicos)</option>
+                                <option value="services">⚙️ Servicios</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Horario de Atención -->
+                <div class="bg-white rounded-2xl shadow-lg border-2 border-emerald-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i data-lucide="clock" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Horario</h3>
+                                <p class="text-xs text-emerald-100">Atención al cliente</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label for="work-start-hour" class="block text-sm font-bold text-slate-800 mb-2">
+                                🌅 Hora de Apertura
+                            </label>
+                            <input type="time" id="work-start-hour"
+                                class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label for="work-end-hour" class="block text-sm font-bold text-slate-800 mb-2">
+                                🌙 Hora de Cierre
+                            </label>
+                            <input type="time" id="work-end-hour"
+                                class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-emerald-500 outline-none transition-all">
+                        </div>
+                        <p class="text-xs text-slate-500">Elina enviará seguimientos automáticos solo en este horario</p>
+                    </div>
+                </div>
+
+                <!-- Contacto -->
+                <div class="bg-white rounded-2xl shadow-lg border-2 border-purple-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i data-lucide="phone" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Contacto</h3>
+                                <p class="text-xs text-purple-100">Teléfono y redes</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label for="admin-phone-number" class="block text-sm font-bold text-slate-800 mb-2">
+                                📱 Número de Notificaciones
+                            </label>
+                            <div class="flex border-2 border-slate-200 rounded-xl overflow-hidden focus-within:border-purple-500 transition-all">
+                                <div class="bg-slate-50 border-r border-slate-200 px-2">
+                                    <select id="admin-phone-country-code"
+                                        class="bg-transparent border-none text-sm font-medium outline-none py-3 pr-6">
+                                        <option value="52" selected>🇲🇽 +52</option>
+                                        <option value="1">🇺🇸 +1</option>
+                                        <option value="34">🇪🇸 +34</option>
+                                        <option value="57">🇨🇴 +57</option>
+                                    </select>
+                                </div>
+                                <input type="tel" id="admin-phone-input" placeholder="1234567890"
+                                    class="flex-1 px-4 py-3 border-none outline-none">
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1.5">Elina te escribirá aquí cuando necesite tu atención</p>
+                        </div>
+
+                        <div>
+                            <label for="website" class="block text-sm font-bold text-slate-800 mb-2">
+                                🌐 Sitio Web
+                            </label>
+                            <input type="text" id="website" placeholder="tuempresa.com"
+                                class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-purple-500 outline-none transition-all">
+                        </div>
+
+                        <div>
+                            <label for="social-instagram" class="block text-sm font-bold text-slate-800 mb-2">
+                                📸 Instagram
+                            </label>
+                            <input type="text" id="social-instagram" placeholder="tu_usuario"
+                                class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-purple-500 outline-none transition-all">
+                        </div>
+
+                        <div>
+                            <label for="social-facebook" class="block text-sm font-bold text-slate-800 mb-2">
+                                👥 Facebook
+                            </label>
+                            <input type="text" id="social-facebook" placeholder="tu_pagina"
+                                class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-purple-500 outline-none transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos del Negocio -->
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg border-2 border-amber-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i data-lucide="map-pin" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Ubicación y Envíos</h3>
+                                <p class="text-xs text-amber-100">Datos de tu tienda física</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="business-address" class="block text-sm font-bold text-slate-800 mb-2">
+                                    🏢 Dirección del Negocio
+                                </label>
+                                <input type="text" id="business-address" placeholder="Calle, Número, Colonia, Ciudad"
+                                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-amber-500 outline-none transition-all">
+                            </div>
+
+                            <div>
+                                <label for="business-maps-link" class="block text-sm font-bold text-slate-800 mb-2">
+                                    📍 Link de Google Maps
+                                </label>
+                                <input type="url" id="business-maps-link" placeholder="https://maps.app.goo.gl/..."
+                                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-amber-500 outline-none transition-all">
+                                <p class="text-xs text-slate-500 mt-1.5">Link directo a tu ubicación en Google Maps</p>
+                            </div>
+
+                            <div>
+                                <label for="business-phone-number" class="block text-sm font-bold text-slate-800 mb-2">
+                                    ☎️ Teléfono del Negocio
+                                </label>
+                                <div class="flex border-2 border-slate-200 rounded-xl overflow-hidden focus-within:border-amber-500 transition-all">
+                                    <div class="bg-slate-50 border-r border-slate-200 px-2">
+                                        <select id="business-phone-country-code"
+                                            class="bg-transparent border-none text-sm font-medium outline-none py-3 pr-6">
+                                            <option value="52" selected>🇲🇽 +52</option>
+                                            <option value="1">🇺🇸 +1</option>
+                                            <option value="34">🇪🇸 +34</option>
+                                            <option value="57">🇨🇴 +57</option>
+                                        </select>
+                                    </div>
+                                    <input type="tel" id="business-phone-input" placeholder="1234567890"
+                                        class="flex-1 px-4 py-3 border-none outline-none">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="pickup-location" class="block text-sm font-bold text-slate-800 mb-2">
+                                    📦 Ubicación de Recogida
+                                </label>
+                                <input type="text" id="pickup-location" placeholder="Dirección para recoger pedidos"
+                                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-amber-500 outline-none transition-all">
+                            </div>
+
+                            <!-- TRACKING DE ENVÍOS: Comentado hasta implementar tracking real
+                            <div class="md:col-span-2 flex items-center gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                <input type="checkbox" id="has-shipping-system" class="w-5 h-5 rounded text-amber-600">
+                                <label for="has-shipping-system" class="text-sm font-bold text-slate-800">
+                                    📦 Tengo sistema de tracking de envíos
+                                </label>
+                            </div>
+                            -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB: Pagos -->
+        <div id="tab-payment" class="settings-tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <div class="lg:col-span-2 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 border-2 border-blue-200">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center shrink-0">
+                            <i data-lucide="info" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 mb-1">💡 Información de Pago para Flows Automáticos</h3>
+                            <p class="text-sm text-slate-700">
+                                Cuando uses el paso "Enviar información de pago" en tus flows, se usarán estos datos.
+                                Configura al menos un método de pago.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transferencia Bancaria -->
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg border-2 border-green-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i data-lucide="building" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Transferencia Bancaria</h3>
+                                <p class="text-xs text-green-100">Cuenta de banco principal</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="payment-bank-name" class="block text-sm font-bold text-slate-800 mb-2">
+                                    🏦 Nombre del Banco
+                                </label>
+                                <input type="text" id="payment-bank-name" placeholder="Ej: BBVA México"
+                                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-green-500 outline-none transition-all">
+                            </div>
+
+                            <div>
+                                <label for="payment-account-holder" class="block text-sm font-bold text-slate-800 mb-2">
+                                    👤 Titular de la Cuenta
+                                </label>
+                                <input type="text" id="payment-account-holder" placeholder="Ej: Juan Pérez"
+                                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-green-500 outline-none transition-all">
+                            </div>
+
+                            <div>
+                                <label for="payment-bank-account" class="block text-sm font-bold text-slate-800 mb-2">
+                                    💳 Número de Cuenta
+                                </label>
+                                <input type="text" id="payment-bank-account" placeholder="Ej: 0123456789"
+                                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-green-500 outline-none transition-all">
+                            </div>
+
+                            <div>
+                                <label for="payment-clabe" class="block text-sm font-bold text-slate-800 mb-2">
+                                    🔢 CLABE Interbancaria
+                                </label>
+                                <input type="text" id="payment-clabe" placeholder="18 dígitos" maxlength="18"
+                                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-green-500 outline-none font-mono transition-all">
+                                <p class="text-xs text-slate-500 mt-1.5">Solo para México</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PayPal -->
+                <div class="bg-white rounded-2xl shadow-lg border-2 border-yellow-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-yellow-500 to-amber-600 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i data-lucide="mail" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">PayPal</h3>
+                                <p class="text-xs text-yellow-100">Pagos internacionales</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <label for="payment-paypal-email" class="block text-sm font-bold text-slate-800 mb-2">
+                            📧 Correo de PayPal
+                        </label>
+                        <input type="email" id="payment-paypal-email" placeholder="tu@correo.com"
+                            class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-yellow-500 outline-none transition-all">
+                        <p class="text-xs text-slate-500 mt-1.5">Opcional</p>
+                    </div>
+                </div>
+
+                <!-- Imagen de Pago o QR -->
+                <div class="bg-white rounded-2xl shadow-lg border-2 border-cyan-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i data-lucide="qr-code" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Imagen de Pago o QR</h3>
+                                <p class="text-xs text-cyan-100">MercadoPago, OXXO Pay, tarjeta, etc.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex flex-col items-center gap-4">
+                            <img id="payment-qr-preview" src="https://placehold.co/200x200/e2e8f0/475569?text=Imagen+de+Pago"
+                                alt="Imagen de Pago" class="w-48 h-48 rounded-xl object-contain bg-slate-100 p-3 border-2 border-slate-200">
+                            <input type="file" id="payment-qr-input" class="hidden" accept="image/*">
+                            <button type="button" id="upload-payment-qr-btn"
+                                class="px-6 py-2.5 bg-cyan-500 text-white font-bold rounded-xl hover:bg-cyan-600 transition-all flex items-center gap-2">
+                                <i data-lucide="upload" class="w-4 h-4"></i>
+                                Subir Imagen de Pago
+                            </button>
+                            <p class="text-xs text-slate-500 text-center">Sube QR, ficha, captura de tarjeta o cualquier imagen para recibir pagos</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nombre del Negocio para Pagos -->
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden">
+                    <div class="p-6">
+                        <label for="payment-business-name" class="block text-sm font-bold text-slate-800 mb-2">
+                            🏢 Nombre del Negocio (para pagos)
+                        </label>
+                        <input type="text" id="payment-business-name" placeholder="Ej: Mi Tienda Online"
+                            class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 outline-none transition-all">
+                        <p class="text-xs text-slate-500 mt-1.5">Si está vacío, se usa el nombre de empresa configurado arriba</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB: Branding -->
+        <div id="tab-branding" class="settings-tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- Logo -->
+                <div class="bg-white rounded-2xl shadow-lg border-2 border-indigo-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i data-lucide="image" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Logo</h3>
+                                <p class="text-xs text-indigo-100">Identidad visual</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex flex-col items-center gap-4">
+                            <img id="logo-preview" src="https://placehold.co/150x150/e2e8f0/475569?text=Logo"
+                                alt="Logo" class="w-32 h-32 rounded-2xl object-contain bg-slate-100 p-2 border-2 border-slate-200">
+                            <input type="file" id="logo-input" class="hidden" accept="image/*">
+                            <button type="button" id="upload-logo-btn"
+                                class="px-6 py-2.5 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600 transition-all flex items-center gap-2">
+                                <i data-lucide="upload" class="w-4 h-4"></i>
+                                Cambiar Logo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paleta de Colores -->
+                <div class="bg-white rounded-2xl shadow-lg border-2 border-pink-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-pink-500 to-rose-600 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i data-lucide="palette" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Colores</h3>
+                                <p class="text-xs text-pink-100">Paleta de marca</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-2">Color 1</label>
+                                <input type="color" id="brand-color-1" value="#3b82f6"
+                                    class="h-16 w-full rounded-xl cursor-pointer border-2 border-slate-200">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-2">Color 2</label>
+                                <input type="color" id="brand-color-2" value="#10b981"
+                                    class="h-16 w-full rounded-xl cursor-pointer border-2 border-slate-200">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-2">Color 3</label>
+                                <input type="color" id="brand-color-3" value="#f97316"
+                                    class="h-16 w-full rounded-xl cursor-pointer border-2 border-slate-200">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-2">Color 4</label>
+                                <input type="color" id="brand-color-4" value="#1e293b"
+                                    class="h-16 w-full rounded-xl cursor-pointer border-2 border-slate-200">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tipografía y Referencias -->
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="brand-font" class="block text-sm font-bold text-slate-800 mb-2">
+                                ✍️ Tipografía de Marca
+                            </label>
+                            <select id="brand-font" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 outline-none transition-all">
+                                <option value="Inter">Inter (Moderna y limpia)</option>
+                                <option value="Poppins">Poppins (Geométrica y amigable)</option>
+                                <option value="Roboto">Roboto (Profesional)</option>
+                                <option value="Montserrat">Montserrat (Elegante)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-slate-800 mb-2">
+                                🖼️ Imágenes de Referencia
+                            </label>
+                            <div id="reference-images-container" class="grid grid-cols-3 gap-3">
+                                <div id="add-ref-image-slot" class="aspect-square border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
+                                    <div class="text-center">
+                                        <i data-lucide="plus" class="w-8 h-8 text-slate-400 mx-auto mb-1"></i>
+                                        <p class="text-xs text-slate-500 font-medium">Agregar</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="file" id="reference-image-input" class="hidden" accept="image/*">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB: IA & Automatización -->
+        <div id="tab-ai" class="settings-tab-content hidden">
+            <div class="grid grid-cols-1 gap-6">
+
+                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-purple-500 rounded-2xl flex items-center justify-center shrink-0">
+                            <i data-lucide="sparkles" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 mb-1">🤖 Configuración de IA</h3>
+                            <p class="text-sm text-slate-700">
+                                Personaliza cómo Elina se comunica con tus clientes
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg border-2 border-purple-100 p-6">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="mic" class="w-5 h-5 text-purple-600"></i>
+                        Voz de Elina (TTS)
+                    </h3>
+                    <div class="space-y-4">
+                        <select id="tts-voice" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-purple-500 outline-none transition-all">
+                            <option value="">Cargando voces...</option>
+                        </select>
+                        <button type="button" id="play-voice-preview"
+                            class="w-full px-6 py-3 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="play" class="w-4 h-4"></i>
+                            Probar Voz
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white rounded-2xl shadow-lg border-2 border-green-100 p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <input type="checkbox" id="quotes-enabled" class="w-5 h-5 rounded text-green-600">
+                            <label for="quotes-enabled" class="text-sm font-bold text-slate-900">
+                                💰 Cotizaciones Automáticas
+                            </label>
+                        </div>
+                        <p class="text-xs text-slate-600">Permite a Elina crear cotizaciones automáticamente</p>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-lg border-2 border-blue-100 p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <input type="checkbox" id="daily-summary-enabled" class="w-5 h-5 rounded text-blue-600">
+                            <label for="daily-summary-enabled" class="text-sm font-bold text-slate-900">
+                                📊 Resumen Diario
+                            </label>
+                        </div>
+                        <input type="time" id="daily-summary-time" value="08:00"
+                            class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-blue-500 outline-none transition-all">
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-lg border-2 border-orange-100 p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <input type="checkbox" id="pending-tasks-reminder-enabled" class="w-5 h-5 rounded text-orange-600">
+                            <label for="pending-tasks-reminder-enabled" class="text-sm font-bold text-slate-900">
+                                ⏰ Recordatorio de Tareas
+                            </label>
+                        </div>
+                        <p class="text-xs text-slate-600">Recibe alertas de tareas pendientes</p>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-lg border-2 border-indigo-100 p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <input type="checkbox" id="appointments-enabled" class="w-5 h-5 rounded text-indigo-600">
+                            <label for="appointments-enabled" class="text-sm font-bold text-slate-900">
+                                📅 Sistema de Citas
+                            </label>
+                        </div>
+                        <p class="text-xs text-slate-600">Permite que tus clientes agenden citas desde WhatsApp</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-6">
+                    <label for="business-category" class="block text-sm font-bold text-slate-800 mb-2">
+                        🏷️ Categoría de Negocio
+                    </label>
+                    <select id="business-category" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 outline-none transition-all">
+                        <option value="ecommerce">E-commerce / Tienda Online</option>
+                        <option value="restaurant">Restaurante / Food</option>
+                        <option value="services">Servicios Profesionales</option>
+                        <option value="health">Salud y Bienestar</option>
+                        <option value="education">Educación</option>
+                        <option value="other">Otro</option>
+                    </select>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB: Equipo -->
+        <div id="tab-team" class="settings-tab-content hidden">
+            <div class="grid grid-cols-1 gap-6">
+
+                <div class="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl p-6 border-2 border-cyan-200">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-cyan-500 rounded-2xl flex items-center justify-center shrink-0">
+                            <i data-lucide="users" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 mb-1">👥 Gestión de Equipo</h3>
+                            <p class="text-sm text-slate-700">
+                                Invita miembros y administra permisos
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="team-management-panel" class="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4">Invitar Nuevo Miembro</h3>
+                    <div class="flex gap-3">
+                        <input type="email" id="invite-email" placeholder="correo@ejemplo.com"
+                            class="flex-1 px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-cyan-500 outline-none transition-all">
+                        <button type="button" id="invite-member-btn"
+                            class="px-6 py-3 bg-cyan-500 text-white font-bold rounded-xl hover:bg-cyan-600 transition-all whitespace-nowrap">
+                            Invitar
+                        </button>
+                    </div>
+
+                    <div class="mt-6">
+                        <h4 class="font-bold text-slate-900 mb-3">Miembros del Equipo</h4>
+                        <div id="team-members-list" class="space-y-3">
+                            <!-- Lista de miembros se renderiza aquí -->
+                        </div>
+                    </div>
+
+                    <div class="mt-6 bg-slate-50 rounded-xl p-4 border border-slate-200">
+                        <h4 class="font-bold text-slate-900 mb-3">Configuración de Vendedores</h4>
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="see-all-chats-toggle" class="w-5 h-5 rounded text-cyan-600">
+                            <label for="see-all-chats-toggle" class="text-sm font-medium text-slate-700">
+                                Permitir que vendedores vean todos los chats
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        </form>
+    </div>
+</div>
+
+<style>
+/* Tabs Styling */
+.settings-tab {
+    color: #64748b;
+    border-color: transparent;
+}
+
+.settings-tab.active {
+    color: #3b82f6;
+    border-color: #3b82f6;
+    background: linear-gradient(to bottom, rgba(59, 130, 246, 0.05), transparent);
+}
+
+.settings-tab:hover:not(.active) {
+    color: #475569;
+    background: rgba(0, 0, 0, 0.02);
+}
+
+/* Scrollbar Custom */
+.custom-scrollbar::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+</style>
+
+<script>
+// Sistema de Tabs
+window.switchSettingsTab = (tabName) => {
+    // Ocultar todos los contenidos
+    document.querySelectorAll('.settings-tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+
+    // Remover clase active de todos los tabs
+    document.querySelectorAll('.settings-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    // Mostrar el contenido seleccionado
+    document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+    // Activar el tab seleccionado
+    document.querySelector(`.settings-tab[data-tab="${tabName}"]`).classList.add('active');
+
+    // Renderizar iconos de Lucide
+    if (window.lucide) lucide.createIcons();
+};
+
+// Inicializar iconos cuando carga
+if (window.lucide) {
+    setTimeout(() => lucide.createIcons(), 100);
+}
+</script>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración Edge Function - Elina</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .config-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border-color, #e0e0e0);
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-secondary, #666);
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            color: var(--primary-color, #4f46e5);
+        }
+
+        .tab.active {
+            color: var(--primary-color, #4f46e5);
+            border-bottom-color: var(--primary-color, #4f46e5);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary, #1f2937);
+        }
+
+        .form-group textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 12px;
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .form-group select,
+        .form-group input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: var(--bg-secondary, #f9fafb);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color, #4f46e5);
+        }
+
+        .flow-step input[type="checkbox"] {
+            margin-right: 12px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .flow-step label {
+            font-size: 15px;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary-color, #4f46e5);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover, #4338ca);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary, #f3f4f6);
+            color: var(--text-primary, #1f2937);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color, #e5e7eb);
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .alert.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary, #666);
+        }
+
+        .config-info {
+            background: var(--bg-info, #eff6ff);
+            border: 1px solid var(--border-info, #bfdbfe);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .config-info h3 {
+            margin: 0 0 8px 0;
+            color: var(--primary-color, #4f46e5);
+        }
+
+        .config-info p {
+            margin: 0;
+            color: var(--text-secondary, #666);
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="config-container">
+        <h1>⚙️ Configuración de Edge Function</h1>
+
+        <div id="alert" class="alert"></div>
+        <div id="loading" class="loading">Cargando configuración...</div>
+
+        <div id="config-panel" style="display: none;">
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="prompts">System Prompts</button>
+                <button class="tab" data-tab="flow">Flujo de Procesamiento</button>
+                <button class="tab" data-tab="params">Parámetros</button>
+            </div>
+
+            <!-- Tab Content: Prompts -->
+            <div id="prompts-tab" class="tab-content active">
+                <div class="config-info">
+                    <h3>📝 System Prompts Personalizados</h3>
+                    <p>Personaliza los prompts que guían el comportamiento de la IA. Deja en blanco para usar los
+                        valores por defecto.</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="base-prompt">Base Prompt</label>
+                    <textarea id="base-prompt"
+                        placeholder="Deja en blanco para usar el prompt por defecto..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="personality-context">Personality Context</label>
+                    <textarea id="personality-context"
+                        placeholder="Deja en blanco para usar el contexto por defecto..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="placeholder-instructions">Placeholder Instructions</label>
+                    <textarea id="placeholder-instructions"
+                        placeholder="Deja en blanco para usar las instrucciones por defecto..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="appointment-rules">Appointment Rules</label>
+                    <textarea id="appointment-rules"
+                        placeholder="Deja en blanco para usar las reglas por defecto..."></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="savePrompts()">💾 Guardar Prompts</button>
+                    <button class="btn btn-secondary" onclick="restoreDefaults()">🔄 Restaurar Defaults</button>
+                </div>
+            </div>
+
+            <!-- Tab Content: Flow -->
+            <div id="flow-tab" class="tab-content">
+                <div class="config-info">
+                    <h3>🔄 Flujo de Procesamiento</h3>
+                    <p>Habilita o deshabilita cada paso del procesamiento de mensajes.</p>
+                </div>
+
+                <div class="flow-step">
+                    <input type="checkbox" id="enable-appointment" checked>
+                    <label for="enable-appointment">1. Detectar Intención de Cita</label>
+                </div>
+
+                <div class="flow-step">
+                    <input type="checkbox" id="enable-critical" checked>
+                    <label for="enable-critical">2. Detectar Intención Crítica</label>
+                </div>
+
+                <div class="flow-step">
+                    <input type="checkbox" id="enable-product" checked>
+                    <label for="enable-product">3. Detectar Intención de Producto</label>
+                </div>
+
+                <div class="flow-step">
+                    <input type="checkbox" id="enable-quote" checked>
+                    <label for="enable-quote">4. Detectar Intención de Cotización</label>
+                </div>
+
+                <div class="flow-step">
+                    <input type="checkbox" id="enable-sentiment" checked>
+                    <label for="enable-sentiment">5. Análisis de Sentimiento</label>
+                </div>
+
+                <div class="flow-step">
+                    <input type="checkbox" id="enable-preferences">
+                    <label for="enable-preferences">6. Sistema de Preferencias de Usuario</label>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="saveFlow()">💾 Guardar Configuración</button>
+                </div>
+            </div>
+
+            <!-- Tab Content: Params -->
+            <div id="params-tab" class="tab-content">
+                <div class="config-info">
+                    <h3>🎛️ Parámetros del Sistema</h3>
+                    <p>Configura el modelo LLM y el comportamiento del sistema.</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="llm-model">Modelo LLM</label>
+                    <select id="llm-model">
+                        <option value="gpt-5-nano-2025-08-07">GPT-5 Nano (Recomendado)</option>
+                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                        <option value="gpt-4o">GPT-4o</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="max-tokens">Max Tokens</label>
+                    <input type="number" id="max-tokens" value="2000" min="500" max="4000" step="100">
+                </div>
+
+                <div class="form-group">
+                    <label for="temperature">Temperature</label>
+                    <input type="number" id="temperature" value="0.7" min="0" max="2" step="0.1">
+                </div>
+
+                <div class="form-group">
+                    <label for="inventory-mode">Modo de Inyección de Inventario</label>
+                    <select id="inventory-mode">
+                        <option value="conditional">Condicional (Recomendado)</option>
+                        <option value="always">Siempre</option>
+                        <option value="never">Nunca</option>
+                    </select>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="saveParams()">💾 Guardar Parámetros</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/super-admin-edge-config.js"></script>
+</body>
+
+</html>

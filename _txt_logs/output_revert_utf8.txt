@@ -1,0 +1,22 @@
+﻿
+--- TEST: Unknown User (Sales Mode) ---
+[FAIL] No profile/data returned.
+Error Message: Failed to create contact: {"code":"22P02","details":null,"hint":null,"message":"invalid input syntax for type uuid: \"Tester\""}
+---------------- STACK TRACE ----------------
+Error: Failed to create contact: {"code":"22P02","details":null,"hint":null,"message":"invalid input syntax for type uuid: \"Tester\""}
+    at ensureContact (file:///var/tmp/sb-compile-edge-runtime/functions/process-chat-message/context.ts:39:11)
+    at eventLoopTick (ext:core/01_core.js:175:7)
+    at async Server.<anonymous> (file:///var/tmp/sb-compile-edge-runtime/functions/process-chat-message/index.ts:170:21)
+    at async Server.#respond (https://deno.land/std@0.168.0/http/server.ts:221:18)
+---------------------------------------------
+
+--- TEST: Known Client (Support Mode) ---
+[FAIL] No profile/data returned.
+Error Message: Failed to create contact: {"code":"22P02","details":null,"hint":null,"message":"invalid input syntax for type uuid: \"Tester\""}
+---------------- STACK TRACE ----------------
+Error: Failed to create contact: {"code":"22P02","details":null,"hint":null,"message":"invalid input syntax for type uuid: \"Tester\""}
+    at ensureContact (file:///var/tmp/sb-compile-edge-runtime/functions/process-chat-message/context.ts:39:11)
+    at eventLoopTick (ext:core/01_core.js:175:7)
+    at async Server.<anonymous> (file:///var/tmp/sb-compile-edge-runtime/functions/process-chat-message/index.ts:170:21)
+    at async Server.#respond (https://deno.land/std@0.168.0/http/server.ts:221:18)
+---------------------------------------------

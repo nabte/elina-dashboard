@@ -1,0 +1,22 @@
+const fs = require('fs');
+const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
+
+// Configuración básica (si no tienes dotenv, hardcodeamos o leemos de un config dummy)
+// IMPORTANTE: NO hardcodear credenciales reales en producción.
+// Aquí asumimos que el usuario tiene las credenciales o usamos un cliente existente si fuera navegador.
+// Como estamos en node, necesitamos URL y KEY.
+// Intentaré leerlas de un archivo .env si existe, o usar placeholders que fallarán si no se configuran.
+
+// NOTA: Si no tienes las credenciales a mano, usa SQL Editor en Supabase Dashboard.
+// Pero intentaremos usar el cliente si podemos encontrar las credenciales.
+
+console.log("Por favor ejecuta este SQL manualmente en el SQL Editor de Supabase:");
+console.log(`
+ALTER TABLE public.quotes 
+ADD COLUMN IF NOT EXISTS discount_percent numeric DEFAULT 0,
+ADD COLUMN IF NOT EXISTS tax_percent numeric DEFAULT 0;
+`);
+
+console.log("Como alternativa, si tienes la CLI de supabase instalada, usa 'supabase db push'.");
+console.log("Este script en JS no puede conectar sin las credenciales explícitas.");

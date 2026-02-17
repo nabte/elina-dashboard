@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uso de Datos y Cookies | Elina IA</title>
+    <meta name="description"
+        content="Descubre cómo Elina IA utiliza RAG, vectores y cookies para potenciar tu negocio sin comprometer la privacidad. Detalles sobre silos de datos y entrenamiento de IA.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #F8FAFC;
+            color: #1E293B;
+        }
+
+        h1,
+        h2,
+        h3,
+        .font-heading {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 glass-nav">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-3">
+                <img src="public/assets/lgo_web.png" class="w-10 h-10 object-contain" alt="Elina Logo">
+                <span class="font-heading font-bold text-2xl text-slate-900">Elina <span
+                        class="text-emerald-500">IA</span></span>
+            </a>
+            <div class="hidden md:flex items-center gap-8 font-semibold text-slate-600">
+                <a href="index.html" class="hover:text-emerald-500 transition-colors">Inicio</a>
+                <a href="index.html#pricing" class="hover:text-emerald-500 transition-colors">Precios</a>
+                <a href="blog.html" class="hover:text-emerald-500 transition-colors">Blog</a>
+                <a href="auth.html?tab=register" class="btn-primary px-6 py-2.5 rounded-xl font-bold">Prueba Gratis</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-32 pb-20 px-6 max-w-4xl mx-auto">
+        <div class="mb-12">
+            <h1 class="text-5xl md:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight uppercase">POLÍTICA DE USO
+                DE DATOS, COOKIES Y ENTRENAMIENTO</h1>
+            <div class="flex items-center gap-4 text-slate-500">
+                <span
+                    class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold uppercase">Transparencia
+                    IA</span>
+                <p class="text-sm italic font-medium">Última actualización: 14 de febrero de 2026</p>
+            </div>
+        </div>
+
+        <div class="prose prose-slate prose-lg max-w-none space-y-12 text-slate-700 leading-relaxed">
+            <p class="text-lg">En <strong>BRANDCODE</strong> (operadora de Elina IA), creemos en la transparencia total
+                sobre cómo nuestra tecnología interactúa con su información. Este documento detalla los procesos
+                técnicos de manejo de datos, el uso de cookies y los protocolos de seguridad de nuestra inteligencia
+                artificial.</p>
+
+            <section>
+                <h2 class="text-3xl font-bold text-slate-900 mb-6 font-heading">1. ¿QUÉ INFORMACIÓN PROCESAMOS? (RAG Y
+                    VECTORES)</h2>
+                <p>Para que Elina IA funcione como un experto en su negocio, procesamos dos tipos de información que
+                    usted nos proporciona voluntariamente:</p>
+                <ul class="list-disc pl-6 space-y-4 text-sm">
+                    <li><strong>Datos No Estructurados:</strong> Archivos PDF, documentos Word, presentaciones, textos
+                        libres y contenido extraído automáticamente de las URLs que usted vincula al sistema.</li>
+                    <li><strong>Datos Estructurados:</strong> Listas de productos, catálogos, precios, inventarios y
+                        preguntas frecuentes (FAQs) cargadas manualmente o vía CSV/Excel.</li>
+                </ul>
+                <div class="mt-8 p-10 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-8 opacity-10">
+                        <i data-lucide="binary" class="w-24 h-24"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-purple-400 font-heading">Procesamiento Vectorial</h3>
+                    <p class="text-slate-300">Esta información no se guarda únicamente como archivos legibles en nuestra
+                        base de datos activa. ELINA utiliza tecnología de <strong>Embeddings</strong> para transformar
+                        su conocimiento en vectores (representaciones numéricas) que permiten a la IA realizar búsquedas
+                        semánticas.</p>
+                    <p class="mt-4 text-sm text-slate-400 italic">Este proceso garantiza que la IA pueda "entender" el
+                        contexto de las preguntas de sus clientes sin necesidad de coincidencias exactas de palabras.
+                    </p>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="text-3xl font-bold text-slate-900 mb-6 font-heading">2. ENTRENAMIENTO DE MODELOS Y
+                    AISLAMIENTO DE DATOS</h2>
+                <p>La seguridad de su propiedad intelectual es nuestra prioridad. En Elina IA aplicamos una política
+                    estricta de <strong>Silos de Datos (Data Silos)</strong>:</p>
+                <ul class="list-disc pl-6 space-y-4 mt-8 text-sm">
+                    <li><strong>Instancia Única:</strong> El conocimiento proporcionado se utiliza exclusivamente para
+                        generar respuestas para su propia cuenta y chatbot.</li>
+                    <li><strong>No-Contaminación:</strong> BRANDCODE garantiza que su base de conocimiento
+                        <strong>NO</strong> se comparte ni se utiliza para entrenar o mejorar los modelos de otros
+                        clientes actuales o futuros.
+                    </li>
+                    <li><strong>Mejora de Precisión (Fine-Tuning):</strong> Utilizamos el historial de chats marcado
+                        como exitoso por su equipo para ajustar la precisión de las respuestas de su instancia
+                        específica, creando una personalización única para su marca.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-3xl font-bold text-slate-900 mb-6 font-heading">3. POLÍTICA DE COOKIES Y TELEMETRÍA</h2>
+                <p>Nuestra plataforma utiliza tecnologías de rastreo estándar para garantizar la estabilidad operativa
+                    del software:</p>
+
+                <div class="grid md:grid-cols-2 gap-8 mt-8">
+                    <div class="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm">
+                        <div
+                            class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 mb-6">
+                            <i data-lucide="shield-check" class="w-6 h-6"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-900 mb-3 text-xl">Cookies Técnicas</h4>
+                        <p class="text-sm text-slate-500 leading-relaxed">Necesarias para la autenticación segura,
+                            mantener el estado de su sesión y recordar sus preferencias de configuración en el
+                            dashboard.</p>
+                    </div>
+                    <div class="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm">
+                        <div
+                            class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 mb-6">
+                            <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-900 mb-3 text-xl">Telemetría Anónima</h4>
+                        <p class="text-sm text-slate-500 leading-relaxed">Recopilamos datos anónimos sobre el
+                            rendimiento de la plataforma y errores técnicos para optimizar la velocidad del servicio
+                            SaaS.</p>
+                    </div>
+                </div>
+                <p class="mt-8 text-sm text-slate-400 italic">No utilizamos cookies publicitarias de terceros ni
+                    vendemos perfiles de comportamiento a agencias de marketing.</p>
+            </section>
+
+            <section>
+                <h2 class="text-3xl font-bold text-slate-900 mb-6 font-heading">4. SEGURIDAD E INFRAESTRUCTURA DE
+                    WHATSAPP</h2>
+                <p>Elina IA opera mediante una infraestructura diseñada para la estabilidad empresarial:</p>
+                <ul class="list-disc pl-6 space-y-4 mt-6 text-sm">
+                    <li><strong>Protocolos de Conectividad:</strong> Utilizamos una arquitectura que garantiza el envío
+                        eficiente de mensajes respetando los límites técnicos de Meta Platforms, Inc.</li>
+                    <li><strong>Cifrado:</strong> Todas las comunicaciones entre Elina IA y los servicios de Meta viajan
+                        por túneles cifrados SSL/TLS.</li>
+                    <li><strong>Privacidad de Contactos:</strong> Solo procesamos los números de teléfono y nombres
+                        conforme a las instrucciones directas de automatización definidas por el Cliente.</li>
+                </ul>
+            </section>
+
+            <section class="bg-purple-900 text-white p-12 rounded-[3.5rem] mt-12 shadow-2xl">
+                <h2 class="text-3xl font-bold mb-8 font-heading text-purple-200 uppercase tracking-tighter">5. DERECHO
+                    AL OLVIDO Y ELIMINACIÓN DE DATOS</h2>
+                <div class="space-y-6 text-purple-100">
+                    <p class="text-lg">Usted mantiene control total y permanente sobre sus datos:</p>
+                    <ul class="list-none space-y-4">
+                        <li class="flex gap-4 items-start">
+                            <div
+                                class="w-8 h-8 rounded-full bg-purple-700 flex-shrink-0 flex items-center justify-center font-bold text-white">
+                                1</div>
+                            <p><strong>Baja de Conocimiento:</strong> Puede eliminar documentos individuales
+                                directamente desde su panel en tiempo real; esto destruirá los vectores semánticos
+                                asociados de forma inmediata.</p>
+                        </li>
+                        <li class="flex gap-4 items-start">
+                            <div
+                                class="w-8 h-8 rounded-full bg-purple-700 flex-shrink-0 flex items-center justify-center font-bold text-white">
+                                2</div>
+                            <p><strong>Cierre de Cuenta:</strong> En caso de cancelación del servicio, puede solicitar
+                                el borrado total de sus historiales y bases mediante correo a
+                                <strong>privacidad@elinaia.com.mx</strong>.
+                            </p>
+                        </li>
+                    </ul>
+                    <div class="mt-8 p-6 bg-purple-800/50 rounded-2xl border border-purple-700/50 text-sm italic">
+                        Plazo de Ejecución: El borrado técnico seguro se completa en un plazo máximo de 30 días
+                        naturales. Nota: De acuerdo a la legislación fiscal, BRANDCODE conservará exclusivamente los
+                        registros de facturación por los periodos que la ley exija.
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-white pt-20 pb-12">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid md:grid-cols-4 gap-12 pb-12 border-b border-slate-800">
+                <div class="col-span-2">
+                    <div class="flex items-center gap-3 mb-6">
+                        <img src="public/assets/lgo_web.png" class="w-8 h-8 object-contain" alt="Elina Logo">
+                        <span class="font-heading font-bold text-xl tracking-tight">Elina IA</span>
+                    </div>
+                    <p class="text-slate-400">Inteligencia Artificial para potenciar negocios en Latinoamérica.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-6 text-slate-500 text-xs uppercase tracking-widest">Navegación</h4>
+                    <ul class="space-y-3 text-slate-300">
+                        <li><a href="index.html" class="hover:text-emerald-400">Inicio</a></li>
+                        <li><a href="blog.html" class="hover:text-emerald-400">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-6 text-slate-500 text-xs uppercase tracking-widest">Legal</h4>
+                    <ul class="space-y-3 text-slate-300 text-sm">
+                        <li><a href="privacy.html" class="hover:text-emerald-400">Privacidad</a></li>
+                        <li><a href="terms.html" class="hover:text-emerald-400">Términos</a></li>
+                        <li><a href="data-usage.html" class="text-emerald-400">Uso de Datos</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-8 text-center text-slate-500 text-xs">© 2026 Elina Technologies.</div>
+        </div>
+    </footer>
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://elinaia.com.mx/sitemap.xml

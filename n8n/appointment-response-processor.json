@@ -1,0 +1,277 @@
+{
+  "name": "Procesar Respuestas de Recordatorios",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "appointment-reminder-response",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Webhook: Mensaje Recibido",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "appointment-reminder-response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"received\": true } }}"
+      },
+      "id": "webhook-response",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizar número de teléfono del mensaje entrante\nconst items = $input.all();\nconst out = [];\n\nfor (const { json } of items) {\n  // Extraer número del mensaje (depende de cómo Evolution API envía los datos)\n  const rawPhone = json?.body?.data?.key?.remoteJid || \n                   json?.body?.data?.from || \n                   json?.phone || \n                   json?.remoteJid ||\n                   null;\n  \n  if (!rawPhone) continue;\n  \n  // Normalizar: quitar @s.whatsapp.net y otros sufijos\n  let normalized = String(rawPhone).replace('@s.whatsapp.net', '').replace('@c.us', '');\n  \n  // Quitar todo excepto dígitos\n  normalized = normalized.replace(/[^\\d]/g, '');\n  \n  // Formatear a +521XXXXXXXXXX si es necesario\n  if (/^\\d{10}$/.test(normalized)) {\n    normalized = '521' + normalized;\n  } else if (/^52\\d{10}$/.test(normalized)) {\n    normalized = '521' + normalized.slice(2);\n  }\n  \n  // Agregar + si no lo tiene\n  if (!normalized.startsWith('+')) {\n    normalized = '+' + normalized;\n  }\n  \n  // Extraer mensaje\n  const message = json?.body?.data?.message?.conversation || \n                 json?.body?.data?.message?.extendedTextMessage?.text ||\n                 json?.body?.data?.message?.text ||\n                 json?.message ||\n                 '';\n  \n  out.push({\n    json: {\n      phone_number: normalized,\n      message: message,\n      original_data: json\n    }\n  });\n}\n\nreturn out;"
+      },
+      "id": "normalize-phone",
+      "name": "Normalizar Teléfono",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ar.*, m.id as meeting_id, m.user_id, m.start_time, m.summary FROM appointment_reminders ar INNER JOIN meetings m ON ar.meeting_id = m.id WHERE ar.contact_phone = $1 AND ar.status = 'sent' AND ar.sent_at >= NOW() - INTERVAL '48 hours' ORDER BY ar.sent_at DESC LIMIT 1"
+      },
+      "id": "get-recent-reminder",
+      "name": "Obtener Recordatorio Reciente",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-reminder",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-is-response",
+      "name": "IF: ¿Es respuesta a recordatorio?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/functions/v1/process-reminder-response",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $('Normalizar Teléfono').item.json.message }}"
+            },
+            {
+              "name": "phone_number",
+              "value": "={{ $('Normalizar Teléfono').item.json.phone_number }}"
+            },
+            {
+              "name": "user_id",
+              "value": "={{ $json.user_id }}"
+            },
+            {
+              "name": "meeting_id",
+              "value": "={{ $json.meeting_id }}"
+            },
+            {
+              "name": "reminder_id",
+              "value": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "process-response",
+      "name": "Procesar Respuesta con IA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-confirmed",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "confirmed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-confirmed",
+      "name": "IF: ¿Es confirmación?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "operation": "sendText",
+        "instanceName": "={{ $env.EVOLUTION_INSTANCE_NAME }}",
+        "remoteJid": "={{ $('Normalizar Teléfono').item.json.phone_number.replace('+', '').replace('@s.whatsapp.net', '') }}@s.whatsapp.net",
+        "messageText": "¡Gracias por confirmar tu asistencia! Te esperamos en tu cita. Si necesitas cancelar o cambiar la fecha, por favor avísanos con anticipación.",
+        "options": {
+          "delay": 1000
+        }
+      },
+      "id": "send-confirmation",
+      "name": "Enviar Confirmación",
+      "type": "n8n-nodes-base.evolutionApi",
+      "typeVersion": 1,
+      "position": [1650, 100],
+      "credentials": {
+        "evolutionApi": {
+          "id": "1",
+          "name": "Evolution API account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-cancelled",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "cancelled",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-cancelled",
+      "name": "IF: ¿Es cancelación?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "operation": "sendText",
+        "instanceName": "={{ $env.EVOLUTION_INSTANCE_NAME }}",
+        "remoteJid": "={{ $('Normalizar Teléfono').item.json.phone_number.replace('+', '').replace('@s.whatsapp.net', '') }}@s.whatsapp.net",
+        "messageText": "Entendido, hemos registrado la cancelación de tu cita. Si deseas reagendar, por favor contáctanos.",
+        "options": {
+          "delay": 1000
+        }
+      },
+      "id": "send-cancellation",
+      "name": "Enviar Mensaje Cancelación",
+      "type": "n8n-nodes-base.evolutionApi",
+      "typeVersion": 1,
+      "position": [1650, 400],
+      "credentials": {
+        "evolutionApi": {
+          "id": "1",
+          "name": "Evolution API account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook: Mensaje Recibido": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}, {"node": "Normalizar Teléfono", "type": "main", "index": 0}]]
+    },
+    "Normalizar Teléfono": {
+      "main": [[{"node": "Obtener Recordatorio Reciente", "type": "main", "index": 0}]]
+    },
+    "Obtener Recordatorio Reciente": {
+      "main": [[{"node": "IF: ¿Es respuesta a recordatorio?", "type": "main", "index": 0}]]
+    },
+    "IF: ¿Es respuesta a recordatorio?": {
+      "main": [
+        [{"node": "Procesar Respuesta con IA", "type": "main", "index": 0}],
+        []
+      ]
+    },
+    "Procesar Respuesta con IA": {
+      "main": [[{"node": "IF: ¿Es confirmación?", "type": "main", "index": 0}, {"node": "IF: ¿Es cancelación?", "type": "main", "index": 0}]]
+    },
+    "IF: ¿Es confirmación?": {
+      "main": [
+        [{"node": "Enviar Confirmación", "type": "main", "index": 0}],
+        []
+      ]
+    },
+    "IF: ¿Es cancelación?": {
+      "main": [
+        [{"node": "Enviar Mensaje Cancelación", "type": "main", "index": 0}],
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-12-17T00:00:00.000Z",
+  "versionId": "1"
+}
+

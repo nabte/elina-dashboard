@@ -1,0 +1,197 @@
+{
+  "nota": "Estos son los nodos exactos que debes agregar al flow 'Elina V4'. Copia y pega la configuración de cada nodo.",
+  
+  "nodos": [
+    {
+      "nombre": "Detectar Intención Crítica",
+      "tipo": "HTTP Request",
+      "posicion": "Después de '3. RAG - Formatear Contexto', antes de 'AI Agent1'",
+      "configuracion": {
+        "method": "POST",
+        "url": "https://mytvwfbijlgbihlegmfg.supabase.co/functions/v1/detect-critical-intent",
+        "nota_url": "⚠️ Reemplaza 'mytvwfbijlgbihlegmfg' con tu Project ID de Supabase",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "[Pega tu Service Role Key aquí directamente]"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer [Pega tu Service Role Key aquí directamente]"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contact_id\": {{ $('Get Contact ID').item.json.id }},\n  \"user_id\": \"{{ $('Get a row').item.json.id }}\",\n  \"message_content\": \"{{ $('set text').item.json.text }}\",\n  \"message_id\": {{ $('human').item.json.id || null }}\n}",
+        "options": {}
+      },
+      "nota": "Este nodo llama a la Edge Function detect-critical-intent. Para Edge Functions necesitas HTTP Request (el nodo de Supabase no las soporta). Pega tu Service Role Key directamente en los headers."
+    },
+    
+    {
+      "nombre": "IF: ¿Es Crítico?",
+      "tipo": "IF",
+      "posicion": "Después de 'Detectar Intención Crítica'",
+      "configuracion": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_critical }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "conexiones": {
+        "true": "Obtener Número Notificación",
+        "false": "Buscar Promociones Activas"
+      }
+    },
+    
+    {
+      "nombre": "Obtener Número Notificación",
+      "tipo": "Supabase",
+      "posicion": "Rama TRUE de 'IF: ¿Es Crítico?'",
+      "configuracion": {
+        "operation": "get",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Get a row').item.json.id }}"
+            }
+          ]
+        },
+        "select": "contact_phone"
+      },
+      "credentials": "Selecciona tu credencial de Supabase configurada",
+      "nota": "Obtiene el número guardado en profiles.contact_phone. Usa el nodo oficial de Supabase con credenciales configuradas."
+    },
+    
+    {
+      "nombre": "Enviar Notificación WhatsApp",
+      "tipo": "Evolution API",
+      "posicion": "Después de 'Obtener Número Notificación'",
+      "configuracion": {
+        "resource": "messages-api",
+        "instanceName": "={{ $('Set Fields').item.json.instance.name }}",
+        "remoteJid": "={{ $('Obtener Número Notificación').item.json.contact_phone.replace('+', '').replace('@s.whatsapp.net', '') }}",
+        "messageText": "=🚨 *ATENCIÓN REQUERIDA*\n\nSe detectó una intención crítica en una conversación:\n\n*Contacto:* {{ $('Get Contact ID').item.json.full_name || $('Webhook').item.json.body.data.pushName }}\n*Número:* {{ $('Webhook').item.json.body.data.key.remoteJid.replace('@s.whatsapp.net', '') }}\n\n*Tipo de detección:* {{ $('Detectar Intención Crítica').item.json.detection_type }}\n*Confianza:* {{ Math.round($('Detectar Intención Crítica').item.json.confidence * 100) }}%\n\n*Mensaje detectado:*\n\"{{ $('Detectar Intención Crítica').item.json.detected_content }}\"\n\nLa conversación ha sido pausada automáticamente. Revisa el chat en la aplicación.",
+        "options_message": {
+          "delay": 1000
+        }
+      },
+      "nota": "Envía notificación al número configurado en Settings"
+    },
+    
+    {
+      "nombre": "FIN - Conversación Pausada",
+      "tipo": "No Operation",
+      "posicion": "Después de 'Enviar Notificación WhatsApp'",
+      "configuracion": {},
+      "nota": "Detiene el flujo cuando es crítico (no genera respuesta de IA)"
+    },
+    
+    {
+      "nombre": "Buscar Promociones Activas",
+      "tipo": "Supabase",
+      "posicion": "Rama FALSE de 'IF: ¿Es Crítico?', antes de 'AI Agent1'",
+      "configuracion": {
+        "operation": "getMany",
+        "tableId": "smart_promotions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('Get a row').item.json.id }}",
+              "condition": "equal"
+            },
+            {
+              "keyName": "is_active",
+              "keyValue": "true",
+              "condition": "equal"
+            }
+          ]
+        },
+        "select": "*",
+        "sort": {
+          "field": "created_at",
+          "direction": "DESC"
+        }
+      },
+      "credentials": "Selecciona tu credencial de Supabase configurada",
+      "nota": "Busca promociones activas del usuario. Usa el nodo oficial de Supabase con credenciales configuradas."
+    },
+    
+    {
+      "nombre": "Filtrar Promoción Válida",
+      "tipo": "Code",
+      "posicion": "Después de 'Buscar Promociones Activas'",
+      "codigo": "const promos = $input.item.json;\nif (!Array.isArray(promos) || !promos.length) {\n  return [{ json: { promo: null } }];\n}\n\nconst now = new Date();\nconst selected = promos.find(promo => {\n  if (!promo.is_active) return false;\n  if (!promo.no_schedule) {\n    if (promo.start_at && new Date(promo.start_at) > now) return false;\n    if (promo.end_at && new Date(promo.end_at) < now) return false;\n  }\n  return true;\n});\n\nreturn [{ json: { promo: selected || null } }];",
+      "nota": "Filtra y selecciona la primera promoción válida"
+    },
+    
+    {
+      "nombre": "IF: ¿Hay Promoción?",
+      "tipo": "IF",
+      "posicion": "Después de 'Filtrar Promoción Válida'",
+      "configuracion": {
+        "conditions": {
+          "collection": [
+            {
+              "field": "={{ $json.promo }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "conexiones": {
+        "true": "Agregar Promo al Contexto",
+        "false": "AI Agent1"
+      }
+    },
+    
+    {
+      "nombre": "Agregar Promo al Contexto",
+      "tipo": "Code",
+      "posicion": "Rama TRUE de 'IF: ¿Hay Promoción?'",
+      "codigo": "const promo = $('Filtrar Promoción Válida').item.json.promo;\nconst ragContext = $('3. RAG - Formatear Contexto').item.json.rag_context || '';\nconst text = $('set text').item.json.text || '';\nconst imageDesc = $('3. RAG - Formatear Contexto').item.json['descripcion de la imagen'] || '';\n\nlet promoContext = '';\nif (promo) {\n  promoContext = `\\n\\n[PROMOCIÓN ACTIVA DISPONIBLE]\\n` +\n    `Título: ${promo.title || 'Promoción especial'}\\n` +\n    `Descripción: ${promo.description || ''}\\n` +\n    (promo.discount ? `Descuento: ${promo.discount}\\n` : '') +\n    (promo.offer ? `Oferta: ${promo.offer}\\n` : '') +\n    `Vigencia: ${promo.start_at ? new Date(promo.start_at).toLocaleDateString('es-MX') : 'Activa'} - ${promo.end_at ? new Date(promo.end_at).toLocaleDateString('es-MX') : 'Sin límite'}\\n` +\n    `\\nSi el contexto de la conversación lo permite, menciona esta promoción de forma natural. No la fuerces si no es relevante.\\n`;\n}\n\nreturn [{\n  json: {\n    ...$('3. RAG - Formatear Contexto').item.json,\n    rag_context: ragContext + promoContext,\n    promo_id: promo?.id || null\n  }\n}];",
+      "nota": "Agrega la promoción al contexto RAG para que la IA la use"
+    }
+  ],
+  
+  "modificaciones_necesarias": [
+    {
+      "nodo": "AI Agent1",
+      "campo": "prompt",
+      "modificacion": "Agregar al final del prompt:\n{{ $json.promo_context ? '\\n' + $json.promo_context : '' }}",
+      "nota": "O mejor aún, el nodo 'Agregar Promo al Contexto' ya incluye la promo en rag_context, así que no necesitas modificar el prompt si ya usas rag_context"
+    }
+  ],
+  
+  "orden_de_conexion": [
+    "3. RAG - Formatear Contexto",
+    "  ↓",
+    "Detectar Intención Crítica",
+    "  ↓",
+    "IF: ¿Es Crítico?",
+    "  ├─ TRUE → Obtener Número Notificación → Enviar Notificación WhatsApp → FIN",
+    "  └─ FALSE → Buscar Promociones Activas",
+    "                ↓",
+    "            Filtrar Promoción Válida",
+    "                ↓",
+    "            IF: ¿Hay Promoción?",
+    "                ├─ TRUE → Agregar Promo al Contexto → AI Agent1",
+    "                └─ FALSE → AI Agent1"
+  ]
+}
+

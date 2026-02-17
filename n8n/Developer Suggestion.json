@@ -1,0 +1,164 @@
+{
+  "name": "Developer Suggestion",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "developer-suggestion",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "https://app.elinaia.com.mx"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        300
+      ],
+      "id": "webhook-node",
+      "name": "Webhook",
+      "webhookId": "developer-suggestion-webhook"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Webhook').item.json.body.userId }}"
+            }
+          ]
+        }
+      },
+      "id": "get-user-profile",
+      "name": "Get User Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        300
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = items[0].json.body;\nconst userProfile = items[1].json;\n\nconst message = `🚨 *Nueva Sugerencia de Desarrollo*\n\n*Usuario:* ${userProfile.business_name || userProfile.email || 'N/A'}\n*ID Usuario:* ${body.userId}\n*Fecha:* ${new Date(body.timestamp).toLocaleString('es-MX')}\n\n*Mensaje que desató la alarma:*\n${body.triggerMessage}\n\n*Contexto de la conversación:*\n${body.conversationContext}\n\n---\nEsta sugerencia fue generada desde el sistema de Entrenamiento de Prompt.`;\n\nreturn [{\n  json: {\n    message: message,\n    phoneNumber: \"5219995169313\" // Número del desarrollador\n  }\n}];"
+      },
+      "id": "format-message",
+      "name": "Format Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "ElinaHead",
+        "remoteJid": "={{ $('Format Message').item.json.phoneNumber }}",
+        "messageText": "={{ $('Format Message').item.json.message }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "id": "send-whatsapp",
+      "name": "Send WhatsApp",
+      "credentials": {
+        "evolutionApi": {
+          "id": "1NdmmRm4cT4v7Ciq",
+          "name": "Evolution account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        400,
+        300
+      ],
+      "id": "respond-webhook",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get User Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Profile": {
+      "main": [
+        [
+          {
+            "node": "Format Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Message": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "developer-suggestion-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
+

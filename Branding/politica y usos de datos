@@ -1,0 +1,64 @@
+POLÍTICA DE USO DE DATOS, COOKIES Y ENTRENAMIENTO DE IA
+
+Última actualización: 14 de febrero de 2026
+
+En BRANDCODE (operadora de Elina IA), creemos en la transparencia total sobre cómo nuestra tecnología interactúa con su información. Este documento detalla los procesos técnicos de manejo de datos, el uso de cookies y los protocolos de seguridad de nuestra inteligencia artificial.
+
+1. ¿QUÉ INFORMACIÓN PROCESAMOS? (RAG Y VECTORES)
+
+Para que Elina IA funcione como un experto en su negocio, procesamos dos tipos de información que usted nos proporciona voluntariamente:
+
+Datos No Estructurados: Archivos PDF, documentos Word, textos libres y contenido extraído de las URLs que usted vincula al sistema.
+
+Datos Estructurados: Listas de productos, precios y preguntas frecuentes (FAQs) cargadas manualmente.
+
+Procesamiento Vectorial: Esta información no se guarda como archivos legibles tradicionales en nuestra base de conocimiento activa, sino que se convierte en "vectores" (representaciones numéricas matemáticas) que permiten a la IA buscar conceptos semánticos. Esto añade una capa de seguridad por ofuscación, ya que los vectores son ilegibles para humanos sin el proceso de decodificación inverso.
+
+2. ENTRENAMIENTO DE MODELOS Y AISLAMIENTO DE DATOS
+
+Una de las principales preocupaciones empresariales es la privacidad de la propiedad intelectual. En Elina IA aplicamos una política estricta de Silos de Datos (Data Silos):
+
+Instancia Única: El conocimiento que usted sube a Elina IA se utiliza exclusivamente para generar respuestas de su propio chatbot.
+
+No-Contaminación Cruzada: NO compartimos, mezclamos ni utilizamos su base de conocimiento para entrenar modelos de otros clientes. Lo que su IA aprende sobre su negocio, se queda estrictamente en su cuenta.
+
+Mejora Continua (Fine-Tuning): Utilizamos las interacciones marcadas como "exitosas" o "corregidas" por usted para ajustar la precisión de las respuestas de su instancia específica, mejorando la personalidad y certeza de su bot sin exponer sus datos al exterior.
+
+3. POLÍTICA DE COOKIES Y TELEMETRÍA
+
+Nuestra plataforma utiliza tecnologías de rastreo estándar para garantizar la funcionalidad y estabilidad del servicio SaaS.
+
+Tipos de Cookies que utilizamos:
+
+Cookies Esenciales (Sesión): Necesarias para mantener su sesión activa de forma segura (tokens de autenticación) y recordar sus preferencias de configuración (idioma, tema oscuro/claro) mientras navega por el panel. Sin estas, la plataforma no puede funcionar.
+
+Telemetría y Rendimiento (Anónimas): Utilizamos herramientas de análisis para detectar errores, tiempos de carga lentos y caídas del sistema. Estos datos son totalmente anónimos y no están vinculados a su perfil personal ni al contenido de sus chats. No utilizamos cookies publicitarias ni de retargeting de terceros.
+
+Control del Usuario: Usted puede limpiar o bloquear las cookies desde la configuración de su navegador en cualquier momento, aunque esto provocará el cierre de su sesión en Elina IA.
+
+4. SEGURIDAD E INFRAESTRUCTURA DE WHATSAPP
+
+Elina IA facilita la gestión de conversaciones mediante una infraestructura robusta de conectividad:
+
+Protocolos de Interoperabilidad: Para garantizar la máxima estabilidad y funciones avanzadas, Elina IA utiliza una arquitectura híbrida que integra APIs oficiales y gateways de mensajería de terceros (infraestructura de conexión). Esto nos permite procesar mensajes masivos y automatizaciones complejas de manera eficiente.
+
+Cumplimiento de Meta: Independientemente de la vía técnica de conexión, nuestra plataforma está diseñada para operar respetando los límites de frecuencia y las Políticas de Uso de Meta.
+
+Anti-Spam: Elina IA implementa candados de software para prevenir el envío de mensajes masivos no solicitados (SPAM) que pongan en riesgo la reputación de su línea. No realizamos "scraping" (recolección indebida) de contactos de terceros.
+
+5. ALMACENAMIENTO Y ELIMINACIÓN DE DATOS (DERECHO AL OLVIDO)
+
+Usted es el dueño de sus datos. En cumplimiento con las normativas de privacidad, ofrecemos mecanismos claros para la gestión de su información:
+
+¿Cómo solicitar la eliminación de datos?
+
+Si decide dejar de usar Elina IA, puede solicitar el borrado definitivo de su huella digital en nuestros servidores:
+
+Baja de Base de Conocimiento: Puede eliminar documentos y URLs individuales directamente desde su panel de control; esto borrará inmediatamente los vectores asociados de la memoria de la IA.
+
+Eliminación de Cuenta (Wipeout): Para borrar todo registro (historial de chats, logs, base de conocimiento completa y datos de cuenta), envíe un correo a privacidad@elinaia.com.mx con el asunto "Solicitud de Eliminación de Datos".
+
+Plazo de Ejecución: Una vez confirmada su identidad, ejecutaremos el borrado seguro en un plazo máximo de 30 días naturales. Tenga en cuenta que, por ley fiscal, BRANDCODE debe conservar los registros de facturación (facturas y comprobantes de pago) por el tiempo que estipule la autoridad tributaria (SAT), pero estos no contendrán datos operativos de sus chats o clientes.
+
+Contacto:
+Para cualquier duda sobre el uso técnico de sus datos, contacte a nuestro Oficial de Privacidad en: privacidad@elinaia.com.mx

@@ -1,0 +1,109 @@
+<!-- Contenido del panel de Configuración -->
+<h2 class="text-2xl sm:text-3xl font-bold mb-6">Configuración</h2>
+<form id="settings-form" class="bg-white p-8 rounded-xl shadow-md space-y-8 max-w-4xl mx-auto">
+    <!-- Horario Laboral -->
+    <div>
+        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Horario de Atención</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">                            
+            <div><label for="work-start-hour" class="block text-sm font-medium text-slate-700">Hora de Apertura</label><input type="time" id="work-start-hour" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+            <div><label for="work-end-hour" class="block text-sm font-medium text-slate-700">Hora de Cierre</label><input type="time" id="work-end-hour" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+        </div>
+         <p class="text-xs text-slate-500 mt-2">Define las horas en las que Elina enviará seguimientos automáticos.</p>
+    </div>
+
+    <!-- Información de la Empresa -->
+    <div>
+        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Información de la Empresa</h3>
+        <label for="company-description" class="block text-sm font-medium text-slate-700">Descripción General</label>
+        <textarea id="company-description" rows="5" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm" placeholder="Ej: Somos una agencia de marketing digital en CDMX..."></textarea>
+        <p class="text-xs text-slate-500 mt-2">La IA usará esto para entender mejor tu negocio y responder preguntas generales.</p>
+    </div>
+
+    <!-- Contacto y Redes -->
+    <div>
+        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Contacto y Redes Sociales</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label for="website" class="block text-sm font-medium text-slate-700">Sitio Web</label><input type="text" id="website" placeholder="tuempresa.com" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+            <div>
+                <label for="admin-phone-number" class="block text-sm font-medium text-slate-700 mb-1">Teléfono del Administrador</label>
+                <div class="flex items-center gap-2 mt-1">
+                    <input type="tel" id="admin-phone-input" class="form-input w-full border-slate-300 rounded-lg">
+                </div>
+            </div>
+            <div><label for="social-instagram" class="block text-sm font-medium text-slate-700">Instagram</label><input type="text" id="social-instagram" placeholder="tu_usuario_de_instagram" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+            <div><label for="social-facebook" class="block text-sm font-medium text-slate-700">Facebook</label><input type="text" id="social-facebook" placeholder="tu_pagina_de_facebook" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+        </div>
+    </div>
+
+    <!-- Branding y Activos Visuales -->
+    <div>
+        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Branding y Activos Visuales</h3>
+        <div class="space-y-6">
+            <!-- Logo -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">Logo de la Empresa</label>
+                <div class="flex items-center gap-4">
+                    <img id="logo-preview" src="https://placehold.co/100x100/e2e8f0/475569?text=Logo" alt="Vista previa del logo" class="w-24 h-24 rounded-lg object-contain bg-slate-100 p-1">
+                    <input type="file" id="logo-input" class="hidden" accept="image/png, image/jpeg, image/webp, image/svg+xml">
+                    <button type="button" id="upload-logo-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">Cambiar Logo</button>
+                </div>
+            </div>
+            <!-- Paleta de Colores -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">Paleta de Colores de Marca</label>
+                <div class="flex gap-4">
+                    <input type="color" id="brand-color-1" value="#3b82f6" class="h-12 w-full rounded-lg cursor-pointer">
+                    <input type="color" id="brand-color-2" value="#10b981" class="h-12 w-full rounded-lg cursor-pointer">
+                    <input type="color" id="brand-color-3" value="#f97316" class="h-12 w-full rounded-lg cursor-pointer">
+                    <input type="color" id="brand-color-4" value="#1e293b" class="h-12 w-full rounded-lg cursor-pointer">
+                </div>
+            </div>
+            <!-- Tipografía -->
+            <div>
+                <label for="brand-font" class="block text-sm font-medium text-slate-700">Tipografía de Marca</label>
+                <div class="custom-select-wrapper mt-1">
+                    <select id="brand-font" class="custom-select form-input">
+                        <option>Poppins</option><option>Roboto</option><option>Lato</option><option>Montserrat</option><option>Oswald</option><option>Open Sans</option>
+                    </select>
+                    <i data-lucide="chevron-down" class="select-icon w-5 h-5 text-slate-400"></i>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">Por el momento no podemos cargar fuentes personalizadas, pero tenemos un amplio catálogo para que elijas.</p>
+            </div>
+            <!-- Imágenes de Referencia -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">Imágenes de Referencia para IA</label>
+                <div id="reference-images-container" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                    <!-- Las imágenes existentes se cargarán aquí -->
+                    <div id="add-ref-image-slot" class="aspect-square bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-slate-200 hover:border-slate-400">
+                        <i data-lucide="plus" class="w-8 h-8 text-slate-400"></i>
+                    </div>
+                </div>
+                <input type="file" id="reference-image-input" class="hidden" accept="image/png, image/jpeg, image/webp" multiple>
+                <p class="text-xs text-slate-500 mt-2">Sube hasta 3 imágenes. La IA las tomará como referencia para tus diseños gráficos.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gestión de Equipo (Solo para Admins) -->
+    <div id="team-management-panel" class="hidden">
+        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Gestión de Equipo</h3>
+        <div class="bg-slate-50 p-6 rounded-lg">
+            <h4 class="font-semibold mb-2">Invitar Nuevo Miembro</h4>
+            <p class="text-sm text-slate-600 mb-4">La persona recibirá un correo para crear su cuenta y unirse a tu equipo.</p>
+            <form id="invite-member-form" class="flex items-center gap-2">
+                <input type="email" id="invite-email" placeholder="correo@ejemplo.com" required class="form-input w-full border-slate-300 rounded-lg text-sm">
+                <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 whitespace-nowrap">Invitar</button>
+            </form>
+        </div>
+        <div class="mt-6">
+            <h4 class="font-semibold mb-2">Miembros del Equipo</h4>
+            <div id="team-members-list" class="space-y-3">
+                <!-- La lista de miembros y sus permisos se renderizará aquí -->
+            </div>
+        </div>
+    </div>
+
+    <div class="pt-5">
+        <button type="button" id="settings-save-safe-btn" data-settings-primary="true" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50">Guardar Seguro</button>
+    </div>
+</form>

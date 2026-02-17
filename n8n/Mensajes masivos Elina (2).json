@@ -1,0 +1,2048 @@
+{
+  "name": "Mensajes masivos Elina",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "masivos-elina",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -3680,
+        2368
+      ],
+      "id": "3b4c2e27-c762-496d-8961-4c117077ce96",
+      "name": "Webhook",
+      "webhookId": "eb55d862-2a91-4530-9e0d-cbaa3d71d12a"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Webhook').item.json.body.userId }}"
+            }
+          ]
+        }
+      },
+      "id": "0850582a-3057-4bc3-8df5-838e972843dc",
+      "name": "1. Get User Profile1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2528,
+        2560
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un asistente que reescribe textos SIN alterar el significado. Debes:\n- chat1: copiar el texto original tal cual, incluyendo saltos de línea, emojis, URLs, signos, mayúsculas/minúsculas y placeholders como %nombre% si existen.\n- chat2, chat3, chat4: crear TRES versiones parafraseadas del original, manteniendo intención, tono, información y longitud similar (±5%). No inventes datos, no agregues ni quites emojis; si el original NO trae emojis, no los agregues. Conserva URLs, @menciones, #hashtags y placeholders,exactamente escritos pero el texto debe ser ligeramente diferente. NO entreges el texto orignal 4 veces. solo en la primera.\n- No inventes conversaciones ni ejemplos. No cambies cifras, fechas, montos, teléfonos, correos ni enlaces.\n- Respeta el idioma del texto de entrada.\n- Si el texto está vacío, devuelve cuatro cadenas vacías.\n- Salida OBLIGATORIA en JSON estricto, sin Markdown, con claves: chat1, chat2, chat3, chat4.\n\nel texto orignal es el siguiente: {{ $('Webhook').item.json.body.message }}\n\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -3264,
+        2368
+      ],
+      "id": "f11bc536-d7dc-4317-8285-78fc2ab5b9bc",
+      "name": "AI Agent",
+      "executeOnce": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -3312,
+        2704
+      ],
+      "id": "87d5b977-9f25-4a35-8e24-286664695cce",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "F3ZY8evKfJMeWVz6",
+          "name": "OpenAI ELINA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = items[0].json.output;\nconst obj = JSON.parse(raw);\n\n// Ahora generamos 4 items, uno por cada chat\nconst out = [];\n['chat1','chat2','chat3','chat4'].forEach((k, idx) => {\n  out.push({\n    json: {\n      chat_index: idx + 1,\n      text: obj[k] || ''\n    }\n  });\n});\n\nreturn out;"
+      },
+      "id": "f0d2f7e0-7090-4da8-9916-bee6d25ec8ba",
+      "name": "5. Parsear Variaciones",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2816,
+        2576
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -48,
+        2384
+      ],
+      "id": "ee83d8f1-84ac-4b47-bbf9-acd3c50f656b",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "22107e72-59ca-45e8-b5c5-24a17e532149",
+              "name": "mensaje_aleatorio_sin_personalizar",
+              "value": "={{ $items('5. Parsear Variaciones')[Math.floor(Math.random() * $items('5. Parsear Variaciones').length)].json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "db71b1f6-951c-493b-9e4f-745ce9b04584",
+              "name": "evolution instance",
+              "value": "={{ $('1. Get User Profile1').item.json.evolution_instance_name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        336,
+        2464
+      ],
+      "id": "ea3a2537-8d9b-4b1e-9ef7-9f476d4f6717",
+      "name": "Juntar Contacto y Mensaje"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "811106a4-d0fe-48fd-b116-db4af5995675",
+              "name": "final_message",
+              "value": "={{ $json.mensaje_aleatorio_sin_personalizar.replace('%nombre%', $json.full_name) }}",
+              "type": "string"
+            },
+            {
+              "id": "505f39fe-67bc-4222-99b8-40cf935ebbee",
+              "name": "full_name",
+              "value": "={{ $json.full_name }}",
+              "type": "string"
+            },
+            {
+              "id": "4ee281a0-5693-46ae-881b-0e39ab4689ae",
+              "name": "phone_number",
+              "value": "={{ $json.phone_number }}",
+              "type": "string"
+            },
+            {
+              "id": "06d8741d-15c3-4eea-985f-54f2b21fb829",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1072,
+        2304
+      ],
+      "id": "fc1f5a08-1162-4062-9e89-5850ba3e1a20",
+      "name": "Personalizar Mensaje"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4e8044a1-7130-4fa1-a879-46b08ce3689b",
+              "leftValue": "={{ $json.mensaje_aleatorio_sin_personalizar }}",
+              "rightValue": "%nombre%",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        704,
+        2480
+      ],
+      "id": "558f104b-a370-472c-adb6-f0e445407eec",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "811106a4-d0fe-48fd-b116-db4af5995675",
+              "name": "final_message",
+              "value": "={{ $json.mensaje_aleatorio_sin_personalizar }}",
+              "type": "string"
+            },
+            {
+              "id": "505f39fe-67bc-4222-99b8-40cf935ebbee",
+              "name": "full_name",
+              "value": "={{ $json.full_name }}",
+              "type": "string"
+            },
+            {
+              "id": "4ee281a0-5693-46ae-881b-0e39ab4689ae",
+              "name": "phone_number",
+              "value": "={{ $json.phone_number }}",
+              "type": "string"
+            },
+            {
+              "id": "9ae0deb6-50d5-4b06-a78d-63f04e4c1221",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        2576
+      ],
+      "id": "f3fe9acd-b4c1-47e6-977f-b709ec571bdd",
+      "name": "Mantener Mensaje Original"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.body.userId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "active_campaign_id",
+              "fieldValue": "active"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -3440,
+        2336
+      ],
+      "id": "2947435c-b16d-4bab-8a25-3335d3ab1f23",
+      "name": "Update a row",
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "95ed6eb0-5462-4d89-86ad-43371c8814e0",
+              "name": "mensaje",
+              "value": "={{ $json.final_message }}",
+              "type": "string"
+            },
+            {
+              "id": "1355fd2b-e498-4b5c-a920-69d83b822684",
+              "name": "cliente",
+              "value": "={{ $json.full_name }}",
+              "type": "string"
+            },
+            {
+              "id": "a4ccd834-8167-4c8a-bdb8-2f7cd14ec861",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            },
+            {
+              "id": "e47c8886-e87b-46b8-905f-239112cb5645",
+              "name": "phone",
+              "value": "={{ (ph => { const d = String(ph || '').replace(/\\D/g, '').slice(-10); return d.length === 10 ? '52' + d : ''; })($json.phone_number) }}",
+              "type": "string"
+            },
+            {
+              "id": "url-field-preserve",
+              "name": "url",
+              "value": "={{ $json.url || $('Guardar Lista de Contactos').item.json.url || $('Webhook').item.json.body.fileUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "evolution-instance-preserve",
+              "name": "evolution instance",
+              "value": "={{ $json['evolution instance'] || $('Juntar Contacto y Mensaje').item.json['evolution instance'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1280,
+        2464
+      ],
+      "id": "cc4a1a72-8e55-4f89-9be6-7d4897c8e131",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtenemos el índice que añadimos antes del bucle\nconst index = $input.item.json.loop_index;\n\n// Definimos un tamaño de lote aleatorio.\nconst batch_size = Math.floor(Math.random() * (15 - 8 + 1)) + 8;\n\nlet pause_type = 'corta'; // Por defecto, la pausa es corta\n\n// Usamos el operador de módulo (%) para ver si hemos completado un lote.\n// Si el resto de la división (index + 1) / batch_size es 0, hacemos una pausa larga.\n// Se suma 1 al index porque empieza en 0.\nif ((index + 1) % batch_size === 0 && index > 0) {\n  pause_type = 'larga';\n}\n\n// Devolvemos el tipo de pausa a realizar\n$input.item.json.pause_type = pause_type;\nreturn $input.item;\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4528,
+        2544
+      ],
+      "id": "6c69ecf3-1f3b-4948-85b1-8e43314c9409",
+      "name": "Motor de Pausas y Contadores"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c2b323f6-42d8-4b7e-8fd9-310e60571dd0",
+              "leftValue": "={{ $json.pause_type }}",
+              "rightValue": "larga",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4672,
+        2544
+      ],
+      "id": "4d5ff99e-18ae-4574-a0ae-46831abc19bc",
+      "name": "¿Pausa Larga?"
+    },
+    {
+      "parameters": {
+        "amount": "={{ Math.floor(Math.random() * (120 - 50 + 1)) + 50 }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4912,
+        2448
+      ],
+      "id": "6c4a0cd9-1c4e-4010-a7e2-05aaf39c397c",
+      "name": "Wait Larga",
+      "webhookId": "2bd3801c-9f5b-4e83-bde6-1b0b722c931c"
+    },
+    {
+      "parameters": {
+        "amount": "={{ Math.floor(Math.random() * (35 - 8 + 1)) + 8 }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4880,
+        2624
+      ],
+      "id": "8e08571a-e333-478e-b250-d06d68930f8b",
+      "name": "Wait corta",
+      "webhookId": "2bd3801c-9f5b-4e83-bde6-1b0b722c931c"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0ce6ec06-4c2c-45b9-9ae1-cecf5066a94f",
+              "leftValue": "={{ $('Guardar Lista de Contactos').all().length }}",
+              "rightValue": "={{ $('Resultados del Bucle').all().length}}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        1872
+      ],
+      "id": "ce9cf7b0-1e81-4d74-b99f-a1a47e6e8b7b",
+      "name": "¿Campaña Incompleta?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.userId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "active_campaign_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        1952
+      ],
+      "id": "81cb8d3e-bf47-4e28-bd47-4728fec8e624",
+      "name": "Limpiar Campaña Activa",
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        1952
+      ],
+      "id": "67b452b6-2635-4069-a6cc-4e0e90158734",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtenemos la lista original COMPLETA de contactos.\nconst allContacts = $('Guardar Lista de Contactos').all();\n\n// Obtenemos la lista de los contactos que SÍ FUERON ENVIADOS AL BUCLE.\n// Esta es nuestra nueva y fiable fuente de verdad sobre quién fue procesado.\nconst processedContacts = $('Limitar Lista para Envío Diario').all();\n\n// Creamos un Set con los IDs de los contactos que se procesaron.\n// Usamos String() por seguridad para evitar errores de tipo de dato.\nconst processedContactIds = new Set(processedContacts.map(item => String(item.json.id)));\n\n// Filtramos la lista original para quedarnos con los que NO estaban en la lista de procesados.\nconst pendingContacts = allContacts.filter(contact => !processedContactIds.has(String(contact.json.id)));\n\n// Extraemos únicamente los IDs de los contactos pendientes.\nconst pending_contact_ids = pendingContacts.map(contact => contact.json.id);\n\n// Obtenemos las variaciones de mensajes del nodo de IA.\nconst message_variations = $('5. Parsear Variaciones').all().map(item => item.json.text);\n\n// Preparamos el objeto final que se guardará en Supabase.\nconst newItem = {\n  json: {\n    user_id: $('Webhook').item.json.body.userId,\n    campaign_id: $execution.id,\n    message_variations: message_variations,\n    file_url: $('Webhook').item.json.body.fileUrl,\n    pending_contact_ids: pending_contact_ids,\n    start_hour: $('1. Get User Profile1').first().json.work_start_hour || 9,\n    end_hour: $('1. Get User Profile1').first().json.work_end_hour || 18,\n  }\n};\n\n// Devolvemos este único item para el siguiente nodo.\nreturn newItem;\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        1680
+      ],
+      "id": "a2f067ac-89fd-4111-adf0-0cacbed74872",
+      "name": "Preparar Datos para Supabase"
+    },
+    {
+      "parameters": {
+        "tableId": "campaign_state",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $json.user_id }}"
+            },
+            {
+              "fieldId": "campaign_id",
+              "fieldValue": "={{ $json.campaign_id }}"
+            },
+            {
+              "fieldId": "message_variations",
+              "fieldValue": "={{ $json.message_variations }}"
+            },
+            {
+              "fieldId": "file_url",
+              "fieldValue": "={{ $json.file_url }}"
+            },
+            {
+              "fieldId": "pending_contact_ids",
+              "fieldValue": "={{ $json.pending_contact_ids }}"
+            },
+            {
+              "fieldId": "start_hour",
+              "fieldValue": "={{ $json.start_hour }}"
+            },
+            {
+              "fieldId": "end_hour",
+              "fieldValue": "={{ $json.end_hour }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        1680
+      ],
+      "id": "c36c38c7-9bde-4ece-b6b3-5eaca44042a6",
+      "name": "continaumos",
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        5104,
+        2704
+      ],
+      "id": "b3eff820-274f-4356-a6b0-d39e2c99bbb3",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- AJUSTE PARA PRUEBAS ---\n// Cambia este número a 1 para probar, y a 400 para producción.\nconst LIMITE_DIARIO = 600; \n\n// Obtenemos la lista completa de contactos del nodo anterior\nconst todosLosContactos = $input.all();\n\n// Usamos .slice() para cortar la lista y quedarnos solo con la porción que enviaremos hoy\nconst contactosParaHoy = todosLosContactos.slice(0, LIMITE_DIARIO);\n\n// Añadimos un índice a cada item para poder usarlo en el motor de pausas\ncontactosParaHoy.forEach((item, index) => {\n  item.json.loop_index = index;\n});\n\n// Devolvemos la lista ya cortada y preparada\nreturn contactosParaHoy;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        2256
+      ],
+      "id": "827d48ef-df31-483d-8e08-cc128ce5f8f0",
+      "name": "Limitar Lista para Envío Diario"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        176,
+        2016
+      ],
+      "id": "054b7701-df9f-4f4b-9d09-83b87e010bc9",
+      "name": "Resultados del Bucle"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "={{ $json['evolution instance'] || $('Juntar Contacto y Mensaje').item.json['evolution instance'] }}",
+        "remoteJid": "={{ (($json.phone || $json.verified_number || ($json.data && $json.data[0] && $json.data[0].number) || '').toString().replace('@s.whatsapp.net', '').replace('@c.us', '').replace(/\\D/g, '')).replace(/^52(\\d{10})$/, '521$1') }}",
+        "messageText": "={{ $json.mensaje || $json.final_message || '' }}",
+        "options_message": {
+          "delay": "={{ Math.floor(1000 + Math.random() * 1500) }}"
+        }
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        2512
+      ],
+      "id": "c9ff6a59-1b5e-4c7b-b87a-1bd1ef8887b9",
+      "name": "Enviar texto",
+      "credentials": {
+        "evolutionApi": {
+          "id": "1NdmmRm4cT4v7Ciq",
+          "name": "Evolution account 3"
+        }
+      },
+      "continueOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "operation": "send-image",
+        "instanceName": "={{ $json['evolution instance'] || $('Juntar Contacto y Mensaje').item.json['evolution instance'] }}",
+        "remoteJid": "={{ (($json.phone || $json.verified_number || ($json.data && $json.data[0] && $json.data[0].number) || '').toString().replace('@s.whatsapp.net', '').replace('@c.us', '').replace(/\\D/g, '')).replace(/^52(\\d{10})$/, '521$1') }}",
+        "media": "={{ $json.url || $('Webhook').item.json.body.fileUrl }}",
+        "caption": "={{ $json.mensaje || $json.final_message || '' }}",
+        "options_message": {
+          "delay": "={{ Math.floor(1000 + Math.random() * 1500) }}"
+        }
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        2912,
+        2048
+      ],
+      "id": "bb7803b7-dca3-4698-a111-f571e558c1f8",
+      "name": "Enviar imagem",
+      "credentials": {
+        "evolutionApi": {
+          "id": "1NdmmRm4cT4v7Ciq",
+          "name": "Evolution account 3"
+        }
+      },
+      "continueOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "operation": "send-video",
+        "instanceName": "={{ $json['evolution instance'] || $('Juntar Contacto y Mensaje').item.json['evolution instance'] }}",
+        "remoteJid": "={{ (($json.phone || $json.verified_number || ($json.data && $json.data[0] && $json.data[0].number) || '').toString().replace('@s.whatsapp.net', '').replace('@c.us', '').replace(/\\D/g, '')).replace(/^52(\\d{10})$/, '521$1') }}",
+        "media": "={{ $json.url || $('Webhook').item.json.body.fileUrl }}",
+        "caption": "={{ $json.mensaje || $json.final_message || '' }}",
+        "options_message": {
+          "delay": "={{ Math.floor(1000 + Math.random() * 1500) }}"
+        }
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        2304
+      ],
+      "id": "80dc75cd-5123-4037-a694-6bf44076f6b1",
+      "name": "Enviar video",
+      "retryOnFail": false,
+      "credentials": {
+        "evolutionApi": {
+          "id": "1NdmmRm4cT4v7Ciq",
+          "name": "Evolution account 3"
+        }
+      },
+      "continueOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lee user_id del item anterior y el tag del Webhook\nconst id = $json.id; \nconst raw = $('Webhook').item.json.body.includeTag || '';\n\n// Separa por comas y limpia espacios\nconst parts = raw.split(',').map(s => s.trim()).filter(Boolean);\n\n// Función auxiliar para \"Title Case\" (Primera Letra De Cada Palabra Mayúscula)\nfunction toTitleCase(str) {\n  return str.replace(/\\w\\S*/g, function(txt) {\n    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();\n  });\n}\n\nconst variations = new Set();\n\nparts.forEach(p => {\n    // 1. Original (tal cual vino)\n    variations.add(p);\n    \n    // 2. Todo Minúsculas (ej: clientes roberto may 2025)\n    variations.add(p.toLowerCase());\n\n    // 3. Todo Mayúsculas (ej: CLIENTES ROBERTO MAY 2025)\n    variations.add(p.toUpperCase());\n\n    // 4. Sentence Case (ej: Clientes roberto may 2025)\n    const sentence = p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();\n    variations.add(sentence);\n\n    // 5. Title Case (ej: Clientes Roberto May 2025) -> ESTE ES EL QUE FALTA\n    variations.add(toTitleCase(p));\n});\n\n// Convertimos el Set a Array\nconst finalParts = Array.from(variations);\n\n// Construimos el array literal de PostgreSQL: {\"val 1\", \"val 2\"}\n// Es CRÍTICO usar comillas dobles para strings con espacios dentro del array de Postgres\nconst arrayLiteral = '{' + finalParts.map(p => `\"${p.replace(/\"/g, '\\\\\"')}\"`).join(',') + '}';\n\n// Query para PostgREST\n// Usamos encodeURIComponent solo en el valor del array, no en toda la string\nconst q = `user_id=eq.${id}&labels=ov.${arrayLiteral}&select=*`;\n\nreturn [{ json: { filterQuery: q, generatedTags: finalParts } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2144,
+        2560
+      ],
+      "id": "64afe056-804b-4d11-8b7c-e71cd05704de",
+      "name": "busca la etiqueta"
+    },
+    {
+      "parameters": {
+        "url": "=https://mytvwfbijlgbihlegmfg.supabase.co/rest/v1/contacts?{{$json.filterQuery}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDQxODk5MCwiZXhwIjoyMDY5OTk0OTkwfQ.07-JQs9AXJlqKYMDxk4tOL_6zOEGQTddaKlQmKQe14U"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDQxODk5MCwiZXhwIjoyMDY5OTk0OTkwfQ.07-JQs9AXJlqKYMDxk4tOL_6zOEGQTddaKlQmKQe14U"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1920,
+        2560
+      ],
+      "id": "ea41445d-8da2-48a8-8048-ae52c0a030da",
+      "name": "HTTP Request (por tag)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Webhook').item.json.body.includeTag }}",
+              "value2": "todos"
+            }
+          ]
+        }
+      },
+      "name": "3. IF: Incluir a todos?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2336,
+        2416
+      ],
+      "id": "31b3594d-7441-4c4b-b723-07e9fe04ffc1"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "contacts",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        }
+      },
+      "id": "e1b53276-9ea2-47db-b1c7-fdb4ba914bb2",
+      "name": "Get Contacts (todos)1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2144,
+        2272
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Webhook').item.json.body.excludeTag }}",
+              "operation": "notEqual",
+              "value2": "ninguno"
+            }
+          ]
+        }
+      },
+      "name": "4. IF: Excluir a alguien?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1472,
+        2512
+      ],
+      "id": "d6afa4b8-0e61-4fae-9079-7c351cfaf03e"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Si llegó el centinela de 'sin contactos' desde arriba, propaga como vacío controlado\nif (items.length === 1 && items[0].json && items[0].json._noContacts) {\n  return [{ json: { _empty: true } }];\n}\n\n// Lee excludeTag del webhook (puede venir \"A, B, C\" o \"A\")\nconst excludeRaw = $('Webhook').item.json.body.excludeTag || '';\nif (!excludeRaw || excludeRaw === 'ninguno') {\n  // No filtramos; pero si llegaran 0 items, devolvemos centinela vacío\n  return items.length ? items : [{ json: { _empty: true } }];\n}\n\nconst excludes = excludeRaw.split(',').map(s => s.trim()).filter(Boolean);\n\n// Filtrado case-sensitive: si el contacto tiene CUALQUIERA de los exclude → se descarta\nconst filtrados = items.filter(it => {\n  const labels = Array.isArray(it.json.labels) ? it.json.labels : [];\n  const tieneAlgunExcluido = excludes.some(tag => labels.includes(tag));\n  return !tieneAlgunExcluido;\n});\n\n// Si quedó vacío, devolvemos centinela\nif (!filtrados.length) {\n  return [{ json: { _empty: true } }];\n}\n\nreturn filtrados;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1248,
+        2448
+      ],
+      "id": "aae2721a-332b-47ae-8381-f32a68b354a3",
+      "name": "a quien quitamos?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "full_name",
+              "value": "={{ $json.full_name }}",
+              "type": "string",
+              "id": "3c9374ab-1470-434c-a1b1-6ee7da6daa3c"
+            },
+            {
+              "name": "phone_number",
+              "value": "={{ $json.phone_number }}",
+              "type": "string",
+              "id": "3ee05cbd-7af7-47c1-a40b-4a534c2985a5"
+            },
+            {
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "number",
+              "id": "99f0d0c5-fe9f-4209-a764-1b65149d77c7"
+            },
+            {
+              "name": "evolution_instance",
+              "value": "={{ $('1. Get User Profile1').item.json.evolution_instance_name }}",
+              "type": "string",
+              "id": "a139a297-26f9-45f3-93c5-c1dcf414a435"
+            },
+            {
+              "name": "url",
+              "value": "={{ $('Webhook').item.json.body.fileUrl }}",
+              "type": "string",
+              "id": "59623deb-486d-4e9f-af3c-3745bd995807"
+            },
+            {
+              "id": "dd67e2d6-480b-4373-a507-e1d6b7a6aa59",
+              "name": "labels",
+              "value": "={{ $json.labels }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -752,
+        2720
+      ],
+      "id": "fc345d65-bb93-44bc-b1b1-04af524c3508",
+      "name": "Guardar Lista de Contactos"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Entrada 0: Get Contacts (todos)\n// Entrada 1: HTTP Request (por tag)\nconst fromTodos = $input.all(0);\nconst fromTag   = $input.all(1);\n\n// Escoge la que traiga datos\nlet out = fromTodos.length ? fromTodos : fromTag;\n\n// Si AMBAS están vacías, devuelve un item centinela para que el flujo no se detenga\nif (!out.length) {\n  return [{ json: { _noContacts: true } }];\n}\n\n// Sanidad: asegura que cada item tenga 'labels' como array\nout.forEach(it => {\n  const v = it.json.labels;\n  if (!Array.isArray(v)) {\n    it.json.labels = (v == null) ? [] : [v];\n  }\n});\n\nreturn out;"
+      },
+      "id": "7862de93-a872-4dad-8729-98fcc89e9ce9",
+      "name": "Unificar listas1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1696,
+        2512
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2dfa254b-3e82-4fe5-8993-b93b56de618e",
+              "leftValue": "={{ $json._empty }}",
+              "rightValue": "=true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -992,
+        2496
+      ],
+      "id": "70bb0b80-d7de-4edd-b609-28a81626ef89",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $items('Webhook')[0].json.body.userId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "active_campaign_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -784,
+        2016
+      ],
+      "id": "779ce339-9ee9-498b-bf13-03dbec5988a7",
+      "name": "Limpiar Campaña Activa1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        2016
+      ],
+      "id": "fedc96e6-6f6f-4cba-8a66-a194933ccbf7",
+      "name": "No Operation, do nothing2"
+    },
+    {
+      "parameters": {
+        "resource": "chat-api",
+        "instanceName": "={{ $('Juntar Contacto y Mensaje').item.json['evolution instance'] }}",
+        "numbers": "={{ $json.phone }}"
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        2336
+      ],
+      "id": "b63d5f08-aaf4-44bf-9f59-4337a7145e25",
+      "name": "Verificar Número WhatsApp",
+      "credentials": {
+        "evolutionApi": {
+          "id": "1NdmmRm4cT4v7Ciq",
+          "name": "Evolution account 3"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesar respuesta de verificación de Evolution API\nconst item = $input.item.json;\n\n// Obtener los datos originales de Edit Fields para preservarlos\nconst editFieldsData = $('Edit Fields').item.json;\n\n// La respuesta de checkNumber puede venir en diferentes formatos\n// Intentamos extraer si el número existe\nlet exists = false;\nlet phoneNumber = editFieldsData.phone || item.phone || '';\nlet contactId = editFieldsData.id || item.id;\n\n// Verificar diferentes formatos de respuesta de Evolution API\nif (item.data && Array.isArray(item.data) && item.data.length > 0) {\n  // Formato: { data: [{ exists: true/false, jid: '...' }] }\n  const firstResult = item.data[0];\n  exists = firstResult.exists === true || firstResult.exists === 'true';\n} else if (item.exists !== undefined) {\n  // Formato directo: { exists: true/false }\n  exists = item.exists === true || item.exists === 'true';\n} else if (item.status === 'success' && item.data) {\n  // Otro formato posible\n  exists = item.data.exists === true || item.data.exists === 'true';\n}\n\n// Si hay error en la verificación, asumimos que no existe\nif (item.error || item.status === 'error') {\n  exists = false;\n}\n\n// Preservar TODOS los datos de la respuesta de verificación (incluyendo data[0].number)\n// Y luego agregar/sobrescribir con los datos de Edit Fields\nconst result = {};\nfor (const key in item) {\n  if (item.hasOwnProperty(key)) {\n    result[key] = item[key];\n  }\n}\n\n// Ahora agregar/sobrescribir con los datos de Edit Fields para preservar mensaje, url, etc.\nfor (const key in editFieldsData) {\n  if (editFieldsData.hasOwnProperty(key)) {\n    // No sobrescribir 'data' ni 'phone_verified' que vienen de la verificación\n    if (key !== 'data' && key !== 'phone_verified') {\n      result[key] = editFieldsData[key];\n    }\n  }\n}\n\n// Agregar los campos de verificación\nresult.phone_verified = exists;\nresult.phone = phoneNumber;\nresult.id = contactId;\nresult.verification_result = exists ? 'valid' : 'invalid';\n\nreturn { json: result };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        2240
+      ],
+      "id": "3111fe36-d1e1-4fc6-8818-175727ea0b74",
+      "name": "Procesar Verificación"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-phone-valid",
+              "leftValue": "={{ $json.phone_verified }}",
+              "rightValue": "=true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "check-phone-not-empty",
+              "leftValue": "={{ $json.data[0].number }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1744,
+        2544
+      ],
+      "id": "188afb55-47c3-4b8f-a5b9-0a6c9f9983ba",
+      "name": "¿Número Válido?"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "contacts",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "phone_number",
+              "condition": "eq",
+              "keyValue": "={{ $json.data[0].number }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2080,
+        2672
+      ],
+      "id": "90606905-c514-407e-a625-94ba64c3c899",
+      "name": "Eliminar Contacto Inválido",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "356f15bb-86b6-4fb8-9d73-a98406475e0b",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2064,
+        2432
+      ],
+      "id": "2aee8862-50b9-4ebc-adc1-bd3903c6bc54",
+      "name": "existe el numero"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "contacts",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Edit Fields').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "labels",
+              "fieldValue": "={{ Array.from(new Set([...($json.labels || []), 'no-existe'])) }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        3104
+      ],
+      "id": "a6902d2d-bee3-4a34-a582-8736edbde24f",
+      "name": "TAg:No Existe",
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "contacts",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Edit Fields').item.json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        3120
+      ],
+      "id": "16ca1978-4e83-4d07-8f41-cd643426735f",
+      "name": "Get a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ ( $json.url || $('Guardar Lista de Contactos').item.json.url || '' ).trim() }}",
+                    "rightValue": "=\\.(?:[jJ][pP][eE]?[gG]|[pP][nN][gG]|[gG][iI][fF]|[bB][mM][pP]|[wW][eE][bB][pP]|[sS][vV][gG])(?:\\?.*)?$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    },
+                    "id": "df4d1adc-3662-4dd5-a1ac-586eecaddaab"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "imagen"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fbcd266c-dd39-4e20-8f07-8919720170d0",
+                    "leftValue": "={{ ( $json.url || $('Guardar Lista de Contactos').item.json.url || '' ).trim() }}",
+                    "rightValue": "\\.(?:[mM][pP]4|[mM][oO][vV]|[aA][vV][iI]|[mM][kK][vV]|[wW][eE][bB][mM]|[fF][lL][vV]|[wW][mM][vV])(?:\\?.*)?$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "video"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6c6140bf-b806-4d2f-a907-86f1aa68edf6",
+                    "leftValue": "={{ ( $json.url || $('Guardar Lista de Contactos').item.json.url || '' ).trim() }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "empty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Texto"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2672,
+        2288
+      ],
+      "id": "d6c18904-5037-44f3-bdfa-966ba259e4d6",
+      "name": "tipo de mensaje2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.userId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "active_campaign_id",
+              "fieldValue": "={{ null }}"
+            }
+          ]
+        }
+      },
+      "id": "1b88dcef-f2c1-4428-9171-a394929ba661",
+      "name": "⛔ ERROR: Pausar Campaña",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4736,
+        3168
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "Campaña detenida por error de conexión o envío."
+      },
+      "id": "d6baba7f-19b9-4f3a-8d2a-515171c89ea7",
+      "name": "Detener Flujo",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        4960,
+        3168
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "I94piGuwjkjeQ8AP",
+          "mode": "list",
+          "cachedResultName": "malos numerds",
+          "cachedResultUrl": "/projects/W4Twkzcf0KcXouUC/datatables/I94piGuwjkjeQ8AP"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "numero": "={{ $('Procesar Verificación').item.json.data[0].number }}",
+            "quienenvia": "={{ $('Juntar Contacto y Mensaje').item.json.evolution_instance }}",
+            "etiqeuta": "={{ $('Juntar Contacto y Mensaje').item.json.labels }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "numero",
+              "displayName": "numero",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "etiqeuta",
+              "displayName": "etiqeuta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "quienenvia",
+              "displayName": "quienenvia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        2288,
+        2672
+      ],
+      "id": "6a513b74-4e30-4942-a4ad-9d1e3cb8b675",
+      "name": "Insert row"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n-n8n.mcjhhb.easypanel.host",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+            "content-length": "401",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "es-US,es-419;q=0.9,es;q=0.8,en;q=0.7",
+            "content-type": "application/json",
+            "origin": "https://app.elinaia.com.mx",
+            "priority": "u=1, i",
+            "referer": "https://app.elinaia.com.mx/",
+            "sec-ch-ua": "\"Chromium\";v=\"142\", \"Google Chrome\";v=\"142\", \"Not_A Brand\";v=\"99\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "189.220.43.121",
+            "x-forwarded-host": "n8n-n8n.mcjhhb.easypanel.host",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "35f5005c00d4",
+            "x-real-ip": "189.220.43.121"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "userId": "2914fa5f-fc15-43fa-b677-126b336c3c7a",
+            "message": "en compras de 5mil pesos por cada 15pzs te regalo 2pzs de toner o tinta",
+            "includeTag": "Cristina lugo",
+            "excludeTag": "ninguno",
+            "fileUrl": "https://creativersezone.b-cdn.net/2914fa5f-fc15-43fa-b677-126b336c3c7a/bulk-campaigns/1765820046858-15_2_5000_MIL.jpg",
+            "scheduledAt": null,
+            "scheduledTimezone": null,
+            "scheduledDate": null,
+            "scheduledTime": null
+          },
+          "webhookUrl": "https://n8n-n8n.mcjhhb.easypanel.host/webhook/masivos-elina",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Get User Profile1": {
+      "main": [
+        [
+          {
+            "node": "3. IF: Incluir a todos?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "5. Parsear Variaciones",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Limpiar Campaña Activa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Parsear Variaciones": {
+      "main": [
+        [
+          {
+            "node": "1. Get User Profile1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Resultados del Bucle",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Juntar Contacto y Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Juntar Contacto y Mensaje": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Personalizar Mensaje": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Personalizar Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mantener Mensaje Original",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mantener Mensaje Original": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Verificar Número WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Número WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Procesar Verificación",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Procesar Verificación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Verificación": {
+      "main": [
+        [
+          {
+            "node": "¿Número Válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Número Válido?": {
+      "main": [
+        [
+          {
+            "node": "existe el numero",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Eliminar Contacto Inválido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Motor de Pausas y Contadores": {
+      "main": [
+        [
+          {
+            "node": "¿Pausa Larga?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Pausa Larga?": {
+      "main": [
+        [
+          {
+            "node": "Wait Larga",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait corta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait corta": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Larga": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Campaña Incompleta?": {
+      "main": [
+        [
+          {
+            "node": "Preparar Datos para Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Limpiar Campaña Activa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar Campaña Activa": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Datos para Supabase": {
+      "main": [
+        [
+          {
+            "node": "continaumos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limitar Lista para Envío Diario": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resultados del Bucle": {
+      "main": [
+        [
+          {
+            "node": "¿Campaña Incompleta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar texto": {
+      "main": [
+        [
+          {
+            "node": "Motor de Pausas y Contadores",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⛔ ERROR: Pausar Campaña",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar video": {
+      "main": [
+        [
+          {
+            "node": "Motor de Pausas y Contadores",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⛔ ERROR: Pausar Campaña",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar imagem": {
+      "main": [
+        [
+          {
+            "node": "Motor de Pausas y Contadores",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⛔ ERROR: Pausar Campaña",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "busca la etiqueta": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request (por tag)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. IF: Incluir a todos?1": {
+      "main": [
+        [
+          {
+            "node": "Get Contacts (todos)1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "busca la etiqueta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Contacts (todos)1": {
+      "main": [
+        [
+          {
+            "node": "Unificar listas1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request (por tag)": {
+      "main": [
+        [
+          {
+            "node": "Unificar listas1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. IF: Excluir a alguien?": {
+      "main": [
+        [
+          {
+            "node": "a quien quitamos?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guardar Lista de Contactos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "a quien quitamos?": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unificar listas1": {
+      "main": [
+        [
+          {
+            "node": "4. IF: Excluir a alguien?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Limpiar Campaña Activa1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guardar Lista de Contactos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Lista de Contactos": {
+      "main": [
+        [
+          {
+            "node": "Limitar Lista para Envío Diario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar Campaña Activa1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "existe el numero": {
+      "main": [
+        [
+          {
+            "node": "tipo de mensaje2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "TAg:No Existe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tipo de mensaje2": {
+      "main": [
+        [
+          {
+            "node": "Enviar imagem",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⛔ ERROR: Pausar Campaña": {
+      "main": [
+        [
+          {
+            "node": "Detener Flujo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Eliminar Contacto Inválido": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "9e2e1878-f008-4e28-8f56-2e5c5e644f15",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "32906a5f2bdc653e88c8f6fde14f7365d097573b5e9053a6781ad64c78a4c371"
+  },
+  "id": "M91wdpNkphQx2uuh",
+  "tags": []
+}

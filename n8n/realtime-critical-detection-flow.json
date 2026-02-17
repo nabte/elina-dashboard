@@ -1,0 +1,242 @@
+{
+  "name": "Detección Crítica en Tiempo Real",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "realtime-critical-detection",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook: Mensaje Nuevo",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "realtime-critical-detection"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "webhook-response",
+      "name": "Responder Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst contactId = body.contact_id || body.contactId;\nconst userId = body.user_id || body.userId;\nconst messageContent = body.content || body.message_content || body.message;\nconst messageId = body.message_id || body.id;\n\nif (!contactId || !userId || !messageContent) {\n  return [{ json: { error: 'Missing required fields', body } }];\n}\n\nreturn [{\n  json: {\n    contact_id: contactId,\n    user_id: userId,\n    message_content: messageContent,\n    message_id: messageId,\n    original_body: body\n  }\n}];"
+      },
+      "id": "parse-request",
+      "name": "Parsear Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/functions/v1/detect-critical-intent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contact_id\": {{ $json.contact_id }},\n  \"user_id\": \"{{ $json.user_id }}\",\n  \"message_content\": \"{{ $json.message_content }}\",\n  \"message_id\": {{ $json.message_id }}\n}",
+        "options": {}
+      },
+      "id": "call-edge-function",
+      "name": "Llamar Edge Function",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_critical }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-critical",
+      "name": "IF: ¿Es Crítico?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/rpc/get_contact_info",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"p_contact_id\": {{ $('Parsear Request').item.json.contact_id }}\n}",
+        "options": {}
+      },
+      "id": "get-contact-info",
+      "name": "Obtener Info Contacto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n-n8n.mcjhhb.easypanel.host/webhook/notificarlabel",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $('Parsear Request').item.json.user_id }}\",\n  \"contact_id\": {{ $('Parsear Request').item.json.contact_id }},\n  \"contact_name\": \"{{ $json.full_name || $json.phone_number }}\",\n  \"contact_phone\": \"{{ $json.phone_number }}\",\n  \"assigned_label\": \"REQUIERE ATENCIÓN HUMANA\",\n  \"detection_type\": \"{{ $('Llamar Edge Function').item.json.detection_type }}\",\n  \"detected_content\": \"{{ $('Llamar Edge Function').item.json.detected_content }}\",\n  \"confidence\": {{ $('Llamar Edge Function').item.json.confidence }},\n  \"is_critical\": true,\n  \"conversation_paused\": {{ $('Llamar Edge Function').item.json.paused || false }}\n}",
+        "options": {}
+      },
+      "id": "send-notification",
+      "name": "Enviar Notificación",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const detection = $('Llamar Edge Function').item.json;\nconst request = $('Parsear Request').item.json;\n\nreturn [{\n  json: {\n    success: true,\n    is_critical: detection.is_critical || false,\n    detection_type: detection.detection_type || null,\n    confidence: detection.confidence || 0,\n    paused: detection.paused || false,\n    contact_id: request.contact_id,\n    message: detection.is_critical \n      ? `Intención crítica detectada: ${detection.detection_type}`\n      : 'No se detectó intención crítica'\n  }\n}];"
+      },
+      "id": "format-response",
+      "name": "Formatear Respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 400]
+    }
+  ],
+  "connections": {
+    "Webhook: Mensaje Nuevo": {
+      "main": [
+        [
+          {
+            "node": "Parsear Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear Request": {
+      "main": [
+        [
+          {
+            "node": "Llamar Edge Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar Edge Function": {
+      "main": [
+        [
+          {
+            "node": "IF: ¿Es Crítico?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: ¿Es Crítico?": {
+      "main": [
+        [
+          {
+            "node": "Obtener Info Contacto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Formatear Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Info Contacto": {
+      "main": [
+        [
+          {
+            "node": "Enviar Notificación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Notificación": {
+      "main": [
+        [
+          {
+            "node": "Formatear Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Respuesta": {
+      "main": [
+        [
+          {
+            "node": "Responder Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-25T00:00:00.000Z",
+  "versionId": "realtime-critical-v1"
+}
+

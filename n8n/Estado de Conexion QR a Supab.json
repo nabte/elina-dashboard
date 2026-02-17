@@ -1,0 +1,253 @@
+{
+  "name": "Estado de Conexion QR a Supab",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "a/connection-update",
+        "options": {}
+      },
+      "name": "Webhook de Evolution API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -912,
+        64
+      ],
+      "webhookId": "YOUR_WEBHOOK_ID_HERE",
+      "id": "aa767807-4e72-41d0-b8a9-f8b4d55a68ce"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.data.state }}",
+              "value2": "close"
+            }
+          ]
+        }
+      },
+      "name": "IF: Conexión Exitosa?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        64
+      ],
+      "id": "798d840c-5e63-4821-89e0-a1776ad11066"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "evolution_instance_name",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook de Evolution API').item.json.body.instance }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "whatsapp_connected",
+              "fieldValue": "TRUE"
+            }
+          ]
+        }
+      },
+      "name": "Actualizar Estado en Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        -48
+      ],
+      "id": "6c972128-1dd9-42c8-bf58-ab2302074c5c",
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "evolution_instance_name",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook de Evolution API').item.json.body.instance }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "whatsapp_connected",
+              "fieldValue": "FALSE"
+            }
+          ]
+        }
+      },
+      "name": "Actualizar Estado en Supabase1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        160
+      ],
+      "id": "a849f0d2-a17e-4574-be9d-591b8010cd09",
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "restart-instance",
+        "instanceName": "={{ $('Webhook de Evolution API').item.json.body.instance }}"
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        272,
+        160
+      ],
+      "id": "afa34c4b-6686-43e7-ad0c-ed7a98a662c5",
+      "name": "Reiniciar instancia",
+      "credentials": {
+        "evolutionApi": {
+          "id": "1NdmmRm4cT4v7Ciq",
+          "name": "Evolution account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -256,
+        160
+      ],
+      "id": "9a28d288-b8a2-46b9-a245-cbf644e65f6e",
+      "name": "Wait",
+      "webhookId": "d26fecdf-88c4-4208-96ee-ed47bb089571"
+    }
+  ],
+  "pinData": {
+    "Webhook de Evolution API": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n-n8n.mcjhhb.easypanel.host",
+            "user-agent": "axios/1.12.2",
+            "content-length": "401",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/json",
+            "x-forwarded-for": "172.18.0.1",
+            "x-forwarded-host": "n8n-n8n.mcjhhb.easypanel.host",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "edbefd7fd1eb",
+            "x-real-ip": "172.18.0.1"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "event": "connection.update",
+            "instance": "Elina 2",
+            "data": {
+              "instance": "Elina 2",
+              "state": "close",
+              "statusReason": 401
+            },
+            "destination": "https://n8n-n8n.mcjhhb.easypanel.host/webhook/evolution-status-webhook",
+            "date_time": "2025-10-04T14:20:18.019Z",
+            "sender": "5219993895046@s.whatsapp.net",
+            "server_url": "https://evolutionapi-evolution-api.mcjhhb.easypanel.host",
+            "apikey": "9BD3A84C-4427-4273-9BDF-8E23E458D663"
+          },
+          "webhookUrl": "https://n8n-n8n.mcjhhb.easypanel.host/webhook/evolution-status-webhook",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook de Evolution API": {
+      "main": [
+        [
+          {
+            "node": "IF: Conexión Exitosa?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: Conexión Exitosa?": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Estado en Supabase1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Actualizar Estado en Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Estado en Supabase1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Reiniciar instancia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f8dfe1e6-0ea3-442f-a7a1-2ddb43fc53ed",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "32906a5f2bdc653e88c8f6fde14f7365d097573b5e9053a6781ad64c78a4c371"
+  },
+  "id": "jCvs6EFrUC35F2s3",
+  "tags": []
+}

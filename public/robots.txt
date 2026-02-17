@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard.html
+Disallow: /superadmin.html
+Disallow: /company-admin.html
+Disallow: /appointments.html
+Disallow: /settings.html
+Disallow: /api/
+
+Sitemap: https://elinaia.com.mx/sitemap.xml

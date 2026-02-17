@@ -1,0 +1,100 @@
+<!-- follow-ups.html -->
+<div id="follow-ups-access-denied" class="hidden bg-white rounded-xl shadow-md p-8 text-center">
+    <i data-lucide="lock" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
+    <h3 class="text-xl font-bold">Función Exclusiva del Plan Grow</h3>
+    <p class="text-slate-500 mt-2 max-w-md mx-auto">La automatización de seguimientos te permite ahorrar horas y cerrar más ventas. ¡Actívala mejorando tu plan!</p>
+    <button id="upgrade-to-grow-from-followups" class="mt-6 bg-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-700">
+        Mejorar a Plan Grow
+    </button>
+</div>
+
+<div id="follow-ups-container" class="hidden space-y-4">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl sm:text-3xl font-bold">Secuencias de Seguimiento</h2>
+        <button id="add-sequence-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nueva Secuencia
+        </button>
+    </div>
+
+    <div id="followups-list" class="space-y-4">
+        <div id="followups-loader" class="text-center text-slate-500 p-8">Cargando secuencias...</div>
+        <!-- Las secuencias se renderizarán aquí -->
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Secuencia -->
+<div id="sequence-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl">
+        <form id="sequence-form">
+            <input type="hidden" id="sequence-id">
+            <div class="p-6 border-b">
+                <h3 id="sequence-modal-title" class="text-xl font-bold">Crear Nueva Secuencia</h3>
+            </div>
+            <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                <!-- Configuración General -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="sequence-target-label" class="block text-sm font-medium text-slate-700">Etiqueta que Activa la Secuencia</label>
+                        <div class="custom-select-wrapper mt-1">
+                            <select id="sequence-target-label" required class="custom-select form-input"></select>
+                            <i data-lucide="chevron-down" class="select-icon w-5 h-5 text-slate-400"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">Estado</label>
+                        <label class="mt-2 relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="sequence-is-active" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                            <span class="ml-3 text-sm font-medium text-slate-900">Activa</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Contenedor de Mensajes -->
+                <div class="space-y-4">
+                    <h4 class="font-semibold">Mensajes de la Secuencia</h4>
+                    <div id="messages-container" class="space-y-4">
+                        <!-- Los mensajes se agregarán aquí dinámicamente -->
+                    </div>
+                    <button type="button" id="add-message-btn" class="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Añadir Mensaje
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 bg-slate-50 flex justify-between items-center rounded-b-lg">
+                <button type="button" id="delete-sequence-btn" class="hidden bg-red-100 text-red-700 font-bold py-2 px-4 rounded-lg hover:bg-red-200">Eliminar Secuencia</button>
+                <div class="flex gap-3">
+                    <button type="button" id="cancel-sequence-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Guardar Secuencia</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Plantilla para un paso de seguimiento (oculta) -->
+<template id="message-step-template">
+    <div class="message-step bg-slate-50 p-4 rounded-lg border">
+        <div class="flex justify-between items-center mb-2">
+            <label class="font-semibold text-sm">Paso <span class="step-number">1</span></label>
+            <button type="button" class="remove-step-btn text-red-500 hover:bg-red-100 p-1 rounded-full"><i data-lucide="x" class="w-4 h-4 pointer-events-none"></i></button>
+        </div>
+        <textarea class="step-message w-full border-slate-300 rounded-md text-sm" rows="3" placeholder="Escribe el mensaje para este paso... (puedes usar %nombre%)" required></textarea>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            <div>
+                <label class="text-sm font-medium">Retraso</label>
+                <div class="flex items-center gap-2 mt-1">
+                    <input type="number" class="step-delay w-20 text-center border-slate-300 rounded-md text-sm" min="1" value="24" required>
+                    <span class="text-sm text-slate-600">horas</span>
+                </div>
+            </div>
+            <div class="file-upload-container">
+                <label class="text-sm font-medium">Archivo Adjunto (Opcional)</label>
+                <input type="file" class="step-file-input hidden">
+                <button type="button" class="upload-file-btn mt-1 text-sm bg-white border border-slate-300 rounded-md px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2"><i data-lucide="paperclip" class="w-4 h-4"></i> Adjuntar</button>
+                <div class="file-name-display text-xs text-slate-600 mt-1 truncate"></div>
+                <img class="step-image-preview hidden max-h-20 rounded-md mt-2" alt="Vista previa">
+            </div>
+        </div>
+    </div>
+</template>

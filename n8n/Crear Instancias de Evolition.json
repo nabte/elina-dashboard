@@ -1,0 +1,513 @@
+{
+  "name": "Crear Instancias de Evolition",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "volution-instance-create",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        224
+      ],
+      "id": "ba92f3a8-12b7-492a-8583-30a3c26b0ba7",
+      "name": "Webhook",
+      "webhookId": "45067853-ee29-4528-a159-8d4fdad8c175"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Obtener el número enviado por el webhook\nconst webhook = $('Webhook').first(); // O usa el nombre real de tu nodo si es distinto\nconst input = webhook.json.body.telefono_admin;\n\nif (!input) {\n  throw new Error(\"❌ No se encontró 'telefono_admin' en el payload del webhook.\");\n}\n\n// 2. Limpiar el número: quitar símbolos y espacios\nlet num = input.replace(/\\D/g, ''); \n\n// 3. Detectar lada (1–3 dígitos)\nconst possibleLadas = ['1','34','52','54','55','56','57','58','502','591','597'];\nlet lada = possibleLadas.find(l => num.startsWith(l)) || num.slice(0,2);\nlet resto = num.slice(lada.length);\n\n// 4. Aplicar reglas por país\nif (lada === '52' && !resto.startsWith('1')) {\n  resto = '1' + resto;\n}\nif (lada === '54') {\n  if (resto.startsWith('15')) resto = resto.slice(2);\n  if (!resto.startsWith('9')) resto = '9' + resto;\n}\nif (lada === '55') {\n  const add9Areas = ['11','21','22','24','27','28'];\n  const area = resto.slice(0,2);\n  if (add9Areas.includes(area) && !resto.startsWith('9')) {\n    resto = '9' + resto;\n  }\n}\n\n// 5. Reconstruir número final y devolver datos\nconst cleanNumber = lada + resto;\n\nreturn [\n  {\n    json: {\n      ...webhook.json.body,\n      telefono_admin: cleanNumber\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        224
+      ],
+      "id": "8dc4f722-8c2c-48ea-a823-379ef16d521e",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7d5ac747-8b0b-4347-bfc5-a2aac81d2255",
+              "name": "nombre limpio",
+              "value": "={{ $json.data.instance.instanceName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -16,
+        224
+      ],
+      "id": "b31b9795-33c0-40bd-ae70-bb68d2d4ed52",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "=https://mytvwfbijlgbihlegmfg.supabase.co/auth/v1/admin/users?email={{ $('Webhook').item.json.body.email }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDQxODk5MCwiZXhwIjoyMDY5OTk0OTkwfQ.07-JQs9AXJlqKYMDxk4tOL_6zOEGQTddaKlQmKQe14U"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDQxODk5MCwiZXhwIjoyMDY5OTk0OTkwfQ.07-JQs9AXJlqKYMDxk4tOL_6zOEGQTddaKlQmKQe14U"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -464,
+        224
+      ],
+      "id": "ff431ee4-7a92-4132-a7e9-32252bcd8d95",
+      "name": "Get User ID from Supabase Auth"
+    },
+    {
+      "parameters": {
+        "instanceName": "={{ $('Webhook').item.json.body.nombre }}",
+        "number": "=",
+        "options_Create_instance": {
+          "webhook": {
+            "webhookSettings": {
+              "webhookUrl": "https://n8n-n8n.mcjhhb.easypanel.host/webhook/a/messages-upsert",
+              "webhookBase64": true,
+              "webhookEvents": [
+                "MESSAGES_UPSERT"
+              ]
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        224
+      ],
+      "id": "ae47102b-2652-487f-958a-e418b42bd21a",
+      "name": "Criar instancia",
+      "credentials": {
+        "evolutionApi": {
+          "id": "Z9jp08jNe9bfzQyi",
+          "name": "Evolution account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "fetch-instances",
+        "instanceName": "={{ $('Webhook').item.json.body.nombre }}"
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        208,
+        224
+      ],
+      "id": "e0fcd8f2-ec4c-4086-8895-40bddf76b62f",
+      "name": "Buscar instancia",
+      "credentials": {
+        "evolutionApi": {
+          "id": "Z9jp08jNe9bfzQyi",
+          "name": "Evolution account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "636a04b5-32e2-4a04-b986-acb935d9c3e0",
+              "name": "evolutionAdminId",
+              "value": "={{ $('Criar instancia').item.json.data.instance.instanceName }}",
+              "type": "string"
+            },
+            {
+              "id": "6c0b6df4-c1e5-4289-b25b-302c2e8491b6",
+              "name": "evolutionInstanceId",
+              "value": "={{ $('Criar instancia').item.json.data.instance.instanceId }}",
+              "type": "string"
+            },
+            {
+              "id": "93bc39f0-c058-458d-870d-bd6258413334",
+              "name": "createdAt",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "73d6ce6f-9c1a-4289-883c-ef931cf6fb4c",
+              "name": "API key token",
+              "value": "={{ $('Buscar instancia').item.json.data[0].token }}",
+              "type": "string"
+            },
+            {
+              "id": "e7fb3b74-1357-4030-8fa5-3cae357304e8",
+              "name": "Whats del contacto",
+              "value": "={{ $json.telefono_admin }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        656,
+        224
+      ],
+      "id": "46d2e199-1df7-4157-9bd8-a6ba4eac7bec",
+      "name": "Prepare Client Data"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "ElinaHead",
+        "remoteJid": "5219995169313",
+        "messageText": "=Nuevo usuario agregado\nNOMBRE {{ $('profiles').item.json.full_name }}\nNUMERO {{ $('profiles').item.json.contact_phone }}\n\nbase64{{ $json.data.webhookBase64 }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        1744,
+        224
+      ],
+      "id": "04458fb1-2e1e-421c-940a-e5574d112411",
+      "name": "Enviar texto",
+      "credentials": {
+        "evolutionApi": {
+          "id": "Z9jp08jNe9bfzQyi",
+          "name": "Evolution account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1.5
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -688,
+        224
+      ],
+      "id": "f617a097-b294-41be-a52a-b13622c54c21",
+      "name": "Wait",
+      "webhookId": "59bf2bc4-392b-4423-a3cc-b9d98cd8e2dc"
+    },
+    {
+      "parameters": {
+        "resource": "chat-api",
+        "operation": "fetch-profile-picture",
+        "instanceName": "={{ $json.nombre }}",
+        "number": "={{ $json.telefono_admin }}"
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        864,
+        224
+      ],
+      "id": "c0e45e00-14c7-45dc-8bf9-edc7cb5281f8",
+      "name": "Buscar foto do perfil",
+      "credentials": {
+        "evolutionApi": {
+          "id": "1NdmmRm4cT4v7Ciq",
+          "name": "Evolution account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Get User ID from Supabase Auth').item.json.users[0].id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "evolution_instance_name",
+              "fieldValue": "={{ $('Criar instancia').item.json.data.instance.instanceName }}"
+            },
+            {
+              "fieldId": "evolution_api_key",
+              "fieldValue": "={{ $('Buscar instancia').item.json.data[0].token }}"
+            },
+            {
+              "fieldId": "full_name",
+              "fieldValue": "={{ $('Webhook').item.json.body.nombre }}"
+            },
+            {
+              "fieldId": "contact_phone",
+              "fieldValue": "={{ $('Code2').item.json.telefono_admin }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $('Webhook').item.json.body.email }}"
+            },
+            {
+              "fieldId": "urlfoto",
+              "fieldValue": "={{ $json.data.profilePictureUrl }}"
+            },
+            {
+              "fieldId": "bulk_sends_used",
+              "fieldValue": "0"
+            },
+            {
+              "fieldId": "video_generations_used",
+              "fieldValue": "0"
+            },
+            {
+              "fieldId": "image_generations_used",
+              "fieldValue": "0"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        224
+      ],
+      "id": "533fa023-95f2-41da-9adf-38ba52245fa6",
+      "name": "profiles",
+      "alwaysOutputData": false,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "instance-settings",
+        "instanceName": "={{ $('Webhook').item.json.body.nombre }}",
+        "readMessages": true,
+        "syncFullHistory": true
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        48
+      ],
+      "id": "047c3170-2262-4318-b004-ff92dbed4613",
+      "name": "Definir comportamento",
+      "credentials": {
+        "evolutionApi": {
+          "id": "1NdmmRm4cT4v7Ciq",
+          "name": "Evolution account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n-n8n.mcjhhb.easypanel.host",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+            "content-length": "138",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "es-ES,es;q=0.9",
+            "content-type": "application/json",
+            "origin": "https://app.elinaia.com.mx",
+            "priority": "u=1, i",
+            "referer": "https://app.elinaia.com.mx/",
+            "sec-ch-ua": "\"Chromium\";v=\"142\", \"Google Chrome\";v=\"142\", \"Not_A Brand\";v=\"99\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "189.172.3.135",
+            "x-forwarded-host": "n8n-n8n.mcjhhb.easypanel.host",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "30f54e9e965a",
+            "x-real-ip": "189.172.3.135"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "nombre": "litipa7872@chaineor.com",
+            "email": "litipa7872@chaineor.com",
+            "telefono_admin": "+529995169313",
+            "Passwr": "Litipa7872@chaineor.com"
+          },
+          "webhookUrl": "https://n8n-n8n.mcjhhb.easypanel.host/webhook/volution-instance-create",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Prepare Client Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Buscar instancia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User ID from Supabase Auth": {
+      "main": [
+        [
+          {
+            "node": "Criar instancia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar instancia": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar instancia": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Client Data": {
+      "main": [
+        [
+          {
+            "node": "Buscar foto do perfil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get User ID from Supabase Auth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar foto do perfil": {
+      "main": [
+        [
+          {
+            "node": "profiles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "profiles": {
+      "main": [
+        [
+          {
+            "node": "Definir comportamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Definir comportamento": {
+      "main": [
+        [
+          {
+            "node": "Enviar texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Mexico_City",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "6c8bd16c-2eea-425c-ade7-1e8f3c7efb9f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "32906a5f2bdc653e88c8f6fde14f7365d097573b5e9053a6781ad64c78a4c371"
+  },
+  "id": "5oGSCYulAsj5DYdv",
+  "tags": []
+}

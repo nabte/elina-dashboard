@@ -1,0 +1,284 @@
+Mapa de la base de datos y funcionamiento
+A continuación tienes un inventario legible por IA de tu proyecto Supabase: tablas (con columnas), estado de RLS, funciones Edge disponibles, extensiones instaladas y automatizaciones/relaciones clave. Si quieres que lo entregue en JSON estructurado para tu IA, dímelo y te lo formateo.
+
+Esquemas principales y tablas
+Notas generales:
+
+RLS: “true” indica que la tabla tiene Row Level Security habilitado.
+PK: claves primarias.
+FKs: relaciones relevantes con otras tablas.
+Comentarios: propósito funcional cuando está disponible.
+auth
+users (RLS: true)
+PK: id
+Cols: id uuid, email text, phone text, role text, aud varchar, encrypted_password varchar, … metadatos JSON, timestamps…
+Comentario: Usuarios del sistema de Auth (propietario seguro).
+FKs entrantes desde muchas tablas en public (profiles.id, settings.user_id, contacts.assigned_to_id, etc.).
+refresh_tokens (RLS: true)
+PK: id bigint
+FKs: session_id → auth.sessions.id
+instances (RLS: true)
+PK: id
+audit_log_entries (RLS: true)
+PK: id
+schema_migrations (RLS: true)
+PK: version
+identities (RLS: true)
+PK: id
+FKs: user_id → auth.users.id
+sessions (RLS: true)
+PK: id
+FKs: user_id → auth.users.id, oauth_client_id → auth.oauth_clients.id
+mfa_factors (RLS: true)
+PK: id
+FKs: user_id → auth.users.id
+mfa_challenges (RLS: true)
+PK: id
+FKs: factor_id → auth.mfa_factors.id
+mfa_amr_claims (RLS: true)
+PK: id
+FKs: session_id → auth.sessions.id
+sso_providers (RLS: true)
+PK: id
+FKs: con sso_domains y saml_providers
+sso_domains (RLS: true)
+PK: id
+FK: sso_provider_id → auth.sso_providers.id
+saml_providers (RLS: true)
+PK: id
+FK: sso_provider_id → auth.sso_providers.id
+saml_relay_states (RLS: true)
+PK: id
+FKs: flow_state_id → auth.flow_state.id, sso_provider_id → auth.sso_providers.id
+flow_state (RLS: true)
+PK: id
+one_time_tokens (RLS: true)
+PK: id
+FK: user_id → auth.users.id
+oauth_clients (RLS: false)
+PK: id
+FKs: referenciado por oauth_authorizations, sessions, oauth_consents
+oauth_authorizations (RLS: false)
+PK: id
+FKs: user_id → auth.users.id, client_id → auth.oauth_clients.id
+oauth_consents (RLS: false)
+PK: id
+FKs: user_id → auth.users.id, client_id → auth.oauth_clients.id
+storage
+buckets (RLS: true)
+PK: id
+Comentario: define buckets (STANDARD/ANALYTICS/VECTOR)
+objects (RLS: true)
+PK: id
+FKs: bucket_id → storage.buckets.id
+Cols útiles: name, path_tokens gen, metadata jsonb, user_metadata jsonb
+migrations (RLS: true)
+PK: id
+s3_multipart_uploads (RLS: true)
+PK: id
+FKs: bucket_id → storage.buckets.id
+s3_multipart_uploads_parts (RLS: true)
+PK: id
+FKs: upload_id → storage.s3_multipart_uploads.id, bucket_id → storage.buckets.id
+prefixes (RLS: true)
+PK: bucket_id, name, level
+FKs: bucket_id → storage.buckets.id
+buckets_analytics (RLS: true)
+PK: id
+buckets_vectors (RLS: true)
+PK: id
+FKs: usado por vector_indexes
+vector_indexes (RLS: true)
+PK: id
+FK: bucket_id → storage.buckets_vectors.id
+realtime
+messages (RLS: true)
+PK: inserted_at, id
+Cols: topic, event, payload jsonb, private bool
+Uso: canalización de eventos broadcast privados.
+subscription (RLS: false)
+PK: id
+Cols: claims, filters…
+schema_migrations (RLS: false)
+Particiones de mensajes por fecha (RLS: false)
+messages_2025_11_17, … _20, … _23
+PK: inserted_at, id
+vault
+secrets (RLS: false)
+PK: id
+Comentario: Almacenamiento cifrado de secretos con pgsodium/Supabase Vault.
+cron
+job (RLS: true)
+PK: jobid
+Cols: schedule, command, active…
+job_run_details (RLS: true)
+PK: runid
+public
+profiles (RLS: true)
+PK: id (→ auth.users.id)
+FKs: organization_id → public.organizations.id
+Cols: info usuario (horarios, tz, branding, límites de IA, etc.)
+prompts (RLS: true)
+PK: id
+FK: user_id → public.profiles.id
+contacts (RLS: true)
+PK: id
+FKs: user_id → public.profiles.id, assigned_to_id → auth.users.id, current_followup_id → public.followups.id, app_id → public.apps.id
+Cols: seguimiento, labels[], estados
+products (RLS: true)
+PK: id
+FKs: user_id → public.profiles.id, app_id → public.apps.id
+Col: shared_scope enum share_scope
+campaigns (RLS: true)
+PK: id
+FK: user_id → public.profiles.id
+subscriptions (RLS: true)
+PK: user_id
+FKs: user_id → auth.users.id, plan_id → public.plans.id
+labels (RLS: true)
+PK: id
+FKs: user_id → public.profiles.id, app_id → public.apps.id
+campaign_state (RLS: true)
+PK: id
+FK: user_id → auth.users.id
+Cols: estado de ejecución, scheduling, cuotas diarias
+message_templates (RLS: true)
+PK: id
+FKs: user_id → auth.users.id, app_id → public.apps.id
+followups (RLS: true)
+PK: id
+FKs: user_id → auth.users.id, app_id → public.apps.id
+Comentario: reglas de secuencias automatizadas
+chat_history (RLS: true)
+PK: id
+FKs: user_id → auth.users.id, app_id → public.apps.id
+Col: embedding vector (extensión vector)
+Comentario: contexto de IA
+daily_stats (RLS: true)
+PK: id
+FK: user_id → public.profiles.id
+plans (RLS: true)
+PK: id
+FKs: referenciado por subscriptions.plan_id
+monthly_usage (RLS: true)
+PK: id
+FKs: user_id → public.profiles.id, app_id → public.apps.id
+n8n_chat_histories (RLS: true)
+PK: id
+Uso: historial consumido por motor n8n
+workflow_logs (RLS: true)
+PK: id
+teams (RLS: true)
+PK: id
+FK: owner_id → auth.users.id
+team_members (RLS: true)
+PK: team_id, user_id
+FKs: team_id → public.teams.id, user_id → auth.users.id
+Col: role enum team_role
+impersonation_sessions (RLS: true)
+PK: id
+FKs: impersonator_id/target_user_id → auth.users.id
+apps (RLS: true)
+PK: id
+Rel: app_id ampliamente usado como scoping
+user_app_access (RLS: true)
+PK: user_id, app_id
+FKs: user_id → auth.users.id, app_id → public.apps.id
+Col: role enum app_role
+mfa_factor_metadata (RLS: true)
+PK: factor_id
+sales_prompts (RLS: true)
+PK: id
+FK: user_id → auth.users.id
+google_credentials (RLS: true)
+PK: user_id
+FK: user_id → auth.users.id
+settings (RLS: true)
+PK: id
+FKs: user_id → auth.users.id, app_id → public.apps.id
+Col: scope enum share_scope
+organizations (RLS: true)
+PK: id
+Comentario: info organizacional y límites/loyalty
+landing_page_content (RLS: true)
+PK: id
+platform_announcements (RLS: true)
+PK: id
+Funciones Edge disponibles
+smart-worker (ACTIVE, verify_jwt)
+create-checkout-session (ACTIVE, verify_jwt)
+get-stripe-subscription (ACTIVE, verify_jwt)
+openai-proxy (ACTIVE, verify_jwt)
+runware-proxy (ACTIVE, verify_jwt)
+gemini-proxy (ACTIVE, verify_jwt)
+invite-team-member (ACTIVE, verify_jwt)
+impersonate-user (ACTIVE, verify_jwt)
+bunny-upload (ACTIVE, verify_jwt)
+image-proxy (ACTIVE, verify_jwt)
+kie-veo-proxy (ACTIVE, verify_jwt)
+kie-image-proxy (ACTIVE, verify_jwt)
+kie-task-status (ACTIVE, verify_jwt)
+oauth-exchange (ACTIVE, verify_jwt)
+classify-escalation (ACTIVE, verify_jwt)
+notify-escalation (ACTIVE, verify_jwt)
+sales-context (ACTIVE, verify_jwt)
+Observaciones:
+
+Todas con verify_jwt: están protegidas por JWT, aptas para ser llamadas desde clientes autenticados.
+Múltiples “proxy” a proveedores de IA y medios: centralizan secretos en Edge Functions.
+Flujo de pagos: create-checkout-session y get-stripe-subscription.
+Equipo y suplantación: invite-team-member, impersonate-user.
+Escalaciones: classify-escalation, notify-escalation.
+Contexto ventas/IA: smart-worker, sales-context.
+Si necesitas la firma de cada ruta/handler, puedo inspeccionar y documentar endpoints por función.
+
+Extensiones instaladas (relevantes)
+extensions.vector 0.8.0: tipo vector y métodos ivfflat/hnsw (usado en public.chat_history.embedding).
+extensions.uuid-ossp 1.1: generación de UUIDs (ej. organizations.id).
+extensions.pgcrypto 1.3: funciones criptográficas (firma, hash).
+graphql.pg_graphql 1.5.11: soporte GraphQL.
+pg_catalog.pg_cron 1.6: scheduler de jobs SQL (tablas cron.job*, RLS true).
+vault.supabase_vault 0.3.1: almacenamiento seguro de secretos (vault.secrets).
+extensions.pg_stat_statements 1.11: monitoreo de consultas.
+plpgsql (lenguaje procedural).
+Otras disponibles pero no necesariamente habilitadas: postgis, http, pg_net, pgaudit, etc.*
+Automatizaciones y flujo de datos
+Realtime
+
+Tabla realtime.messages con RLS para canales privados; particionado por fecha en messages_YYYY_MM_DD. Se usa para broadcast de eventos a clientes suscritos.
+Recomendación: mantener políticas RLS en realtime.messages que validen pertenencia a room/app/tenant.
+Campaigns y followups
+
+public.followups define secuencias automatizadas; public.campaign_state mantiene progreso, scheduling y cuotas diarias; public.contacts contiene estado por contacto (followup_status, current_followup_id, step y timestamps).
+n8n_chat_histories y workflow_logs registran ejecución de flujos y resultados, útil para auditoría/depuración.
+Storage
+
+storage.objects con metadatos y path_tokens. Prefijos/indexan rutas por bucket. s3_multipart_* para subidas grandes.
+buckets_vectors y vector_indexes para capacidades vectoriales en Storage Analytics/Vector.
+IA/Embeddings
+
+public.chat_history.embedding usa extensión vector para contexto conversacional de IA.
+Edge Functions openai-proxy, gemini-proxy, runware-proxy, smart-worker y sales-context orquestan llamadas a modelos y encapsulan secretos.
+Acceso multi-app y permisos
+
+apps, user_app_access y settings con share_scope/app_role definen permisos por app y visibilidad de datos.
+products y settings soportan share_scope para compartir a nivel de usuario/app/org/público.
+Suscripciones y límites
+
+subscriptions enlazado a plans; profiles y organizations guardan contadores y límites (ai_usage_*).
+create-checkout-session/get-stripe-subscription manejan pagos y sincronizan estado (stripe_* ids en subscriptions/profiles).
+Equipos y suplantación
+
+teams, team_members con team_role (admin/advisor).
+impersonation_sessions para suplantación controlada (vía Edge Function impersonate-user).
+Cron
+
+cron.job y cron.job_run_details permiten jobs programados. Útil para resets diarios, seguimiento masivo, limpieza, etc.
+Seguridad/Vault
+
+vault.secrets guarda secretos cifrados; ideal para tokens de terceros si se requieren en SQL/funciones.*_
+RLS: patrones esperados
+En public.* típicamente restringido por auth.uid() igualando user_id o pertenencia a app/organización.
+storage.objects con políticas por bucket y carpeta (por ejemplo, primer segmento = uid).
+realtime.messages con políticas de canales privados, validando pertenencia antes de SELECT/INSERT.
+auth.* y system tables ya gestionadas por Supabase; varias con RLS habilitado por defecto.

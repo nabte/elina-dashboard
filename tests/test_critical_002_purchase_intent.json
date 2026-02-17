@@ -1,0 +1,46 @@
+[
+  {
+    "headers": {
+      "host": "n8n-n8n.mcjhhb.easypanel.host",
+      "user-agent": "axios/1.12.2",
+      "content-type": "application/json"
+    },
+    "params": {},
+    "query": {},
+    "body": {
+      "event": "messages.upsert",
+      "instance": "ElinaIA",
+      "data": {
+        "key": {
+          "remoteJid": "5219993528227@s.whatsapp.net",
+          "remoteJidAlt": "5219993528227@s.whatsapp.net",
+          "fromMe": false,
+          "id": "TEST_CRITICAL_002_1733068800",
+          "participant": "",
+          "addressingMode": "standard"
+        },
+        "pushName": "Kl",
+        "status": "DELIVERY_ACK",
+        "message": {
+          "conversation": "Necesito comprar algo urgente, ¿pueden ayudarme ahora mismo?"
+        },
+        "contextInfo": {
+          "mentionedJid": [],
+          "groupMentions": []
+        },
+        "messageType": "conversation",
+        "messageTimestamp": 1733068800,
+        "instanceId": "e23c5673-1255-429d-8695-339a1dad426b",
+        "source": "desktop"
+      },
+      "destination": "https://n8n-n8n.mcjhhb.easypanel.host/webhook/a/",
+      "date_time": "2025-12-03T12:00:00.000Z",
+      "sender": "5219993528227@s.whatsapp.net",
+      "server_url": "https://evolutionapi-evolution-api.mcjhhb.easypanel.host",
+      "apikey": "3CCF7499C4A8-4E31-B8E1-40A7FA23951B"
+    },
+    "webhookUrl": "https://n8n-n8n.mcjhhb.easypanel.host/webhook/a/messages-upsert",
+    "executionMode": "production"
+  }
+]
+

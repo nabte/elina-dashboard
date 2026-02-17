@@ -1,0 +1,303 @@
+/* Flow Builder V2 - Animaciones y Mejoras Visuales */
+
+/* Drag & Drop Animations */
+.step-block.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+}
+
+.step-block.drag-over {
+    border-color: #8b5cf6 !important;
+    background: linear-gradient(to bottom, #faf5ff, #f3e8ff);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.15);
+}
+
+.step-block {
+    transition: all 0.2s ease;
+}
+
+.step-block:active {
+    cursor: grabbing;
+}
+
+/* Smooth transitions for reordering */
+@keyframes slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.step-block {
+    animation: slide-in 0.3s ease;
+}
+
+/* Keyword chips animation */
+@keyframes chip-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+#keywords-container > div {
+    animation: chip-appear 0.2s ease;
+}
+
+/* Preview panel animations */
+@keyframes message-appear {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#preview-messages > div {
+    animation: message-appear 0.3s ease;
+}
+
+/* Template card hover effects */
+.template-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.template-card:hover {
+    transform: translateY(-4px);
+}
+
+/* Modal entrance animations */
+@keyframes modal-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modal-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+[id$="-modal"] {
+    animation: modal-fade-in 0.2s ease;
+}
+
+[id$="-modal"] > div {
+    animation: modal-slide-up 0.3s ease;
+}
+
+/* Pulse animation for active badge */
+@keyframes pulse-subtle {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.animate-pulse {
+    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Smooth transitions for all interactive elements */
+button, input, select, textarea {
+    transition: all 0.2s ease;
+}
+
+/* Loading spinner */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Gradient text effect for headings */
+.gradient-text {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Glass morphism effect */
+.glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Tooltip styles */
+[title] {
+    position: relative;
+}
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Apply to containers */
+#steps-container,
+#preview-messages,
+#palette-sidebar,
+#editor-area,
+#preview-area {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+/* Shine effect on hover for action buttons */
+@keyframes shine {
+    to {
+        background-position: 200% center;
+    }
+}
+
+.btn-shine {
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #6366f1 100%);
+    background-size: 200% auto;
+}
+
+.btn-shine:hover {
+    animation: shine 1.5s ease infinite;
+}
+
+/* Step type palette hover effect */
+.step-type-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.step-type-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.1);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.step-type-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Floating animation for empty states */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Success checkmark animation */
+@keyframes checkmark {
+    0% {
+        stroke-dashoffset: 100;
+    }
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
+.checkmark-circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    animation: checkmark 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .step-block {
+        padding: 1rem;
+    }
+
+    #palette-sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: auto;
+        max-height: 50vh;
+        z-index: 40;
+        border-top: 2px solid #e2e8f0;
+        border-left: none;
+    }
+
+    #preview-area {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 50;
+        border: none;
+    }
+}
+
+/* Print styles */
+@media print {
+    .step-block {
+        page-break-inside: avoid;
+        border: 1px solid #000;
+    }
+
+    [id$="-modal"],
+    button,
+    #palette-sidebar,
+    #preview-area {
+        display: none !important;
+    }
+}

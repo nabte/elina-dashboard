@@ -1,0 +1,218 @@
+{
+  "name": "Verificación de Contactos - Evolution API",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "verificar-contactos",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-entry",
+      "name": "Webhook - Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "verificar-contactos"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar números para verificación\nconst items = $input.all();\nconst numbers = items[0].json.numbers || [];\nconst userId = items[0].json.userId;\nconst listName = items[0].json.listName;\nconst contactData = items[0].json.contactData || [];\n\n// Crear un item por cada número para procesar en lotes\nconst output = numbers.map((number, index) => {\n  const contactInfo = contactData.find(c => c.phone === number) || {};\n  return {\n    json: {\n      number: number,\n      userId: userId,\n      listName: listName,\n      name: contactInfo.name || null,\n      labels: contactInfo.labels || [],\n      contactData: contactInfo\n    }\n  };\n});\n\nreturn output;"
+      },
+      "id": "prepare-numbers",
+      "name": "Preparar Números",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 15,
+        "options": {}
+      },
+      "id": "split-batches",
+      "name": "Split In Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "resource": "chat-api",
+        "instanceName": "ElinaHead",
+        "numbers": "={{ $json.number }}"
+      },
+      "id": "verify-number",
+      "name": "Verificar Número - Evolution API",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": {
+        "evolutionApi": {
+          "id": "1NdmmRm4cT4v7Ciq",
+          "name": "Evolution account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "exists-check",
+              "leftValue": "={{ $json.data && $json.data[0] && $json.data[0].exists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-verified",
+      "name": "IF: ¿Existe en WhatsApp?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar datos del contacto verificado\nconst input = $input.first().json;\nconst verifiedData = input.data && input.data[0];\n\nif (!verifiedData || !verifiedData.exists) {\n  return [];\n}\n\nreturn [{\n  json: {\n    phone: input.number,\n    jid: verifiedData.jid,\n    exists: verifiedData.exists,\n    userId: input.userId,\n    listName: input.listName,\n    name: input.name || null,\n    labels: input.labels || [],\n    contactData: input.contactData || {}\n  }\n}];"
+      },
+      "id": "prepare-verified",
+      "name": "Preparar Contacto Verificado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Agrupar todos los contactos verificados después de Split In Batches\nconst allVerified = $('Preparar Contacto Verificado').all();\nconst originalInput = $('Webhook - Entrada').first().json;\n\nconst verifiedNumbers = allVerified.map(item => item.json);\n\n// Mapear contactData por número de teléfono desde el input original\nconst contactDataMap = {};\nif (originalInput.contactData && Array.isArray(originalInput.contactData)) {\n  originalInput.contactData.forEach(contact => {\n    if (contact.phone) {\n      contactDataMap[contact.phone] = contact;\n    }\n  });\n}\n\n// Agregar datos completos a cada número verificado\nconst verifiedWithData = verifiedNumbers.map(verified => {\n  const contactInfo = contactDataMap[verified.phone] || {};\n  return {\n    phone: verified.phone,\n    jid: verified.jid,\n    name: verified.name || contactInfo.name || null,\n    labels: verified.labels || contactInfo.labels || []\n  };\n});\n\nreturn [{\n  json: {\n    verifiedNumbers: verifiedWithData,\n    totalProcessed: originalInput.numbers ? originalInput.numbers.length : 0,\n    totalVerified: verifiedWithData.length,\n    userId: originalInput.userId,\n    listName: originalInput.listName,\n    contactData: verifiedWithData\n  }\n}];"
+      },
+      "id": "aggregate-results",
+      "name": "Agregar Resultados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "webhook-response",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1780, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Entrada": {
+      "main": [
+        [
+          {
+            "node": "Preparar Números",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Números": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [
+          {
+            "node": "Verificar Número - Evolution API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agregar Resultados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Número - Evolution API": {
+      "main": [
+        [
+          {
+            "node": "IF: ¿Existe en WhatsApp?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: ¿Existe en WhatsApp?": {
+      "main": [
+        [
+          {
+            "node": "Preparar Contacto Verificado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Preparar Contacto Verificado": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agregar Resultados": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-03T00:00:00.000Z",
+  "versionId": "1"
+}
+

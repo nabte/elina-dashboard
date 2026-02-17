@@ -1,0 +1,369 @@
+{
+  "name": "Masivos Elina Pruebas de usario",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "masivos-test-elina",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "https://app.elinaia.com.mx"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1488,
+        -320
+      ],
+      "id": "af1ff28b-4e11-4238-a1f4-01941c48caed",
+      "name": "Webhook",
+      "webhookId": "005e3514-f8e0-429e-981a-79e42f797c67"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un asistente que reescribe textos SIN alterar el significado. Debes:\n- chat1: copiar el texto original tal cual, incluyendo saltos de línea, emojis, URLs, signos, mayúsculas/minúsculas y placeholders como %nombre% si existen.\n- chat2, chat3, chat4: crear TRES versiones parafraseadas del original, manteniendo intención, tono, información y longitud similar (±5%). No inventes datos, no agregues ni quites emojis; si el original NO trae emojis, no los agregues. Conserva URLs, @menciones, #hashtags y placeholders,exactamente escritos pero el texto debe ser ligeramente diferente. NO entreges el texto orignal 4 veces. solo en la primera.\n- No inventes conversaciones ni ejemplos. No cambies cifras, fechas, montos, teléfonos, correos ni enlaces.\n- Respeta el idioma del texto de entrada.\n- Si el texto está vacío, devuelve cuatro cadenas vacías.\n- Salida OBLIGATORIA en JSON estricto, sin Markdown, con claves: chat1, chat2, chat3, chat4.\n\nel texto orignal es el siguiente: {{ $('Webhook').item.json.body.message }}\n\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -1264,
+        -304
+      ],
+      "id": "eae36c28-8ba7-40e7-bd46-6df6b5a7e1c2",
+      "name": "AI Agent",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -1376,
+        -32
+      ],
+      "id": "9ef72cd2-a1e9-4a72-a342-a8c57ca56be5",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "F3ZY8evKfJMeWVz6",
+          "name": "OpenAI ELINA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = items[0].json.output;\nconst obj = JSON.parse(raw);\n\n// Ahora generamos 4 items, uno por cada chat\nconst out = [];\n['chat1','chat2','chat3','chat4'].forEach((k, idx) => {\n  out.push({\n    json: {\n      chat_index: idx + 1,\n      text: obj[k] || ''\n    }\n  });\n});\n\nreturn out;"
+      },
+      "id": "d3846970-b9a3-4e31-9726-8bacde363fe6",
+      "name": "5. Parsear Variaciones",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "da306e83-495e-4095-8a19-3f3ed57328a3",
+              "leftValue": "={{ $('Webhook').item.json.body.fileUrl }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -304,
+        -352
+      ],
+      "id": "db5e8de4-a6c7-45a5-8041-2de347bce984",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        240,
+        -304
+      ],
+      "id": "59e24fd9-5b61-45ed-ac03-e6bc14094310",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "operation": "send-image",
+        "instanceName": "ElinaHead",
+        "remoteJid": "={{ $('Webhook').item.json.body.testNumber.replace(/^\\+?52(?!1)/, '521') }}",
+        "media": "={{ $('Webhook').item.json.body.fileUrl }}",
+        "caption": "={{ $('5. Parsear Variaciones').item.json.text }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        -448
+      ],
+      "id": "d5deaf3e-5e7e-4310-b54d-de94fb37578f",
+      "name": "Enviar imagem",
+      "credentials": {
+        "evolutionApi": {
+          "id": "1NdmmRm4cT4v7Ciq",
+          "name": "Evolution account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Webhook').item.json.body.userId }}"
+            }
+          ]
+        }
+      },
+      "id": "48cfa5ab-37f0-4c66-b853-7c6c13188b1a",
+      "name": "1. Get User Profile1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -336
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "={{ $('1. Get User Profile1').item.json.evolution_instance_name }}",
+        "remoteJid": "={{ $('Webhook').item.json.body.testNumber.replace(/^\\+?52(?!1)/, '521') }}",
+        "messageText": "={{ $('5. Parsear Variaciones').item.json.text }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        -256
+      ],
+      "id": "b1c601f3-36c4-4db2-a947-d92e1c157dff",
+      "name": "Enviar texto",
+      "credentials": {
+        "evolutionApi": {
+          "id": "1NdmmRm4cT4v7Ciq",
+          "name": "Evolution account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n-n8n.mcjhhb.easypanel.host",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+            "content-length": "566",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "es-ES,es;q=0.9",
+            "content-type": "application/json",
+            "origin": "https://app.elinaia.com.mx",
+            "priority": "u=1, i",
+            "referer": "https://app.elinaia.com.mx/",
+            "sec-ch-ua": "\"Brave\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "sec-gpc": "1",
+            "x-forwarded-for": "189.220.43.121",
+            "x-forwarded-host": "n8n-n8n.mcjhhb.easypanel.host",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "35f5005c00d4",
+            "x-real-ip": "189.220.43.121"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "userId": "2914fa5f-fc15-43fa-b677-126b336c3c7a",
+            "testNumber": "+525527750556",
+            "message": "🎄 ¡Hola! Te traemos una increíble promoción navideña que potenciará tus ventas de manera espectacular. 🌟 No dejes pasar la oportunidad de incrementar tus ingresos en esta temporada festiva. ¡Prepárate para atraer más clientes y hacer de estas fiestas un momento inolvidable para tu negocio! 🎁✨ Prueba ",
+            "fileUrl": "https://creativersezone.b-cdn.net/2914fa5f-fc15-43fa-b677-126b336c3c7a/bulk-tests/1766004303102-D_NQ_NP_2X_924460-MLA88374813591_072025-F.webp"
+          },
+          "webhookUrl": "https://n8n-n8n.mcjhhb.easypanel.host/webhook/masivos-test-elina",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "5. Parsear Variaciones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Parsear Variaciones": {
+      "main": [
+        [
+          {
+            "node": "1. Get User Profile1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Enviar imagem",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar imagem": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Get User Profile1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar texto": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6d0ba82b-fb89-4f02-a640-fd395cb1dd86",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "32906a5f2bdc653e88c8f6fde14f7365d097573b5e9053a6781ad64c78a4c371"
+  },
+  "id": "vshp4zl3L6ElTJjU",
+  "tags": [
+    {
+      "updatedAt": "2025-07-03T12:45:49.688Z",
+      "createdAt": "2025-07-03T12:45:49.688Z",
+      "id": "rrOJSiKya2JM3sCk",
+      "name": "Elina"
+    }
+  ]
+}

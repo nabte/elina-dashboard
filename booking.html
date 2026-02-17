@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar Cita</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/css/intlTelInput.css">
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/js/intlTelInput.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        :root {
+            --brand-color: #10B981;
+            --brand-color-light: #D1FAE5;
+        }
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .brand-bg {
+            background-color: var(--brand-color);
+            color: white;
+        }
+
+        .brand-text {
+            color: var(--brand-color);
+        }
+
+        .brand-border {
+            border-color: var(--brand-color);
+        }
+
+        .brand-bg-light {
+            background-color: var(--brand-color-light);
+            color: var(--brand-color);
+        }
+
+        .hover-brand-bg:hover {
+            background-color: var(--brand-color);
+            color: white;
+        }
+
+        .hover-scale {
+            transition: transform 0.2s;
+        }
+
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+
+        .calendar-day-header {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #000;
+            text-transform: uppercase;
+            padding-bottom: 8px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .calendar-day:hover:not(.disabled) {
+            background-color: #f1f5f9;
+        }
+
+        .calendar-day.selected {
+            background-color: var(--brand-color) !important;
+            color: white !important;
+        }
+
+        .calendar-day.disabled {
+            color: #cbd5e1;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .calendar-day.today {
+            border: 2px solid var(--brand-color);
+        }
+
+        .iti {
+            width: 100%;
+        }
+
+        .iti__flag {
+            background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/img/flags.png");
+        }
+
+        @media (-webkit-min-device-pixel-ratio: 2),
+        (min-resolution: 192dpi) {
+            .iti__flag {
+                background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/img/flags@2x.png");
+            }
+        }
+
+        .animate-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen">
+    <div id="app"></div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const supabase = createClient(
+            'https://mytvwfbijlgbihlegmfg.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MTg5OTAsImV4cCI6MjA2OTk5NDk5MH0.eFL6N7pR4nmpOLywRwxZS_sEWwSbq5WGAnY0zBMreDE'
+        );
+
+        const app = {
+            loading: true,
+            submitting: false,
+            success: false,
+            step: 1,
+            user: null,
+            services: [],
+            existingAppointments: [],
+            selectedService: null,
+            selectedDate: '',
+            selectedTime: '',
+            patientInfo: { name: '', phone: '' },
+            currentMonth: new Date(),
+            brandColor: '#10B981',
+            hasError: false,
+            iti: null,
+            availableSlots: [],
+            loadingSlots: false,
+
+            async init() {
+                const pathParts = window.location.pathname.split('/').filter(p => p);
+                const lastPart = pathParts[pathParts.length - 1];
+                const urlParams = new URLSearchParams(window.location.search);
+
+                let slug = urlParams.get('s') || urlParams.get('u');
+
+                if (!slug && lastPart && !lastPart.includes('.') &&
+                    !['dashboard', 'auth', 'settings', 'superadmin', 'blog'].includes(lastPart)) {
+                    slug = lastPart;
+                }
+
+                if (!slug) {
+                    this.showError('Enlace inválido. Por favor usa el link compartido por la empresa.');
+                    return;
+                }
+
+                try {
+                    let query = supabase
+                        .from('profiles')
+                        .select('id, email, full_name, urlfoto, branding_settings, work_start_hour, work_end_hour, slug');
+
+                    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+                    if (isUUID) {
+                        query = query.or(`slug.eq.${slug},id.eq.${slug}`);
+                    } else {
+                        query = query.eq('slug', slug);
+                    }
+
+                    const { data: profile, error: profileErr } = await query.maybeSingle();
+
+                    if (profileErr || !profile) {
+                        throw new Error('Negocio no encontrado');
+                    }
+
+                    this.user = profile;
+
+                    const branding = profile.branding_settings || {};
+                    this.brandColor = (branding.colors && branding.colors[0]) || '#10B981';
+
+                    document.documentElement.style.setProperty('--brand-color', this.brandColor);
+
+                    this.user.logo_url = branding.logo_url || profile.urlfoto;
+                    this.user.business_name = profile.full_name || profile.email?.split('@')[0] || 'Empresa';
+
+                    const { data: settings } = await supabase
+                        .from('appointment_settings')
+                        .select('is_enabled')
+                        .eq('user_id', profile.id)
+                        .maybeSingle();
+
+                    if (!settings || !settings.is_enabled) {
+                        throw new Error('Este negocio no tiene habilitado el sistema de citas actualmente.');
+                    }
+
+                    const { data: servicesData } = await supabase
+                        .from('products')
+                        .select('id, product_name, service_duration_minutes, price')
+                        .eq('user_id', profile.id)
+                        .eq('product_type', 'service');
+
+                    this.services = servicesData || [];
+
+                    const today = new Date();
+                    const year = today.getFullYear();
+                    const month = String(today.getMonth() + 1).padStart(2, '0');
+                    const day = String(today.getDate()).padStart(2, '0');
+                    const todayStr = `${year}-${month}-${day}`;
+
+                    console.log('[Booking] Init done for user:', profile.id);
+
+                    const { data: apptsData } = await supabase
+                        .from('meetings')
+                        .select('start_time, end_time')
+                        .eq('user_id', profile.id)
+                        .gte('start_time', todayStr + 'T00:00:00')
+                        .in('status', ['confirmed', 'pending']);
+
+                    this.existingAppointments = apptsData || [];
+
+                } catch (err) {
+                    this.hasError = true;
+                    this.showError(err.message);
+                } finally {
+                    this.loading = false;
+                    if (!this.hasError) {
+                        this.render();
+                    }
+                }
+            },
+
+            getTodayStr() {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            },
+
+            showError(message) {
+                document.getElementById('app').innerHTML = `
+                    <div class="min-h-screen flex items-center justify-center p-6">
+                        <div class="text-center max-w-md">
+                            <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <i data-lucide="alert-circle" class="w-10 h-10 text-red-500"></i>
+                            </div>
+                            <h1 class="text-2xl font-black text-black mb-3">Algo salió mal</h1>
+                            <p class="text-black">${message}</p>
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
+            },
+
+            showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-xl shadow-lg text-white font-medium transform transition-all duration-300 translate-y-20 opacity-0 z-50 ${type === 'error' ? 'bg-red-500' : 'bg-black'}`;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                // Animate in
+                requestAnimationFrame(() => {
+                    toast.classList.remove('translate-y-20', 'opacity-0');
+                });
+
+                // Remove after 3s
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            },
+
+            async getAvailableSlots(date) {
+                if (!this.selectedService || !date) return [];
+
+                console.log('[Booking] getAvailableSlots called', { date, serviceId: this.selectedService.id, duration: this.selectedService.service_duration_minutes });
+
+                try {
+                    const payLoad = {
+                        p_user_id: this.user.id,
+                        p_date: date,
+                        p_appointment_type_id: null,
+                        p_product_id: this.selectedService.id,
+                        p_duration_minutes: parseInt(this.selectedService.service_duration_minutes) || 60
+                    };
+
+                    console.log('[Booking] RPC Payload:', payLoad);
+
+                    const { data, error } = await supabase.rpc('get_available_slots', payLoad);
+
+                    if (error) {
+                        console.error('[Booking] RPC Error:', error);
+                        this.showToast(`Error al obtener horarios: ${error.message}`, 'error');
+                        throw error;
+                    }
+
+                    console.log('[Booking] RPC Response Data:', data);
+
+                    if (data?.error) {
+                        console.warn('[Booking] Data Error:', data.error);
+                        if (data.error === 'No hours configured') {
+                            this.showToast('El negocio no ha configurado horarios para este día.', 'error');
+                        }
+                        return [];
+                    }
+
+                    const slots = data?.available_slots || [];
+                    console.log(`[Booking] Found ${slots.length} slots`);
+                    return slots;
+
+                } catch (err) {
+                    console.error('[Booking] Exception loading slots:', err);
+                    return [];
+                }
+            },
+
+            async submitAppointment() {
+                this.submitting = true;
+                this.render();
+
+                try {
+                    const fullPhone = this.iti.getNumber();
+
+                    if (!this.iti.isValidNumber()) {
+                        throw new Error('El número de teléfono no es válido');
+                    }
+
+                    const { data: existingContact } = await supabase
+                        .from('contacts')
+                        .select('id')
+                        .eq('user_id', this.user.id)
+                        .eq('phone_number', fullPhone)
+                        .maybeSingle();
+
+                    let contactId;
+                    if (existingContact) {
+                        contactId = existingContact.id;
+                    } else {
+                        const { data: newContact, error: contactErr } = await supabase
+                            .from('contacts')
+                            .insert({
+                                user_id: this.user.id,
+                                full_name: this.patientInfo.name,
+                                phone_number: fullPhone
+                            })
+                            .select()
+                            .single();
+
+                        if (contactErr) throw contactErr;
+                        contactId = newContact.id;
+                    }
+
+                    const startDateTime = new Date(`${this.selectedDate}T${this.selectedTime}`);
+                    const endDateTime = new Date(startDateTime);
+                    endDateTime.setMinutes(endDateTime.getMinutes() + this.selectedService.service_duration_minutes);
+
+                    const { data: newAppt, error: apptErr } = await supabase
+                        .from('meetings')
+                        .insert({
+                            user_id: this.user.id,
+                            contact_id: contactId,
+                            product_id: this.selectedService.id,
+                            summary: `${this.selectedService.product_name} - ${this.patientInfo.name}`,
+                            start_time: startDateTime.toISOString(),
+                            end_time: endDateTime.toISOString(),
+                            status: 'pending',
+                            confirmation_status: 'pending',
+                            notes: 'Cita agendada desde página pública',
+                            metadata: { created_via: 'public_booking', source: 'web' }
+                        })
+                        .select()
+                        .single();
+
+                    if (apptErr) throw apptErr;
+
+                    supabase.functions.invoke('send-appointment-notification', {
+                        body: { appointment_id: newAppt.id, type: 'confirmation' }
+                    }).catch(e => console.error('Error al enviar notificación:', e));
+
+                    this.success = true;
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                } finally {
+                    this.submitting = false;
+                    this.render();
+                }
+            },
+
+            formatDate(d) {
+                if (!d) return '';
+                const parts = d.split('-');
+                const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+                return dt.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+            },
+
+            formatTime(t) {
+                if (!t) return '00:00';
+                const [hStr, m] = t.split(':');
+                let h = parseInt(hStr);
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                h = h % 12;
+                h = h ? h : 12;
+                return `${h}:${m} ${ampm}`;
+            },
+
+            getDaysInMonth(year, month) {
+                return new Date(year, month + 1, 0).getDate();
+            },
+
+            getFirstDayOfMonth(year, month) {
+                return new Date(year, month, 1).getDay();
+            },
+
+            changeMonth(delta) {
+                const newDate = new Date(this.currentMonth);
+                newDate.setMonth(newDate.getMonth() + delta);
+                this.currentMonth = newDate;
+                this.render();
+            },
+
+            render() {
+                const app = document.getElementById('app');
+
+                if (this.success) {
+                    app.innerHTML = `
+                        <div class="min-h-screen flex items-center justify-center p-6 bg-slate-50">
+                            <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center animate-in">
+                                <div class="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner brand-bg-light" 
+                                     style="background-color: ${this.brandColor}20; color: ${this.brandColor}">
+                                    <i data-lucide="check" class="w-12 h-12"></i>
+                                </div>
+                                <h1 class="text-3xl font-black text-black mb-4">¡Cita Confirmada!</h1>
+                                <p class="text-black mb-8 text-lg">
+                                    Tu cita para <strong>${this.selectedService.product_name}</strong> el 
+                                    <strong>${this.formatDate(this.selectedDate)}</strong> a las 
+                                    <strong>${this.formatTime(this.selectedTime)}</strong> ha sido agendada.
+                                </p>
+                                <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-8">
+                                    <p class="text-xs text-slate-400 uppercase font-bold mb-2">Siguientes pasos</p>
+                                    <p class="text-sm text-black leading-relaxed">
+                                        Te enviamos una confirmación por WhatsApp. Por favor responde <strong class="brand-text">SÍ</strong> para confirmar tu asistencia.
+                                    </p>
+                                </div>
+                                <button onclick="location.reload()" 
+                                        class="px-8 py-4 rounded-2xl font-bold shadow-lg hover-scale w-full brand-bg">
+                                    Agendar otra cita
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    return;
+                }
+
+                app.innerHTML = `
+                    <div class="min-h-screen bg-slate-50 max-w-xl mx-auto shadow-2xl bg-white min-h-screen relative overflow-hidden">
+                        ${this.step === 1 ? this.renderHeader() : ''}
+                        
+                        <div class="px-4 sm:px-6 py-8 relative z-10">
+                            ${this.renderProgressBar()}
+                            
+                            <div class="mt-8 transition-all duration-300">
+                                ${this.step === 1 ? this.renderServiceSelection() : ''}
+                                ${this.step === 2 ? this.renderCalendarView() : ''}
+                                ${this.step === 3 ? this.renderPatientInfoView() : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                lucide.createIcons();
+                this.postRender();
+            },
+
+            postRender() {
+                if (this.step === 3) {
+                    const input = document.getElementById('phone-input');
+                    if (input) {
+                        this.iti = window.intlTelInput(input, {
+                            initialCountry: "mx",
+                            preferredCountries: ["mx", "us", "es", "co", "ar"],
+                            utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/js/utils.js",
+                            separateDialCode: true
+                        });
+
+                        if (this.patientInfo.phone) input.value = this.patientInfo.phone;
+
+                        input.addEventListener('change', () => {
+                            this.patientInfo.phone = input.value;
+                        });
+                    }
+                    const nameInput = document.getElementById('name-input');
+                    if (nameInput) {
+                        nameInput.value = this.patientInfo.name || '';
+                    }
+                }
+            },
+
+            renderHeader() {
+                const businessName = this.user.business_name || 'Elina IA';
+                const avatarCode = businessName[0]?.toUpperCase() || 'E';
+                const avatarBg = this.brandColor;
+
+                const logoHtml = this.user.logo_url
+                    ? `<img src="${this.user.logo_url}" 
+                            onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(businessName)}&background=${avatarBg.replace('#', '')}&color=fff';" 
+                            alt="Logo" class="w-14 h-14 object-cover rounded-2xl shadow-sm">`
+                    : `<div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-md brand-bg">
+                            ${avatarCode}
+                       </div>`;
+
+                return `
+                    <div class="bg-white px-8 py-8 border-b border-slate-50">
+                        <div class="flex items-center gap-5">
+                            ${logoHtml}
+                            <div>
+                                <h1 class="text-xl font-black text-black leading-tight">${businessName}</h1>
+                                <p class="text-black text-xs font-bold uppercase tracking-wider mt-1">Reserva en línea</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderProgressBar() {
+                const stepLabels = ['Servicios', 'Fecha', 'Tus Datos'];
+                const percent = ((this.step - 1) / 2) * 100;
+
+                return `
+                    <div class="mb-10">
+                        <div class="flex justify-between mb-2">
+                             ${[1, 2, 3].map((s, i) => `
+                                <span class="text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 ${this.step >= s ? 'brand-text' : 'text-black opacity-30'}">
+                                    ${stepLabels[i]}
+                                </span>
+                             `).join('')}
+                        </div>
+                        <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full brand-bg transition-all duration-500 ease-out" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderServiceSelection() {
+                if (this.services.length === 0) {
+                    return `
+                        <div class="animate-in text-center py-12">
+                            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i data-lucide="package-open" class="w-8 h-8 text-slate-400"></i>
+                            </div>
+                            <p class="text-slate-500 font-medium">No hay servicios disponibles por el momento.</p>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="animate-in space-y-4">
+                        <h2 class="text-3xl font-black text-black mb-6">Elige un servicio</h2>
+                        
+                        <div class="grid gap-4">
+                            ${this.services.map(s => `
+                                <div onclick="window.app.selectService(${JSON.stringify(s).replace(/"/g, '&quot;')})" 
+                                     class="bg-white p-5 rounded-3xl border border-slate-100 hover:border-transparent hover:shadow-xl transition-all cursor-pointer group relative overflow-hidden">
+                                     
+                                    <div class="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity brand-bg"></div>
+                                    
+                                    <div class="relative z-10 flex justify-between items-center">
+                                        <div class="flex-1 pr-4">
+                                            <h3 class="font-bold text-lg text-black group-hover:text-black mb-1">${s.product_name}</h3>
+                                            <div class="flex items-center gap-3">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-black text-xs font-bold">
+                                                    <i data-lucide="clock" class="w-3.5 h-3.5"></i> 
+                                                    ${s.service_duration_minutes} min
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="text-xl font-black brand-text">
+                                            ${s.price ? '$' + s.price : 'Gratis'}
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderCalendarView() {
+                const year = this.currentMonth.getFullYear();
+                const month = this.currentMonth.getMonth();
+                const monthName = this.currentMonth.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+
+                const daysInMonth = this.getDaysInMonth(year, month);
+                const firstDay = this.getFirstDayOfMonth(year, month);
+
+                const daysHtml = [];
+                for (let i = 0; i < firstDay; i++) {
+                    daysHtml.push('<div class="calendar-day bg-transparent"></div>');
+                }
+
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const isSelected = this.selectedDate === dateStr;
+                    const todayStr = window.app.getTodayStr();
+                    const isToday = todayStr === dateStr;
+                    const isPast = new Date(dateStr + 'T23:59:59') < new Date();
+                    const isDisabled = isPast;
+
+                    daysHtml.push(`
+                        <div onclick="${isDisabled ? '' : `window.app.selectDate('${dateStr}')`}" 
+                             class="calendar-day ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''} ${isDisabled ? 'disabled' : ''}">
+                            ${d}
+                        </div>
+                    `);
+                }
+
+                return `
+                    <div class="animate-in">
+                        <div class="flex items-center gap-3 mb-8">
+                            <button onclick="window.app.setStep(1)" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition">
+                                <i data-lucide="arrow-left" class="w-5 h-5 text-black"></i>
+                            </button>
+                            <h2 class="text-2xl font-black text-black">Fecha y Hora</h2>
+                        </div>
+
+                        <div class="bg-white rounded-[2rem] border border-slate-200 p-4 sm:p-6 shadow-sm mb-8">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-lg font-bold text-black capitalize">${monthName}</h3>
+                                <div class="flex gap-1">
+                                    <button onclick="window.app.changeMonth(-1)" class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition">
+                                        <i data-lucide="chevron-left" class="w-5 h-5 text-black"></i>
+                                    </button>
+                                    <button onclick="window.app.changeMonth(1)" class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition">
+                                        <i data-lucide="chevron-right" class="w-5 h-5 text-black"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="calendar-grid">
+                                <div class="calendar-day-header">Dom</div>
+                                <div class="calendar-day-header">Lun</div>
+                                <div class="calendar-day-header">Mar</div>
+                                <div class="calendar-day-header">Mié</div>
+                                <div class="calendar-day-header">Jue</div>
+                                <div class="calendar-day-header">Vie</div>
+                                <div class="calendar-day-header">Sáb</div>
+                                ${daysHtml.join('')}
+                            </div>
+                        </div>
+
+                        <div id="slots-container" class="space-y-4">
+                            ${this.selectedDate
+                        ? `<h3 class="font-bold text-black text-sm uppercase tracking-wide px-1">Horarios disponibles</h3>${this.renderSlots()}`
+                        : ''}
+                        </div>
+                    </div>
+                `;
+            },
+
+            async selectDate(d) {
+                this.selectedDate = d;
+                this.selectedTime = ''; // Reset time selection
+                this.availableSlots = []; // Limpiar slots anteriores
+                this.loadingSlots = true; // Flag de carga
+                this.render(); // Re-render para mostrar loading si quisieramos
+
+                const slots = await this.getAvailableSlots(d);
+                this.availableSlots = slots;
+                this.loadingSlots = false;
+                this.render();
+            },
+
+            renderSlots() {
+                if (this.loadingSlots) {
+                    return `<div class="py-8 text-center text-black"><i data-lucide="loader" class="animate-spin w-6 h-6 mx-auto mb-2"></i> Cargando horarios...</div>`;
+                }
+
+                if (!this.availableSlots || this.availableSlots.length === 0) {
+                    return `<div class="py-4 text-center text-black text-sm">No hay horarios disponibles para esta fecha.</div>`;
+                }
+
+                // Extraer hora de inicio de cada slot (objeto o string)
+                // get_available_slots devuelve objetos { start: "HH:MM", end: "HH:MM", ... }
+                return `
+                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 animate-in">
+                        ${this.availableSlots.map(slot => {
+                    const t = slot.start || slot; // Manejar objeto o string
+                    return `
+                            <button onclick="window.app.selectTime('${t}')" 
+                                    class="py-3 px-2 rounded-xl text-sm font-bold transition-all border 
+                                    ${this.selectedTime === t
+                            ? 'brand-bg border-transparent shadow-md transform scale-105'
+                            : 'bg-white border-slate-200 text-black hover:border-slate-300 hover:shadow-sm'}">
+                                ${t}
+                            </button>
+                        `}).join('')}
+                    </div>
+                `;
+            },
+
+            renderPatientInfoView() {
+                return `
+                    <div class="animate-in">
+                        <div class="flex items-center gap-3 mb-8">
+                            <button onclick="window.app.setStep(2)" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition">
+                                <i data-lucide="arrow-left" class="w-5 h-5 text-black"></i>
+                            </button>
+                            <h2 class="text-2xl font-black text-black">Finalizar</h2>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-xs font-bold text-black uppercase tracking-wider mb-2 ml-1">Tu Nombre</label>
+                                <input type="text" id="name-input" 
+                                    class="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white outline-none transition-all font-semibold text-black placeholder:text-slate-300"
+                                    placeholder="Ej. Juan Pérez">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-black uppercase tracking-wider mb-2 ml-1">WhatsApp</label>
+                                <input type="tel" id="phone-input" 
+                                    class="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 outline-none transition-all font-semibold text-black"
+                                    placeholder="55 1234 5678">
+                                <p class="text-[10px] text-black mt-2 ml-1">Te enviaremos la confirmación a este número.</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-10">
+                            <button onclick="window.app.handleFinalSubmit()" 
+                                    ${this.submitting ? 'disabled' : ''}
+                                    class="w-full py-4 rounded-2xl text-white font-black text-lg shadow-xl hover-scale transition-all disabled:opacity-70 disabled:cursor-not-allowed brand-bg">
+                                ${this.submitting
+                        ? '<span class="flex items-center justify-center gap-2"><i class="animate-spin" data-lucide="loader-2"></i> Confirmando...</span>'
+                        : 'Confirmar Cita'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            },
+
+            setStep(s) { this.step = s; this.render(); },
+            selectService(s) { this.selectedService = s; this.step = 2; this.render(); },
+            selectTime(t) { this.selectedTime = t; this.step = 3; this.render(); },
+
+            handleFinalSubmit() {
+                this.patientInfo.name = document.getElementById('name-input').value;
+
+                if (!this.patientInfo.name) {
+                    alert('Por favor escribe tu nombre');
+                    return;
+                }
+
+                if (!this.iti.isValidNumber()) {
+                    alert('Por favor escribe un número de WhatsApp válido');
+                    return;
+                }
+
+                this.submitAppointment();
+            },
+
+            attachEventListeners() {
+            }
+        };
+
+        window.app = app;
+        app.init();
+    </script>
+</body>
+
+</html>

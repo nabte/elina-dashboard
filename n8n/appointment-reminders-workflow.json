@@ -1,0 +1,427 @@
+{
+  "name": "Procesar Recordatorios de Citas",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM appointment_reminders WHERE status = 'pending' AND scheduled_for <= NOW() ORDER BY scheduled_for ASC LIMIT 50"
+      },
+      "id": "get-pending-reminders",
+      "name": "Obtener Recordatorios Pendientes",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-reminders",
+      "name": "Split In Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "meetings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.meeting_id }}"
+            }
+          ]
+        },
+        "options": {
+          "select": "id, user_id, contact_id, product_id, start_time, end_time, summary, status"
+        }
+      },
+      "id": "get-meeting",
+      "name": "Obtener Datos de Cita",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-contact",
+              "leftValue": "={{ $json.contact_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-has-contact",
+      "name": "IF: ¿Tiene contacto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "contacts",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Obtener Datos de Cita').item.json.contact_id }}"
+            }
+          ]
+        },
+        "options": {
+          "select": "id, full_name, phone_number"
+        }
+      },
+      "id": "get-contact",
+      "name": "Obtener Contacto",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1250, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/functions/v1/ensure-contact",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone_number",
+              "value": "={{ $json.contact_phone || $('Obtener Contacto').item.json.phone_number }}"
+            },
+            {
+              "name": "user_id",
+              "value": "={{ $('Obtener Datos de Cita').item.json.user_id }}"
+            },
+            {
+              "name": "full_name",
+              "value": "={{ $('Obtener Contacto').item.json.full_name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ensure-contact",
+      "name": "Ensure Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/functions/v1/ensure-contact",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone_number",
+              "value": "={{ $('Obtener Recordatorios Pendientes').item.json.contact_phone }}"
+            },
+            {
+              "name": "user_id",
+              "value": "={{ $('Obtener Datos de Cita').item.json.user_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ensure-contact-no-id",
+      "name": "Ensure Contact (sin ID)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 400]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "appointment_settings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('Obtener Datos de Cita').item.json.user_id }}"
+            }
+          ]
+        },
+        "options": {
+          "select": "reminder_message_template, reminder_24h_enabled, reminder_2h_enabled, reminder_days_before"
+        }
+      },
+      "id": "get-settings",
+      "name": "Obtener Configuración",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1650, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "final-phone",
+              "name": "phone_number",
+              "value": "={{ $('Ensure Contact').item.json.contact.phone_number || $('Ensure Contact (sin ID)').item.json.contact.phone_number }}",
+              "type": "string"
+            },
+            {
+              "id": "final-message",
+              "name": "message",
+              "value": "={{ $('Obtener Recordatorios Pendientes').item.json.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-fields",
+      "name": "Set Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1850, 300]
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "operation": "sendText",
+        "instanceName": "={{ $env.EVOLUTION_INSTANCE_NAME }}",
+        "remoteJid": "={{ $json.phone_number.replace('+', '').replace('@s.whatsapp.net', '') }}@s.whatsapp.net",
+        "messageText": "={{ $json.message }}",
+        "options": {
+          "delay": 1000
+        }
+      },
+      "id": "send-whatsapp",
+      "name": "Enviar Mensaje WhatsApp",
+      "type": "n8n-nodes-base.evolutionApi",
+      "typeVersion": 1,
+      "position": [2050, 300],
+      "credentials": {
+        "evolutionApi": {
+          "id": "1",
+          "name": "Evolution API account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointment_reminders",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Obtener Recordatorios Pendientes').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsToUpdate": {
+          "status": "sent",
+          "sent_at": "={{ $now }}"
+        }
+      },
+      "id": "update-reminder-sent",
+      "name": "Actualizar Recordatorio (Enviado)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2250, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointment_reminders",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Obtener Recordatorios Pendientes').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsToUpdate": {
+          "status": "failed",
+          "error_message": "={{ $json.error || 'Error desconocido' }}"
+        }
+      },
+      "id": "update-reminder-failed",
+      "name": "Actualizar Recordatorio (Fallido)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2250, 400],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "success",
+              "leftValue": "={{ $json.statusCode || $json.status }}",
+              "rightValue": "200",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-success",
+      "name": "IF: ¿Envío exitoso?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2050, 400]
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [[{"node": "Obtener Recordatorios Pendientes", "type": "main", "index": 0}]]
+    },
+    "Obtener Recordatorios Pendientes": {
+      "main": [[{"node": "Split In Batches", "type": "main", "index": 0}]]
+    },
+    "Split In Batches": {
+      "main": [[{"node": "Obtener Datos de Cita", "type": "main", "index": 0}]]
+    },
+    "Obtener Datos de Cita": {
+      "main": [[{"node": "IF: ¿Tiene contacto?", "type": "main", "index": 0}]]
+    },
+    "IF: ¿Tiene contacto?": {
+      "main": [
+        [{"node": "Obtener Contacto", "type": "main", "index": 0}],
+        [{"node": "Ensure Contact (sin ID)", "type": "main", "index": 0}]
+      ]
+    },
+    "Obtener Contacto": {
+      "main": [[{"node": "Ensure Contact", "type": "main", "index": 0}]]
+    },
+    "Ensure Contact": {
+      "main": [[{"node": "Obtener Configuración", "type": "main", "index": 0}]]
+    },
+    "Ensure Contact (sin ID)": {
+      "main": [[{"node": "Obtener Configuración", "type": "main", "index": 0}]]
+    },
+    "Obtener Configuración": {
+      "main": [[{"node": "Set Fields", "type": "main", "index": 0}]]
+    },
+    "Set Fields": {
+      "main": [[{"node": "Enviar Mensaje WhatsApp", "type": "main", "index": 0}]]
+    },
+    "Enviar Mensaje WhatsApp": {
+      "main": [[{"node": "IF: ¿Envío exitoso?", "type": "main", "index": 0}]]
+    },
+    "IF: ¿Envío exitoso?": {
+      "main": [
+        [{"node": "Actualizar Recordatorio (Enviado)", "type": "main", "index": 0}],
+        [{"node": "Actualizar Recordatorio (Fallido)", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-12-17T00:00:00.000Z",
+  "versionId": "1"
+}
+

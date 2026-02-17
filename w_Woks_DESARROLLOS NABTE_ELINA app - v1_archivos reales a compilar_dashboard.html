@@ -1,0 +1,1190 @@
+﻿﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elina IA - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Librería para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- CORRECCIÓN: Cargar lucide con 'defer' para garantizar que esté disponible antes que los scripts de la app. -->
+    <script src="https://unpkg.com/lucide@latest" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 text-slate-800">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Barra lateral de navegación (se ocultará en móvil) -->
+        <aside id="main-sidebar" class="main-sidebar w-64 bg-slate-900 text-white flex flex-col p-4">
+            <div class="flex items-center justify-between gap-3 mb-8">
+                <div class="flex items-center gap-3">
+                    <img src="https://brandcode.com.mx/Elina-logo.jpg" alt="Elina IA Logo" class="h-8 w-8 rounded-full object-cover">
+                    <h1 class="text-xl font-bold">ELINA IA</h1>
+                </div>
+                <!-- CORRECCIÓN: Botón para cerrar el menú en móvil -->
+                <button id="close-sidebar-btn" class="md:hidden p-1 rounded-full hover:bg-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <nav class="flex-grow overflow-y-auto">
+                <ul class="space-y-2">
+                    <li><a href="#" class="nav-link text-xs flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-green-500 hover:text-white transition-colors" data-target="dashboard"><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Dashboard</a></li>
+                    <li><a href="#" class="nav-link text-xs flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-green-500 hover:text-white transition-colors" data-target="follow-ups"><i data-lucide="repeat" class="w-4 h-4"></i>Seguimientos</a></li>
+                    <li><a href="#" class="nav-link text-xs flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-green-500 hover:text-white transition-colors" data-target="bulk-sending"><i data-lucide="send" class="w-4 h-4"></i>Envío Masivo</a></li>
+                    <li><a href="#" class="nav-link text-xs flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-green-500 hover:text-white transition-colors" data-target="smart-labels"><i data-lucide="tags" class="w-4 h-4"></i>Etiquetas IA</a></li>
+                    <li><a href="#" class="nav-link text-xs flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-green-500 hover:text-white transition-colors" data-target="kanban"><i data-lucide="columns-3" class="w-4 h-4"></i>Kanban</a></li>
+                    <li><a href="#" class="nav-link text-xs flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-green-500 hover:text-white transition-colors" data-target="contacts"><i data-lucide="users" class="w-4 h-4"></i>Contactos</a></li>
+                    <li><a href="#" class="nav-link text-xs flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-green-500 hover:text-white transition-colors" data-target="templates"><i data-lucide="file-text" class="w-4 h-4"></i>Plantillas</a></li>
+                    <li><a href="#" class="nav-link text-xs flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-green-500 hover:text-white transition-colors" data-target="products"><i data-lucide="boxes" class="w-4 h-4"></i>Productos</a></li>
+                    <li><a href="#" class="nav-link text-xs flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-green-500 hover:text-white transition-colors" data-target="chats"><i data-lucide="message-square" class="w-4 h-4"></i>Chats</a></li>
+                    <li class="pt-4 mt-4 border-t border-slate-700/50">
+                        <span class="px-4 text-xs font-semibold uppercase text-slate-500">Herramientas IA</span>
+                    </li>
+                    <li><a href="#" class="nav-link text-sm flex items-center gap-3 px-4 py-2 rounded-md hover:bg-green-500 hover:text-white transition-colors" data-target="designer-ai"><i data-lucide="palette"></i>Diseñador Gráfico IA</a></li>
+                    <li>
+                        <details class="group">
+                            <summary class="text-sm flex items-center justify-between px-4 py-2 rounded-md cursor-pointer hover:bg-slate-800">
+                                <span class="flex items-center gap-3"><i data-lucide="construction"></i>Próximamente</span>
+                                <i data-lucide="chevron-right" class="w-4 h-4 transition-transform group-open:rotate-90"></i>
+                            </summary>
+                            <ul class="pl-8 space-y-1 mt-1">
+                                <li><a href="#" class="nav-link text-sm flex items-center gap-3 px-3 py-1.5 rounded-md text-sm text-slate-400 hover:bg-slate-700 hover:text-white" data-target="calendar"><i data-lucide="calendar-days"></i>Calendario</a></li>
+                                <li><a href="#" class="nav-link text-sm flex items-center gap-3 px-3 py-1.5 rounded-md text-sm text-slate-400 hover:bg-slate-700 hover:text-white" data-target="community-manager"><i data-lucide="megaphone"></i>Community Manager</a></li>
+                            </ul>
+                        </details>
+                    </li>
+                </ul>
+            </nav>
+            <!-- Sección de Upgrade de Plan -->
+            <div id="upgrade-plan-section" class="mt-6 hidden">
+                <button id="upgrade-trial-btn" class="hidden cta-button block w-full text-center bg-green-500 text-white font-bold py-3 px-4 rounded-lg">¡Elige tu Plan!</button>
+                <a href="#" id="upgrade-grow-btn" class="hidden cta-button block w-full text-center bg-cyan-500 text-slate-900 font-bold py-3 px-4 rounded-lg">Mejorar a Plan Grow</a>
+            </div>
+            <div class="mt-auto">
+                 <a href="/superadmin.html" id="superadmin-link" class="hidden nav-link text-sm flex items-center gap-3 px-4 py-2 rounded-md hover:bg-slate-700 transition-colors"><i data-lucide="shield"></i>Super Admin</a>
+                 <a href="#" class="nav-link text-sm flex items-center gap-3 px-4 py-2 rounded-md hover:bg-slate-700 transition-colors" data-target="settings"><i data-lucide="settings"></i>Configuración</a>
+                 <a href="https://wa.me/5219995169313" target="_blank" class="flex items-center gap-3 px-4 py-2 rounded-md text-xs text-slate-400 hover:bg-slate-700 transition-colors mt-2">
+                    <i data-lucide="life-buoy" class="w-4 h-4"></i>Soporte
+                 </a>
+                 <a href="#" id="logout-btn" class="flex items-center gap-3 px-4 py-2 rounded-md text-red-400 hover:bg-red-500 hover:text-white transition-colors mt-2"><i data-lucide="log-out"></i>Cerrar Sesión</a>
+            </div>
+            <div class="border-t border-slate-700 mt-4 pt-4 text-center">
+                <p id="user-business-name" class="font-semibold text-white truncate">Cargando...</p>
+                <span id="user-plan-badge" class="text-xs font-semibold px-2 py-0.5 rounded-full mt-1.5"></span>
+            </div>
+        </aside>
+
+        <!-- Contenido principal -->
+        <main class="flex-1 p-4 sm:p-5 lg:p-6 overflow-y-auto pb-24">
+
+            <!-- Panel del Dashboard (activo por defecto) -->
+            <div id="dashboard" class="content-panel active">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Columna principal (Métricas y Tutoriales) -->
+                    <div class="lg:col-span-2 space-y-8 order-1">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-4">Resumen del Embudo (Últimos 30 días)</h2>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                <div class="stat-card bg-white p-4 rounded-xl shadow-md text-center">
+                                    <h4 class="font-semibold text-slate-500 text-sm">Nuevos Leads</h4>
+                                    <p id="funnel-leads-stat" class="text-3xl font-bold mt-2">0</p>
+                                </div>
+                                <div class="stat-card bg-white p-4 rounded-xl shadow-md text-center">
+                                    <h4 class="font-semibold text-slate-500 text-sm">Interesados</h4>
+                                    <p id="funnel-interested-stat" class="text-3xl font-bold mt-2">0</p>
+                                </div>
+                                <div class="stat-card bg-white p-4 rounded-xl shadow-md text-center">
+                                    <h4 class="font-semibold text-slate-500 text-sm">Clientes Ganados</h4>
+                                    <p id="funnel-won-stat" class="text-3xl font-bold mt-2">0</p>
+                                </div>
+                                <div class="stat-card bg-green-50 p-4 rounded-xl shadow-md text-center border border-green-200">
+                                    <h4 class="font-semibold text-green-800 text-sm">Tasa de Conversión</h4>
+                                    <p id="funnel-conversion-stat" class="text-3xl font-bold text-green-600 mt-2">0%</p>
+                                </div>
+                            </div>
+
+                            <h2 class="text-2xl font-bold mb-4">Métricas de Valor</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="stat-card bg-white p-4 rounded-xl shadow-md">
+                                    <h4 class="font-bold text-slate-800 mb-2">Mensajes Respondidos por IA</h4>
+                                    <div class="h-48"><canvas id="responses-chart"></canvas></div>
+                                </div>
+                                <div class="stat-card bg-white p-4 rounded-xl shadow-md">
+                                    <h4 class="font-bold text-slate-800 mb-2">Tiempo Ahorrado (minutos)</h4>
+                                    <div class="h-48"><canvas id="time-saved-chart"></canvas></div>
+                                </div>
+                            </div>
+                            <!-- INICIO: Botón para el Asistente de Configuración -->
+                            <div class="mt-8 text-center">
+                                <button id="start-wizard-btn" class="bg-green-500 text-white font-bold py-4 px-8 rounded-lg hover:bg-green-600 transition-transform duration-300 ease-in-out shadow-lg animate-pulse-green">
+                                    <i data-lucide="wand-2" class="inline-block w-5 h-5 mr-2"></i>
+                                    Configura tu IA (Recomendado)
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <!-- Columna Lateral (Prompt y conexión) -->
+                    <!-- INICIO: Columna lateral reorganizada -->
+                    <div class="space-y-6 order-2">
+                        <div id="whatsapp-card" class="bg-white p-4 rounded-xl shadow-md">
+                            <h3 class="text-xl font-bold mb-4">Conexión WhatsApp</h3>
+                            <div id="whatsapp-connection-container" class="text-center"></div>
+                            <button id="request-qr-btn" class="mt-4 w-full bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300 transition">
+                                Solicitar QR
+                            </button>
+                            <p class="text-xs text-slate-400 mt-2 text-center">El QR se actualiza cada 40 segundos.</p>
+                        </div>
+                        <div id="tutorials-card" class="bg-white p-4 rounded-xl shadow-md">
+                            <h3 class="text-xl font-bold mb-4">Tutoriales</h3>
+                            <p class="text-sm text-slate-500 mb-3">Aprende a sacar el máximo provecho de Elina.</p>
+                            <!-- INICIO: Video incrustado -->
+                            <div class="relative w-full aspect-video rounded-lg overflow-hidden shadow-inner">
+                                <iframe
+                                    id="yt-player-small"
+                                    class="absolute top-0 left-0 w-full h-full"
+                                    src="https://www.youtube.com/embed/videoseries?list=PLDs44uukbe3FIDa9CttQLh8N-Nfdpo_hG"
+                                    title="Tutoriales ELINA IA"
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowfullscreen></iframe>
+                            </div>
+                            <button id="open-tutorials-btn" class="mt-3 w-full bg-blue-100 text-blue-700 font-semibold py-2 px-4 rounded-lg hover:bg-blue-200">Ver en Grande</button>
+                        </div>
+                    </div>
+                    <!-- FIN: Columna lateral reorganizada -->
+
+                    <!-- Configuración de IA (ahora ancho completo) -->
+<div class="col-span-1 lg:col-span-3 order-3 bg-white p-4 rounded-xl shadow-md max-w-none">
+  <h3 class="text-2xl font-bold mb-4">Configuración de IA</h3>
+
+  <form id="prompt-form" class="space-y-4">
+    <div>
+      <div class="flex justify-between items-center mb-2">
+          <label for="ai-master-prompt" class="block font-medium">Prompt del Asistente</label>
+          <button type="button" id="remake-prompt-btn" class="text-xs bg-blue-100 text-blue-700 font-semibold py-1 px-2 rounded-md hover:bg-blue-200 flex items-center gap-1">
+              <i data-lucide="refresh-cw" class="w-3 h-3"></i> Rehacer mi Prompt
+          </button>
+          <button type="button" id="main-prompt-ai-enhance-btn" class="text-xs bg-purple-100 text-purple-700 font-semibold py-1 px-2 rounded-md hover:bg-purple-200 flex items-center gap-1">
+              <i data-lucide="sparkles" class="w-3 h-3"></i> Mejorar con IA
+          </button>
+      </div>
+      <textarea
+        id="ai-master-prompt"
+        rows="10"
+        class="w-full border-slate-300 rounded-lg p-3 min-h-40 lg:min-h-56 resize-y"
+        placeholder="Describe aquí la personalidad y objetivos de tu asistente de IA..."></textarea>
+    </div>
+
+    <!-- Modal para definir colores de etiquetas detectadas -->
+    <div id="new-labels-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 px-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
+            <div class="flex items-start justify-between p-6 border-b border-slate-200">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900">Configura tus Etiquetas</h3>
+                    <p class="text-sm text-slate-500 mt-1">Elige un color para cada etiqueta detectada en el archivo.</p>
+                </div>
+                <button id="close-new-labels-btn" class="text-slate-400 hover:text-slate-600" aria-label="Cerrar">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="px-6 pt-4 pb-6 overflow-y-auto">
+                <div class="overflow-x-auto rounded-lg border border-slate-200">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide">
+                            <tr>
+                                <th class="px-4 py-3">Etiqueta</th>
+                                <th class="px-4 py-3">Color</th>
+                            </tr>
+                        </thead>
+                        <tbody id="new-labels-table-body" class="divide-y divide-slate-200 bg-white text-sm"></tbody>
+                    </table>
+                </div>
+                <div id="new-labels-error" class="hidden mt-4 text-sm font-medium text-red-500"></div>
+            </div>
+            <div class="flex justify-end gap-3 px-6 pb-6 border-t border-slate-200 bg-slate-50">
+                <button id="cancel-new-labels-btn" class="py-2 px-4 rounded-lg font-semibold text-slate-700 bg-slate-200 hover:bg-slate-300">Cancelar</button>
+                <button id="confirm-new-labels-btn" class="py-2 px-4 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700">Guardar etiquetas</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex justify-between items-center">
+      <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">
+        Guardar
+      </button>
+      <button type="button" id="prompt-help-btn" class="text-sm text-slate-500 hover:underline">Ayuda</button>
+    </div>
+  </form>
+</div>
+
+<!-- INICIO: Modal de Ayuda para el Prompt -->
+<div id="prompt-help-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[95] p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+        <div class="p-5 border-b flex justify-between items-center">
+            <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="help-circle" class="text-blue-500"></i>Guía para un Prompt Poderoso</h3>
+            <button id="close-prompt-help-btn" class="p-2 rounded-full hover:bg-slate-100"><i data-lucide="x" class="w-6 h-6 text-slate-600"></i></button>
+        </div>
+        <div class="flex-grow overflow-y-auto p-8 space-y-6 text-slate-700">
+            <p>El "prompt" es el cerebro de tu asistente. Son las instrucciones que Elina seguirá en cada conversación. Un buen prompt es la clave para que actúe como un experto de tu negocio.</p>
+            
+            <h4 class="text-lg font-semibold text-slate-800 pt-4 border-t">Elementos Clave de un Buen Prompt:</h4>
+            <ul class="list-disc list-inside space-y-2">
+                <li><strong>Rol y Personalidad:</strong> Define quién es. ¿Es un "asistente de ventas amigable", un "experto técnico formal"?</li>
+                <li><strong>Contexto del Negocio:</strong> Explica brevemente qué hace tu empresa, a quién le vende y qué problema resuelve.</li>
+                <li><strong>Reglas y Límites:</strong> ¿Qué NUNCA debe hacer? (Ej: "Nunca dar precios sin preguntar primero el presupuesto"). ¿Qué SIEMPRE debe hacer? (Ej: "Siempre pedir el nombre del cliente").</li>
+                <li><strong>Tono de Comunicación:</strong> ¿Debe usar emojis? ¿Ser muy formal? ¿Hablar de "tú" o de "usted"?</li>
+            </ul>
+
+            <h4 class="text-lg font-semibold text-slate-800 pt-4 border-t">Ejemplo de un Prompt Ganador:</h4>
+            <pre class="bg-slate-100 p-4 rounded-lg text-sm whitespace-pre-wrap font-mono">Eres un asistente de ventas para "Soluciones Solares MX", una empresa que instala paneles solares para hogares. Tu tono debe ser amigable y educativo. Tu objetivo es calificar al cliente obteniendo su nombre, ciudad y un estimado de su gasto de luz bimestral. NUNCA des un precio final, en su lugar, explica que se necesita una visita técnica y ofrece agendarla. Siempre termina tus mensajes con un emoji de sol ☀️.</pre>
+        </div>
+    </div>
+</div>
+                </div>
+            </div>
+
+            <!-- Panel de Contactos -->
+            <div id="contacts" class="content-panel">
+                <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-2xl sm:text-3xl font-bold">Contactos</h2>
+                        <span id="contacts-count-badge" class="hidden bg-slate-200 text-slate-600 text-sm font-semibold px-2.5 py-1 rounded-full">0</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="search" id="contact-search-input" placeholder="Buscar..." class="form-input w-full sm:w-auto py-2.5 rounded-lg border-slate-300 text-sm">
+                        <div class="custom-select-wrapper">
+                            <!-- CORRECCIÓN: El select ahora es más simple, las clases se aplican desde JS -->
+                            <select id="contact-label-filter" class="custom-select form-input w-full sm:w-auto py-2.5 rounded-lg border-slate-300 text-sm pr-8"></select>
+                            <i data-lucide="chevron-down" class="select-icon w-5 h-5 text-slate-400"></i>
+                        </div>
+                        <button id="export-contacts-btn" class="bg-slate-200 text-slate-800 font-semibold py-1.5 px-2.5 rounded-md hover:bg-slate-300 transition text-xs flex items-center justify-center gap-1.5">
+                            <i data-lucide="download" class="w-3 h-3"></i><span>Exportar Contactos</span>
+                        </button>
+                        <button id="import-contacts-btn" class="bg-blue-100 text-blue-700 font-semibold py-1.5 px-2.5 rounded-md hover:bg-blue-200 transition text-xs flex items-center justify-center gap-1.5">
+                            <i data-lucide="upload" class="w-3 h-3"></i><span>Importar Contactos (CSV/XLSX)</span>
+                        </button>
+                        <input type="file" id="import-contacts-input" class="hidden" accept=".csv,.xlsx,.xls">
+                        <button id="sync-contacts-btn" class="bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i><span>Sincronizar</span>
+                        </button>
+                    </div>
+                </div>
+
+<!-- Contenedor para mensajes de estado -->
+<div id="contacts-status-container" class="mb-4">
+    <!-- Los mensajes de estado se insertarán aquí -->
+</div>
+
+<!-- Tabla -->
+<div class="bg-white rounded-xl shadow-md overflow-x-auto">
+  <table class="w-full text-left">
+    <thead class="bg-slate-50">
+        <tr>
+            <th class="p-4 w-12"><input type="checkbox" id="select-all-contacts" class="form-checkbox rounded"></th>
+            <th class="p-4 font-semibold cursor-pointer hover:bg-slate-100" data-sort="full_name">Nombre <span class="sort-indicator inline-block ml-1"><i data-lucide="arrow-up-down" class="w-3 h-3 text-slate-400"></i></span></th>
+            <th class="p-4 font-semibold cursor-pointer hover:bg-slate-100" data-sort="phone_number">Teléfono <span class="sort-indicator inline-block ml-1"><i data-lucide="arrow-up-down" class="w-3 h-3 text-slate-400"></i></span></th>
+            <th class="p-4 font-semibold cursor-pointer hover:bg-slate-100" data-sort="labels">Etiquetas <span class="sort-indicator inline-block ml-1"><i data-lucide="arrow-up-down" class="w-3 h-3 text-slate-400"></i></span></th>
+            <th class="p-4 font-semibold">Ignorar IA</th>
+            <th class="p-4 font-semibold">Info IA</th>
+            <th class="p-4 font-semibold">Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="contacts-table-body" class="divide-y divide-slate-200">
+      <!-- filas dinámicas -->
+    </tbody>
+  </table>
+
+    <!-- Loader para carga inicial -->
+    <div id="contacts-loader" class="p-8 text-center text-slate-500">
+        Cargando...
+    </div>
+
+    <!-- Paginación -->
+    <div id="contacts-pagination" class="flex justify-between items-center mt-4"></div>
+</div>
+
+<!-- Barra de acciones en lote (inicialmente oculta) -->
+<div id="bulk-actions-bar" class="hidden fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white py-3 px-6 rounded-full shadow-lg flex items-center gap-4 z-20">
+    <span id="selected-count">0 seleccionados</span>
+    <button id="bulk-edit-labels-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full text-sm">Gestionar Etiquetas</button>
+</div>
+
+<!-- Nota visual -->
+<p class="text-xs text-slate-500 mt-3">
+  • <b>Ignorar IA</b> se prende si el contacto tiene la etiqueta <code>ignorar</code>.<br>
+  • La etiqueta <code>todos</code> no se muestra aquí (solo se usa en Envío Masivo).<br>
+  • Puedes editar etiquetas con el botón “Editar etiquetas”.
+</p>
+            </div>
+
+            <!-- Otros paneles -->
+            <div id="bulk-sending" class="content-panel">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 order-1">
+                        <h2 class="text-3xl font-bold mb-6">Crear Envío Masivo</h2>
+                        <form id="bulk-send-form" class="bg-white rounded-xl shadow-md p-8 space-y-6">
+                            <!-- Mensaje -->
+                            <div>
+                                <label for="bulk-message" class="block font-medium mb-2">Mensaje</label>
+                                <div class="flex justify-end mb-2">
+                                    <button type="button" id="bulk-ai-enhance-btn" class="text-xs bg-purple-100 text-purple-700 font-semibold py-1 px-2 rounded-md hover:bg-purple-200 flex items-center gap-1">
+                                        <i data-lucide="sparkles" class="w-3 h-3"></i> Mejorar con IA
+                                    </button>
+                                </div>
+                                <div class="relative">
+                                    <textarea id="bulk-message" rows="8" class="w-full border-slate-300 rounded-lg p-3 pr-12 resize-y" placeholder="Escribe tu mensaje aquí... 🚀" required></textarea>
+                                </div>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <button type="button" id="personalize-name-btn" class="text-sm bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-1 px-3 rounded-md">
+                                        <i data-lucide="user-plus" class="w-4 h-4 inline-block mr-1"></i>
+                                        Insertar Nombre
+                                    </button>
+                                    <p class="text-xs text-slate-500">Usa `%nombre%` para personalizar el mensaje.</p>
+                                </div>
+                            </div>
+
+                            <!-- Carga de Archivo -->
+                            <div>
+                                <label class="block font-medium mb-2">Adjuntar Archivo (Opcional)</label>
+                                <div id="file-drop-zone" class="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50">
+                                    <i data-lucide="upload-cloud" class="w-12 h-12 mx-auto text-slate-400"></i>
+                                    <p class="mt-2 text-slate-500">Arrastra un archivo o <span class="text-blue-600 font-semibold">haz clic para seleccionar</span></p>
+                                    <p class="text-xs text-slate-400 mt-1">Imágenes, videos o audios. Máx 10MB.</p>
+                                    <input type="file" id="bulk-file-input" class="hidden" accept="image/*,video/*,audio/*">
+                                </div>
+                                <div id="file-preview" class="hidden mt-4">
+                                    <!-- Vista previa de la imagen -->
+                                    <img id="file-image-preview" class="hidden max-h-40 rounded-lg mx-auto mb-2" alt="Vista previa del archivo">
+                                    <!-- Info del archivo genÃ©rico -->
+                                    <div class="flex items-center justify-between bg-slate-100 p-3 rounded-lg">
+                                        <div class="flex items-center gap-3 overflow-hidden">
+                                            <i data-lucide="file-check" class="text-green-500 flex-shrink-0"></i>
+                                            <span id="file-name" class="text-sm font-medium truncate"></span>
+                                        </div>
+                                        <button type="button" id="remove-file-btn" class="text-red-500 hover:bg-red-100 p-1 rounded-full flex-shrink-0">
+                                            <i data-lucide="x" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Audiencia -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="include-labels" class="block font-medium mb-2">¿A quién se lo enviamos?</label>
+                                    <div class="custom-select-wrapper">
+                                        <select id="include-labels" class="custom-select form-input w-full py-3"></select>
+                                        <i data-lucide="chevron-down" class="select-icon w-5 h-5 text-slate-400"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="exclude-labels" class="block font-medium mb-2">Excluir a (opcional)</label>
+                                    <div class="custom-select-wrapper">
+                                        <select id="exclude-labels" class="custom-select form-input w-full py-3"></select>
+                                        <i data-lucide="chevron-down" class="select-icon w-5 h-5 text-slate-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botón de Envío -->
+                            <div class="pt-4 border-t flex items-center gap-4">
+                                <button type="submit" id="bulk-submit-btn" class="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                                    <span class="button-text">Enviar Campaña</span>
+                                    <div class="loading-spinner hidden animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                </button>
+                                <button type="button" id="bulk-test-btn" class="w-auto bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                                    <i data-lucide="flask-conical" class="w-5 h-5"></i>
+                                    <span>Probar</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Columna de Ayuda y Notas -->
+                    <div class="space-y-6 order-2">
+                        <div class="bg-amber-100 border-l-4 border-amber-500 text-amber-800 p-4 rounded-r-lg">
+                            <h4 class="font-bold">¡Importante! Uso responsable</h4>
+                            <p class="text-sm mt-2">El envío masivo puede resultar en el bloqueo de tu número si no se usa con cuidado. Te recomendamos enviar mensajes solo a contactos que esperan noticias tuyas. Hemos limitado los envíos a 100 mensajes por día y una campaña a la vez para proteger tu cuenta.</p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-md p-4">
+                            <h4 class="font-bold mb-2">Video Tutorial</h4>
+                            <iframe class="w-full aspect-video rounded-lg" src="https://www.youtube.com/embed/UPvbbiiOCao" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; compute-pressure" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenedor para el panel de Etiquetas IA. Se cargará dinámicamente. -->
+            <div id="smart-labels" class="content-panel max-w-5xl mx-auto"></div>
+
+            <!-- Contenedor para el panel Kanban. Se cargará dinámicamente. -->
+            <div id="kanban" class="content-panel" data-html-source="kanban.html"></div>
+
+            <!-- Contenedor para el panel de Seguimientos. Se cargará dinámicamente. -->
+            <div id="follow-ups" class="content-panel max-w-5xl mx-auto"></div>
+
+            <div id="templates" class="content-panel max-w-5xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl sm:text-3xl font-bold">Plantillas de Mensajes</h2>
+                    <button id="add-template-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">
+                        <i data-lucide="plus" class="inline-block w-4 h-4 mr-1"></i> Nueva Plantilla
+                    </button>
+                </div>
+
+                <!-- Plantillas Base -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">Plantillas Base</h3>
+                    <div id="base-templates-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Las plantillas base se renderizarán aquí -->
+                    </div>
+                </div>
+
+                <!-- Plantillas Personalizadas -->
+                <div>
+                    <!-- Formulario para nueva plantilla (oculto por defecto) -->
+                    <div id="new-template-form-container" class="hidden bg-white p-4 rounded-lg shadow mb-4">
+                        <form id="new-template-form" class="space-y-3">
+                            <input type="text" id="new-template-name" placeholder="Nombre de la plantilla" required class="form-input w-full border-slate-300 rounded-lg">
+                            <textarea id="new-template-content" rows="3" placeholder="Contenido del mensaje... (puedes usar %nombre%)" required class="w-full border-slate-300 rounded-lg p-2"></textarea>
+                            <div class="flex justify-end gap-2">
+                                <button type="button" id="cancel-new-template-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">Cancelar</button>
+                                <button type="submit" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">Guardar Plantilla</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-4">Mis Plantillas</h3>
+                    <div id="custom-templates-container" class="space-y-4">
+                        <!-- Las plantillas personalizadas se renderizarán aquí -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="products" class="content-panel max-w-6xl mx-auto">
+                <div class="flex justify-between items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl sm:text-3xl font-bold">Productos</h2>
+                        <p id="products-count" class="text-sm text-slate-500 mt-1">0 productos</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <button id="add-product-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Nuevo Producto
+                        </button>
+                        <button id="download-template-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300 flex items-center gap-2" title="Descargar plantilla para importación masiva">
+                            <i data-lucide="download" class="w-3 h-3"></i> Descargar Plantilla
+                        </button>
+                        <button id="export-products-btn" class="bg-amber-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-amber-600 flex items-center gap-2">
+                            <i data-lucide="share" class="w-4 h-4"></i> Exportar Productos
+                        </button>
+                        <label class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 cursor-pointer flex items-center gap-2">
+                            <i data-lucide="upload" class="w-3 h-3"></i> Importar CSV
+                            <input type="file" id="import-csv-input" class="hidden" accept=".csv">
+                        </label>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50">
+                            <tr><th class="p-4 font-semibold">Nombre</th><th class="p-4 font-semibold">SKU</th><th class="p-4 font-semibold">Precio</th><th class="p-4 font-semibold">Disponibilidad</th><th class="p-4 font-semibold">Media</th><th class="p-4 font-semibold">Acciones</th></tr>
+                        </thead>
+                        <tbody id="products-table-body" class="divide-y divide-slate-200"></tbody>
+                    </table>
+                    <div id="products-loader" class="p-8 text-center text-slate-500">Cargando productos...</div>
+                </div>
+            </div>
+
+            <!-- Contenedor para el panel de Chats. Se cargará dinámicamente. -->
+            <div id="chats" class="content-panel h-full"></div>
+
+            <div id="calendar" class="content-panel"> 
+                <h2 class="text-2xl sm:text-3xl font-bold mb-6">Calendario de Citas</h2>
+                <div class="bg-white rounded-xl shadow-md p-6 text-center">
+                    <i data-lucide="construction" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
+                    <h3 class="text-xl font-bold">Próximamente</h3>
+                    <p class="text-slate-500 mt-2">Gestiona tu agenda y permite que Elina agende citas por ti.</p>
+                </div>
+            </div>
+            <div id="community-manager" class="content-panel">
+                <h2 class="text-2xl sm:text-3xl font-bold mb-6">Community Manager IA</h2>
+                <div class="bg-white rounded-xl shadow-md p-6 text-center">
+                    <i data-lucide="construction" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
+                    <h3 class="text-xl font-bold">Próximamente</h3>
+                    <p class="text-slate-500 mt-2">Automatiza la creación y publicación de contenido en tus redes sociales.</p>
+                </div>
+            </div>
+            <div id="designer-ai" class="content-panel pb-16">
+                <h2 class="text-2xl sm:text-3xl font-bold mb-6">Diseñador Gráfico IA</h2>
+                <div id="designer-ai-access-denied" class="hidden bg-white rounded-xl shadow-md p-8 text-center">
+                    <i data-lucide="lock" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
+                    <h3 class="text-xl font-bold">Función Exclusiva del Plan Grow</h3>
+                    <p class="text-slate-500 mt-2 max-w-md mx-auto">Crea imágenes publicitarias únicas para tus campañas con el poder de la IA. ¡Desbloquea esta función mejorando tu plan!</p>
+                    <button id="upgrade-to-grow-from-designer" class="mt-6 bg-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-700">
+                        Mejorar a Plan Grow
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Columna de generación y resultado -->
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md space-y-6">
+                        <h3 class="text-xl font-bold">1. Define el Contenido de tu Imagen</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label class="block text-sm font-medium">Mensaje Principal (Texto a incluir)</label><textarea id="design-main-message" rows="2" class="form-input w-full mt-1" placeholder="Ej: 50% de descuento"></textarea></div>
+                            <div><label class="block text-sm font-medium">Texto que lo acompaña</label><textarea id="design-sub-text" rows="2" class="form-input w-full mt-1" placeholder="Ej: Solo esta semana"></textarea></div>
+                            <div><label class="block text-sm font-medium">Estilo Visual</label><textarea id="design-style" rows="2" class="form-input w-full mt-1" placeholder="Ej: Minimalista, colores pastel, fondo de madera"></textarea></div>
+                            <div><label class="block text-sm font-medium">Precio (Opcional)</label><input type="text" id="design-price" class="form-input w-full mt-1" placeholder="Ej: Antes $999, ahora $499"></div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Imágenes de Referencia (Máx. 3)</label>
+                            <div id="design-reference-selector" class="grid grid-cols-4 md:grid-cols-6 gap-2">
+                                <!-- Imágenes de referencia de settings y nuevas se cargarán aquí -->
+                            </div>
+                            <button id="design-add-temp-ref" class="text-sm text-blue-600 hover:underline mt-2">Añadir referencia temporal</button>
+                            <input type="file" id="design-temp-ref-input" class="hidden" multiple accept="image/*">
+                        </div>
+                        
+                        <div>
+                            <label for="design-final-prompt" class="block text-sm font-medium">Prompt Final para la IA (Editable)</label>
+                            <textarea id="design-final-prompt" rows="4" class="form-input w-full mt-1 bg-slate-50 text-sm" placeholder="El prompt para la IA se generará aquí..."></textarea>
+                            <p class="text-xs text-slate-400 mt-1">Este es el texto exacto que se enviará a la IA. Puedes editarlo para refinar el resultado.</p>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-4 border-t">
+                            <div class="flex items-center gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium">Formato</label>
+                                        <div class="custom-select-wrapper mt-1">
+                                            <select id="design-aspect-ratio" class="custom-select form-input">
+                                                <option value="1024x1024">Cuadrado (1:1)</option>
+                                                <option value="1792x1024">Horizontal (16:9)</option>
+                                                <option value="1024x1792">Vertical (9:16)</option>
+                                            </select>
+                                            <i data-lucide="chevron-down" class="select-icon w-5 h-5 text-slate-400"></i>
+                                        </div>
+                                </div>
+                                <div class="pt-6">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" id="design-include-logo" class="form-checkbox h-5 w-5 rounded text-purple-600" checked>
+                                        <span class="text-sm font-medium">Incluir Logo</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <button id="generate-design-btn" class="bg-purple-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-purple-700">Generar Imagen</button>
+                        </div>
+                    </div>
+                    <!-- Columna de resultado -->
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <h3 class="text-xl font-bold mb-4">2. Resultado</h3>
+                        <div id="design-result-container" class="bg-slate-100 aspect-square rounded-lg flex items-center justify-center text-slate-400 cursor-pointer" title="Haz clic para ver más grande">
+                            <i data-lucide="image" class="w-16 h-16"></i>
+                        </div>
+                        <button id="design-download-btn" class="hidden mt-4 w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
+                            <i data-lucide="download"></i> Descargar
+                        </button>
+                        <div class="mt-4 bg-slate-50 rounded-lg p-3 text-center">
+                             <h4 class="font-bold text-sm mb-1">Uso Mensual</h4>
+                             <p class="text-xs text-slate-600">Imágenes generadas: <span id="image-generation-usage" class="font-bold">0 / 0</span></p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Galería de Imágenes Generadas -->
+                <div id="gallery-section" class="mt-8 bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xl font-bold mb-4">Mi Galería</h3>
+                    <div id="design-gallery" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+                    <div id="gallery-pagination" class="flex justify-center items-center gap-4 mt-6"></div>
+                </div>
+            </div>
+
+            <div id="settings" class="content-panel max-w-4xl mx-auto">
+                <h2 class="text-2xl sm:text-3xl font-bold mb-6">Configuración</h2>
+                <form id="settings-form" class="bg-white p-8 rounded-xl shadow-md space-y-8 max-w-4xl mx-auto">
+                    <!-- Horario Laboral -->
+                    <div>
+                        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Horario de Atención</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">                            
+                            <div><label for="work-start-hour" class="block text-sm font-medium text-slate-700">Hora de Apertura</label><input type="time" id="work-start-hour" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+                            <div><label for="work-end-hour" class="block text-sm font-medium text-slate-700">Hora de Cierre</label><input type="time" id="work-end-hour" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+                        </div>
+                         <p class="text-xs text-slate-500 mt-2">Define las horas en las que Elina enviará seguimientos automáticos.</p>
+                    </div>
+
+                    <!-- Información de la Empresa -->
+                    <div>
+                        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Información de la Empresa</h3>
+                        <label for="company-description" class="block text-sm font-medium text-slate-700">Descripción General</label>
+                        <textarea id="company-description" rows="5" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm" placeholder="Ej: Somos una agencia de marketing digital en CDMX..."></textarea>
+                        <p class="text-xs text-slate-500 mt-2">La IA usará esto para entender mejor tu negocio y responder preguntas generales.</p>
+                    </div>
+
+                    <!-- Contacto y Redes -->
+                    <div>
+                        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Contacto y Redes Sociales</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label for="website" class="block text-sm font-medium text-slate-700">Sitio Web</label><input type="text" id="website" placeholder="tuempresa.com" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+                            <!-- INICIO: Campo de teléfono del administrador -->
+                            <div>
+                                <label for="admin-phone-number" class="block text-sm font-medium text-slate-700 mb-1">Teléfono del Administrador</label>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <input type="tel" id="admin-phone-input" class="form-input w-full border-slate-300 rounded-lg">
+                                </div>
+                            </div>
+                            <!-- FIN: Campo de teléfono del administrador -->
+                            <div><label for="social-instagram" class="block text-sm font-medium text-slate-700">Instagram</label><input type="text" id="social-instagram" placeholder="tu_usuario_de_instagram" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+                            <div><label for="social-facebook" class="block text-sm font-medium text-slate-700">Facebook</label><input type="text" id="social-facebook" placeholder="tu_pagina_de_facebook" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+                        </div>
+                    </div>
+
+                    <!-- Branding y Activos Visuales -->
+                    <div>
+                        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Branding y Activos Visuales</h3>
+                        <div class="space-y-6">
+                            <!-- Logo -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Logo de la Empresa</label>
+                                <div class="flex items-center gap-4">
+                                    <img id="logo-preview" src="https://placehold.co/100x100/e2e8f0/475569?text=Logo" alt="Vista previa del logo" class="w-24 h-24 rounded-lg object-contain bg-slate-100 p-1">
+                                    <input type="file" id="logo-input" class="hidden" accept="image/png, image/jpeg, image/webp, image/svg+xml">
+                                    <button type="button" id="upload-logo-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">Cambiar Logo</button>
+                                </div>
+                            </div>
+                            <!-- Paleta de Colores -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Paleta de Colores de Marca</label>
+                                <div class="flex gap-4">
+                                    <input type="color" id="brand-color-1" value="#3b82f6" class="h-12 w-full rounded-lg cursor-pointer">
+                                    <input type="color" id="brand-color-2" value="#10b981" class="h-12 w-full rounded-lg cursor-pointer">
+                                    <input type="color" id="brand-color-3" value="#f97316" class="h-12 w-full rounded-lg cursor-pointer">
+                                    <input type="color" id="brand-color-4" value="#1e293b" class="h-12 w-full rounded-lg cursor-pointer">
+                                </div>
+                            </div>
+                            <!-- Tipografía -->
+                            <div>
+                                <label for="brand-font" class="block text-sm font-medium text-slate-700">Tipografía de Marca</label>
+                                <div class="custom-select-wrapper mt-1">
+                                    <select id="brand-font" class="custom-select form-input">
+                                        <option>Poppins</option><option>Roboto</option><option>Lato</option><option>Montserrat</option><option>Oswald</option><option>Open Sans</option>
+                                    </select>
+                                    <i data-lucide="chevron-down" class="select-icon w-5 h-5 text-slate-400"></i>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-2">Por el momento no podemos cargar fuentes personalizadas, pero tenemos un amplio catálogo para que elijas.</p>
+                            </div>
+                            <!-- Imágenes de Referencia -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Imágenes de Referencia para IA</label>
+                                <div id="reference-images-container" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                                    <!-- Las imágenes existentes se cargarán aquí -->
+                                    <div id="add-ref-image-slot" class="aspect-square bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-slate-200 hover:border-slate-400">
+                                        <i data-lucide="plus" class="w-8 h-8 text-slate-400"></i>
+                                    </div>
+                                </div>
+                                <input type="file" id="reference-image-input" class="hidden" accept="image/png, image/jpeg, image/webp" multiple>
+                                <p class="text-xs text-slate-500 mt-2">Sube hasta 3 imágenes. La IA las tomará como referencia para tus diseños gráficos.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gestión de Equipo (Solo para Admins) -->
+                    <div id="team-management-panel" class="hidden">
+                        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Gestión de Equipo</h3>
+                        <div class="bg-slate-50 p-6 rounded-lg">
+                            <h4 class="font-semibold mb-2">Invitar Nuevo Miembro</h4>
+                            <p class="text-sm text-slate-600 mb-4">La persona recibirá un correo para crear su cuenta y unirse a tu equipo.</p>
+                            <form id="invite-member-form" class="flex items-center gap-2">
+                                <input type="email" id="invite-email" placeholder="correo@ejemplo.com" required class="form-input w-full border-slate-300 rounded-lg text-sm">
+                                <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 whitespace-nowrap">Invitar</button>
+                            </form>
+                        </div>
+                        <div class="mt-6">
+                            <h4 class="font-semibold mb-2">Miembros del Equipo</h4>
+                            <div id="team-members-list" class="space-y-3">
+                                <!-- La lista de miembros y sus permisos se renderizará aquí -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-5">
+                        <button type="button" id="settings-save-safe-btn" data-settings-primary="true" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50">Guardar Seguro</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para Editar Etiquetas (inicialmente oculto) -->
+    <div id="edit-labels-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6 border-b">
+                <h3 class="text-xl font-bold">Gestionar Etiquetas</h3>
+            </div>
+            <div id="labels-list" class="p-6 max-h-60 overflow-y-auto">
+                <!-- Lista de etiquetas se renderizarÃ¡ aquÃ­ -->
+                <div class="text-center text-slate-500">Cargando etiquetas...</div>
+            </div>
+            <div class="p-6 border-t">
+                <form id="new-label-form" class="flex items-center gap-2">
+                    <input type="text" id="new-label-name" placeholder="Crear nueva etiqueta..." class="form-input w-full border-slate-300 rounded-lg text-sm">
+                    <input type="color" id="new-label-color" value="#38bdf8" class="h-9 w-12 rounded-lg cursor-pointer">
+                    <button type="submit" class="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700">
+                        <i data-lucide="plus"></i>
+                    </button>
+                </form>
+            </div>
+            <div class="p-6 bg-slate-50 flex justify-end gap-3 rounded-b-lg">
+                <button id="cancel-labels-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">Cancelar</button>
+                <button id="save-labels-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Mejora con IA -->
+    <div id="ai-enhance-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+            <div class="p-6 border-b">
+                <h3 class="text-xl font-bold">Mejorar con IA</h3>
+                <p class="text-sm text-slate-500">Usos restantes este mes: <span id="ai-uses-left" class="font-semibold">0/0</span></p>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label for="ai-original-text" class="block text-sm font-medium text-slate-600">Texto Original</label>
+                    <textarea id="ai-original-text" rows="4" class="w-full border-slate-300 rounded-lg p-3 bg-slate-100 text-slate-700" readonly></textarea>
+                </div>
+                <div>
+                    <label for="ai-prompt-input" class="block text-sm font-medium text-slate-600">¿Qué quieres mejorar? (Opcional)</label>
+                    <input type="text" id="ai-prompt-input" placeholder="Ej: 'Hazlo más amigable', 'Añade un emoji al final'" class="form-input w-full border-slate-300 rounded-lg text-sm">
+                </div>
+                <div id="ai-result-container" class="hidden p-4 bg-green-50 border border-green-200 rounded-lg"></div>
+            </div>
+            <div class="p-6 bg-slate-50 flex justify-between items-center rounded-b-lg">
+                <button id="cancel-ai-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">Cancelar</button>
+                <div class="flex items-center gap-2">
+                    <button id="regenerate-ai-btn" class="hidden bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700">Reintentar</button>
+                    <button id="generate-ai-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Mejorar Texto</button>
+                    <button id="apply-ai-btn" class="hidden bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">Usar este texto</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Envío de Prueba -->
+    <div id="test-send-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6 border-b">
+                <h3 class="text-xl font-bold">Enviar Mensaje de Prueba</h3>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-slate-600 mb-4">Ingresa el número de teléfono al que deseas enviar la prueba. El mensaje usará "Prueba" en lugar de %nombre%.</p>
+                <div class="iti-container">
+                    <label for="test-phone-input" class="block text-sm font-medium text-slate-700 mb-2">Número de Teléfono</label>
+                    <input type="tel" id="test-phone-input" class="form-input w-full border-slate-300 rounded-lg">
+                </div>
+                <div id="test-phone-error" class="text-red-500 text-xs mt-1 hidden">Número inválido.</div>
+            </div>
+            <div class="p-6 bg-slate-50 flex justify-end gap-3 rounded-b-lg">
+                <button id="cancel-test-send-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">Cancelar</button>
+                <button id="confirm-test-send-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Enviar Prueba</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Asignar/Crear Etiqueta con IA -->
+    <div id="assign-label-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <form id="assign-label-form">
+                <div class="p-6 border-b">
+                    <h3 class="text-xl font-bold">Asignar Etiqueta con IA</h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label for="assign-label-select" class="block text-sm font-medium text-slate-700">Elige una etiqueta existente</label>
+                        <div class="custom-select-wrapper mt-1">
+                            <select id="assign-label-select" required class="custom-select form-input"></select>
+                            <i data-lucide="tag" class="select-icon w-5 h-5 text-slate-400"></i>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">O <a href="#" id="create-new-label-link" class="text-blue-600 hover:underline">crea una nueva etiqueta</a> si no la encuentras.</p>
+                    </div>
+                    <div>
+                        <label for="assign-label-condition" class="block text-sm font-medium text-slate-700">Condición para la IA</label>
+                        <div class="flex justify-end mb-1">
+                            <button type="button" id="smart-label-ai-enhance-btn" class="text-xs bg-purple-100 text-purple-700 font-semibold py-1 px-2 rounded-md hover:bg-purple-200 flex items-center gap-1">
+                                <i data-lucide="sparkles" class="w-3 h-3"></i> Mejorar con IA
+                            </button>
+                        </div>
+                        <textarea id="assign-label-condition" rows="4" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm" placeholder="Describe cuándo se debe aplicar esta etiqueta. Ej: 'Cuando el cliente pregunte por el precio y no vuelva a responder en 24 horas'." required></textarea>
+                    </div>
+                </div>
+                <div class="p-6 bg-slate-50 flex justify-end gap-3 rounded-b-lg">
+                    <button type="button" id="cancel-assign-label-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Guardar Automatización</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Nuevo Producto -->
+    <div id="new-product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                <div class="p-6 border-b">
+                    <h3 id="product-modal-title" class="text-xl font-bold">Añadir Nuevo Producto</h3>
+                </div>
+                <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                    <div>
+                        <label for="product-name" class="block text-sm font-medium text-slate-700">Nombre del Producto</label>
+                        <input type="text" id="product-name" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm">
+                    </div>
+                    <div>
+                        <label for="product-description" class="block text-sm font-medium text-slate-700">Descripción</label>
+                        <textarea id="product-description" rows="3" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></textarea>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label for="product-sku" class="block text-sm font-medium text-slate-700">SKU (Identificador Único)</label><input type="text" id="product-sku" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+                        <div><label for="product-price" class="block text-sm font-medium text-slate-700">Precio</label><input type="number" id="product-price" step="0.01" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div><label for="product-stock" class="block text-sm font-medium text-slate-700">Disponibilidad (Stock)</label><input type="number" id="product-stock" value="0" min="0" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+                        <div class="pt-6"><label class="flex items-center"><input type="checkbox" id="product-infinite-stock" class="form-checkbox h-5 w-5 rounded text-blue-600"><span class="ml-2 text-sm text-slate-600">Disponibilidad Infinita</span></label></div>
+                    </div>
+                    <div>
+                        <label for="product-media-file" class="block text-sm font-medium text-slate-700">Imagen o Video (Opcional)</label>
+                        <div class="mt-2">
+                            <img id="product-image-preview" src="" alt="Vista previa" class="hidden max-h-40 rounded-lg">
+                        </div>
+                        <input type="file" id="product-media-file" accept="image/*,video/*" class="mt-1 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </div>
+                </div>
+                <div class="p-6 bg-slate-50 flex justify-end gap-3 rounded-b-lg">
+                    <button type="button" id="cancel-product-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">Cancelar</button>
+                    <button type="submit" id="save-new-product-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50">Guardar Producto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para mapeo de columnas CSV -->
+    <div id="column-mapping-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[90] px-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
+            <div class="flex items-start justify-between p-6 border-b border-slate-200">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900">Mapeo de Columnas</h3>
+                    <p class="text-sm text-slate-500 mt-1">Elige qué columna de tu archivo corresponde a cada campo de Elina.</p>
+                </div>
+                <button id="close-column-mapping-btn" class="text-slate-400 hover:text-slate-600" aria-label="Cerrar">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="px-6 pt-4 pb-6 overflow-y-auto">
+                <div class="overflow-x-auto rounded-lg border border-slate-200">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50 text-left text-sm font-semibold text-slate-600 uppercase tracking-wide">
+                            <tr>
+                                <th class="px-4 py-3">Campo en Elina</th>
+                                <th class="px-4 py-3">Columna del CSV</th>
+                            </tr>
+                        </thead>
+                        <tbody id="column-mapping-table-body" class="divide-y divide-slate-200 bg-white text-sm"></tbody>
+                    </table>
+                </div>
+                <div id="column-mapping-error" class="hidden mt-4 text-sm font-medium text-red-500"></div>
+            </div>
+            <div class="flex justify-end gap-3 px-6 pb-6 border-t border-slate-200 bg-slate-50">
+                <button id="cancel-column-mapping-btn" class="py-2 px-4 rounded-lg font-semibold text-slate-700 bg-slate-200 hover:bg-slate-300">Cancelar</button>
+                <button id="confirm-column-mapping-btn" class="py-2 px-4 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700">Confirmar e Importar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menú de Navegación Inferior para Móvil -->
+    <div class="mobile-bottom-nav fixed bottom-0 left-0 w-full bg-slate-900 border-t border-slate-700 flex justify-around items-center px-2 py-3 z-40">
+        <a href="#" class="nav-link text-sm flex flex-col items-center text-slate-400 hover:text-white" data-target="dashboard">
+            <i data-lucide="layout-dashboard" class="w-6 h-6"></i><span class="text-xs mt-1">Dashboard</span>
+        </a>
+        <a href="/superadmin.html" id="mobile-superadmin-link" class="hidden nav-link text-sm flex flex-col items-center text-slate-400 hover:text-white">
+            <i data-lucide="shield" class="w-6 h-6"></i><span class="text-xs mt-1">Admin</span>
+        </a>
+        <a href="#" class="nav-link text-sm flex flex-col items-center text-slate-400 hover:text-white" data-target="products">
+            <i data-lucide="boxes" class="w-6 h-6"></i><span class="text-xs mt-1">Productos</span>
+        </a>
+        <a href="#" class="nav-link text-sm flex flex-col items-center text-slate-400 hover:text-white" data-target="kanban">
+            <i data-lucide="columns-3" class="w-6 h-6"></i><span class="text-xs mt-1">Kanban</span>
+        </a>
+        <a href="#" class="nav-link text-sm flex flex-col items-center text-slate-400 hover:text-white" data-target="settings">
+            <i data-lucide="settings" class="w-6 h-6"></i><span class="text-xs mt-1">Ajustes</span>
+        </a>
+        <!-- CORRECCIÓN: Botón de menú hamburguesa movido a la barra inferior -->
+        <button id="mobile-menu-btn" class="flex flex-col items-center text-slate-400 hover:text-white">
+            <i data-lucide="menu" class="w-6 h-6"></i><span class="text-xs mt-1">Menú</span>
+        </button>
+    </div>
+
+    <!-- Modal de Selección de Plan (Pricing) -->
+    <div id="pricing-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl">
+            <div class="p-6 text-center border-b">
+                <h3 class="text-2xl font-bold">Elige el Plan Perfecto para Ti</h3>
+                <p class="text-slate-500 mt-1">Tu prueba gratuita está por terminar. ¡Sigue creciendo con Elina IA!</p>
+            </div>
+            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Plan Starter -->
+                <div class="border rounded-lg p-6 flex flex-col">
+                    <h4 class="text-xl font-bold text-cyan-600">Starter</h4>
+                    <p class="plan-price text-3xl font-bold my-4">$499 <span class="text-sm font-normal text-slate-500">/mes</span></p>
+                    <ul class="space-y-2 text-slate-600 mb-auto">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i>500 Envíos Masivos</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i>5 Mejoras con IA</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i>Manejo de Productos</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i>Plantillas de Mensajes</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i>Gestión de Etiquetas</li>
+                        <li class="flex items-center gap-2"><i data-lucide="x" class="w-4 h-4 text-red-500"></i>Seguimientos Automáticos</li>
+                    </ul>
+                    <button class="upgrade-btn mt-6 w-full bg-cyan-600 text-white font-bold py-3 rounded-lg hover:bg-cyan-700" data-plan="starter">
+                        Elegir Starter
+                    </button>
+                </div>
+                <!-- Plan Grow -->
+                <div class="border-2 border-purple-500 rounded-lg p-6 flex flex-col relative">
+                    <span class="absolute top-0 -translate-y-1/2 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full">Más Popular</span>
+                    <h4 class="text-xl font-bold text-purple-600">Grow</h4>
+                    <p class="plan-price text-3xl font-bold my-4">$1499 <span class="text-sm font-normal text-slate-500">/mes</span></p>
+                    <ul class="space-y-2 text-slate-600 mb-auto">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i>1000 Envíos Masivos</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i>20 Mejoras con IA</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i>Manejo de Productos</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i>Plantillas de Mensajes</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i>Gestión de Etiquetas</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-500"></i>Seguimientos Automáticos</li>
+                    </ul>
+                    <button class="upgrade-btn mt-6 w-full bg-purple-600 text-white font-bold py-3 rounded-lg hover:bg-purple-700" data-plan="grow">
+                        Elegir Grow
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 bg-slate-50 text-center rounded-b-lg">
+                <button id="cancel-pricing-modal-btn" class="text-sm text-slate-600 hover:underline">Seguir con la prueba</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Global de Información del Contacto -->
+    <div id="contact-info-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <!-- Cabecera -->
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold">Información del Contacto</h3>
+                <button id="close-contact-info-modal-btn" class="p-2 rounded-full hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <!-- Cuerpo -->
+            <div id="contact-info-modal-body" class="p-6 space-y-4">
+                <!-- El contenido se llenará dinámicamente -->
+                <div class="text-center text-slate-500">Cargando...</div>
+            </div>
+            <!-- Pie de página con acciones -->
+            <div class="p-6 bg-slate-50 flex justify-end gap-3 rounded-b-lg">
+                <button id="contact-info-modal-labels-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">
+                    Gestionar Etiquetas
+                </button>
+                <button id="contact-info-modal-chat-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
+                    Abrir Chat
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Visor de Imágenes -->
+    <div id="image-viewer-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[80] p-4 cursor-pointer">
+        <div class="relative w-[90vw] h-[80vh] cursor-default">
+            <div id="image-viewer-content" class="w-full h-full bg-black rounded-lg overflow-hidden">
+            <!-- El contenido (imagen o iframe) se insertará aquí -->
+            </div>
+            <button id="close-image-viewer-btn" class="absolute -top-3 -right-3 bg-white text-slate-800 rounded-full p-2 shadow-lg hover:bg-slate-200 z-10 cursor-pointer">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para Galería Completa -->
+    <div id="full-gallery-modal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col">
+            <!-- Cabecera -->
+            <div class="p-4 border-b flex justify-between items-center flex-shrink-0">
+                <h3 class="text-xl font-bold text-slate-800">Mi Galería de Creaciones</h3>
+                <button id="close-full-gallery-modal-btn" class="p-2 rounded-full hover:bg-slate-100">
+                    <i data-lucide="x" class="w-6 h-6 text-slate-600"></i>
+                </button>
+            </div>
+            <!-- Cuerpo con scroll -->
+            <div id="full-gallery-content" class="p-6 flex-grow overflow-y-auto">
+                <!-- Las imágenes se insertarán aquí -->
+                <div class="text-center text-slate-500">Cargando galería...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INICIO: Modal del Asistente de Configuración -->
+    <div id="wizard-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[90] p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col">
+            <!-- Cabecera -->
+            <div class="p-5 border-b flex justify-between items-center flex-shrink-0">
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="wand-2" class="text-purple-500"></i>
+                    Asistente de Configuración de IA
+                </h3>
+                <button id="close-wizard-btn" class="p-2 rounded-full hover:bg-slate-100">
+                    <i data-lucide="x" class="w-6 h-6 text-slate-600"></i>
+                </button>
+            </div>
+            <!-- Contenido de los Pasos -->
+            <div class="flex-grow overflow-y-auto p-8">
+                <!-- Paso 1: Conectar WhatsApp -->
+                <div id="wizard-step-1" class="wizard-step hidden">
+                    <div class="text-center">
+                        <h4 class="text-2xl font-bold mb-4">Paso 1: Conecta tu WhatsApp</h4>
+                        <p class="text-slate-600 max-w-2xl mx-auto mb-6">Para que Elina pueda responder, primero necesita acceso a tu WhatsApp. Haz clic en "Solicitar QR" y escanea el código con tu celular desde <strong>WhatsApp > Dispositivos Vinculados > Vincular un dispositivo</strong>.</p>
+                        <div id="wizard-qr-container" class="bg-slate-100 rounded-lg p-4 min-h-[240px] flex items-center justify-center w-full max-w-sm mx-auto">
+                            <!-- El QR o estado de conexión se mostrará aquí -->
+                        </div>
+                        <button id="wizard-request-qr-btn" class="mt-6 bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300 transition">
+                            Solicitar QR
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Paso 2: Sincronizar Contactos -->
+                <div id="wizard-step-2" class="wizard-step hidden">
+                    <div class="text-center">
+                        <h4 class="text-2xl font-bold mb-4">Paso 2: Sincroniza tus Contactos</h4>
+                        <p class="text-slate-600 max-w-2xl mx-auto mb-6">Ahora, vamos a importar tus contactos de WhatsApp para que Elina los conozca. Presiona el botón "Sincronizar".</p>
+                        <p class="text-slate-500 text-sm mb-8">(Este proceso puede tardar unos minutos. Puedes continuar con el siguiente paso mientras se completa).</p>
+                        <button id="wizard-sync-contacts-btn" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2 mx-auto">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i><span>Sincronizar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Paso 3: Información de la Empresa -->
+                <div id="wizard-step-3" class="wizard-step hidden">
+                    <h4 class="text-2xl font-bold mb-2">Paso 3: Cuéntanos sobre tu Empresa</h4>
+                    <p class="text-slate-500 mb-8">Esta información ayudará a Elina a entender el contexto de tu negocio. Puedes cambiarla más tarde en "Configuración".</p>
+                    <form id="wizard-company-form" class="space-y-6">
+                        <!-- Horario -->
+                        <div class="p-5 bg-slate-50 rounded-xl border">
+                            <label class="font-semibold text-slate-800">Horario de Atención</label>
+                            <div class="grid grid-cols-2 gap-4 mt-2">
+                                <div><label class="text-sm">Apertura:</label><input type="time" id="wizard-work-start-hour" class="form-input w-full mt-1"></div>
+                                <div><label class="text-sm">Cierre:</label><input type="time" id="wizard-work-end-hour" class="form-input w-full mt-1"></div>
+                            </div>
+                        </div>
+                        <!-- Descripción -->
+                        <div class="p-5 bg-slate-50 rounded-xl border">
+                            <label class="font-semibold text-slate-800">Descripción de tu Negocio</label>
+                            <textarea id="wizard-company-description" rows="3" class="form-input w-full mt-2" placeholder="Ej: Somos una agencia de marketing digital que ayuda a pymes a crecer. Nuestra misión es..."></textarea>
+                        </div>
+                        <!-- Contacto y Redes -->
+                        <div class="p-5 bg-slate-50 rounded-xl border space-y-4">
+                            <label class="font-semibold text-slate-800">Contacto y Redes Sociales</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="text-sm">Sitio Web:</label><input type="text" id="wizard-website" placeholder="tuempresa.com" class="form-input w-full mt-1"></div>
+                                <!-- CORRECCIÓN: Se quita el selector de país para simplificar -->
+                                <div><label class="text-sm">Teléfono de Contacto:</label><input type="tel" id="wizard-admin-phone-input" placeholder="Ej: 5512345678" class="form-input w-full mt-1"></div>
+                                <div><label class="text-sm">Instagram:</label><input type="text" id="wizard-social-instagram" placeholder="usuario_instagram" class="form-input w-full mt-1"></div>
+                                <div><label class="text-sm">Facebook:</label><input type="text" id="wizard-social-facebook" placeholder="paginadefacebook" class="form-input w-full mt-1"></div>
+                            </div>
+                        </div>
+                        <!-- Branding -->
+                        <div class="p-5 bg-slate-50 rounded-xl border space-y-4">
+                            <label class="font-semibold text-slate-800">Branding</label>
+                            <div class="flex items-center gap-6">
+                                <div><label class="text-sm">Logo:</label><div class="flex items-center gap-2 mt-1"><img id="wizard-logo-preview" src="https://placehold.co/100x100/e2e8f0/475569?text=Logo" class="w-16 h-16 rounded-lg object-contain bg-white p-1"><button type="button" id="wizard-upload-logo-btn" class="text-xs bg-slate-200 p-2 rounded">Cambiar</button><input type="file" id="wizard-logo-input" class="hidden" accept="image/*"></div></div>
+                                <div><label class="text-sm">Colores de Marca:</label><div class="flex gap-2 mt-1"><input type="color" id="wizard-brand-color-1" value="#3b82f6" class="h-10 w-10 rounded-lg cursor-pointer"><input type="color" id="wizard-brand-color-2" value="#10b981" class="h-10 w-10 rounded-lg cursor-pointer"><input type="color" id="wizard-brand-color-3" value="#f97316" class="h-10 w-10 rounded-lg cursor-pointer"><input type="color" id="wizard-brand-color-4" value="#1e293b" class="h-10 w-10 rounded-lg cursor-pointer"></div></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Paso 3: Cuestionario IA -->
+                <div id="wizard-step-4" class="wizard-step hidden">
+                    <h4 class="text-2xl font-bold mb-2">Paso 4: ¡Vamos a conocer tu negocio!</h4>
+                    <p class="text-slate-500 mb-8">Responde estas preguntas para que Elina pueda actuar como una experta de tu empresa. Mientras más detallado seas, mejor será su desempeño.</p>
+                    <form id="wizard-qa-form" class="space-y-6">
+                        <div class="p-5 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="font-semibold text-slate-800">1. ¿Cuál es el nombre de tu negocio y a qué se dedica principalmente?</label>
+                            <textarea name="negocio" rows="2" class="form-input w-full mt-2" placeholder="Ej: 'Somos Brandcode, una agencia de marketing digital especializada en SEO y redes sociales.'"></textarea>
+                        </div>
+                        <div class="p-5 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="font-semibold text-slate-800">2. ¿Quién es tu cliente ideal?</label>
+                            <textarea name="cliente" rows="2" class="form-input w-full mt-2" placeholder="Ej: 'Pequeñas y medianas empresas que quieren aumentar su visibilidad en línea.'"></textarea>
+                        </div>
+                        <div class="p-5 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="font-semibold text-slate-800">3. ¿Qué problema principal le resuelves a ese cliente?</label>
+                            <textarea name="problema" rows="2" class="form-input w-full mt-2" placeholder="Ej: 'Les ayudamos a conseguir más clientes a través de internet.'"></textarea>
+                        </div>
+                        <div class="p-5 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="font-semibold text-slate-800">4. ¿Qué te hace diferente de tu competencia?</label>
+                            <textarea name="diferenciador" rows="2" class="form-input w-full mt-2" placeholder="Ej: 'Ofrecemos un servicio personalizado y reportes mensuales transparentes.'"></textarea>
+                        </div>
+                        <div class="p-5 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="font-semibold text-slate-800">5. ¿Qué tono de comunicación debe usar Elina? (Ej: amigable, formal, técnico, divertido)</label>
+                            <input type="text" name="tono" class="form-input w-full mt-2" placeholder="Ej: 'Amigable y servicial, pero profesional.'">
+                        </div>
+                        <div class="p-5 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="font-semibold text-slate-800">6. ¿Hay algo que Elina NUNCA deba hacer o decir?</label>
+                            <textarea name="no_hacer" rows="2" class="form-input w-full mt-2" placeholder="Ej: 'Nunca debe dar descuentos sin autorización. Nunca debe prometer resultados garantizados.'"></textarea>
+                        </div>
+                        <div class="p-5 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="font-semibold text-slate-800">7. ¿Cómo debe manejar las preguntas sobre precios?</label>
+                            <textarea name="precios" rows="2" class="form-input w-full mt-2" placeholder="Ej: 'Debe decir que los precios varían y preguntar sobre las necesidades del cliente para preparar una cotización.'"></textarea>
+                        </div>
+                        <div class="p-5 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="font-semibold text-slate-800">8. ¿Qué información clave debe intentar obtener de un nuevo prospecto?</label>
+                            <textarea name="info_prospecto" rows="2" class="form-input w-full mt-2" placeholder="Ej: 'Nombre, en qué servicio está interesado y cuál es su presupuesto aproximado.'"></textarea>
+                        </div>
+                         <div class="p-5 bg-slate-50 rounded-xl border border-slate-200">
+                            <label class="font-semibold text-slate-800">9. ¿Hay alguna información adicional, promoción actual o dato importante que Elina deba conocer?</label>
+                            <textarea name="info_adicional" rows="2" class="form-input w-full mt-2" placeholder="Ej: 'Este mes tenemos 20% de descuento en planes de redes sociales. El horario de atención es de 9am a 6pm.'"></textarea>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Paso 4: Finalización -->
+                <div id="wizard-step-5" class="wizard-step hidden text-center">
+                    <div id="wizard-loading" class="flex flex-col items-center justify-center h-full">
+                        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600"></div>
+                        <p class="text-slate-600 mt-4 font-semibold">Analizando tus respuestas y creando el prompt perfecto...</p>
+                    </div>
+                    <div id="wizard-success" class="hidden">
+                        <i data-lucide="party-popper" class="w-20 h-20 text-green-500 mx-auto mb-4"></i>
+                        <h4 class="text-2xl font-bold mb-2">¡Todo Listo!</h4>
+                        <p class="text-slate-600 max-w-2xl mx-auto">Hemos generado y guardado un prompt de IA optimizado para tu negocio. Ahora Elina está lista para empezar a trabajar. Puedes revisar y ajustar el prompt en cualquier momento en el panel principal.</p>
+                    </div>
+                </div>
+
+            </div>
+            <!-- Pie de página con botones -->
+            <div class="p-5 bg-slate-50 border-t flex justify-between items-center flex-shrink-0">
+                <button id="wizard-prev-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-6 rounded-lg hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>                
+                <div id="wizard-step-indicator" class="text-sm font-semibold text-slate-500">Paso 1 de 4</div>
+                <button id="wizard-next-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 w-40 text-center">Siguiente</button>
+                <button id="wizard-finish-btn" class="hidden bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700">Finalizar y Generar Prompt</button>
+            </div>
+        </div>
+    </div>
+    <!-- FIN: Modal del Asistente de Configuración -->
+
+    <!-- Carga de Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+    <script type="module" src="/app.js"></script>
+
+    <!-- Componente de Notificación Toast (Global) -->
+    <div id="toast-notification" class="hidden fixed bottom-5 right-5 bg-green-500 text-white py-3 px-5 rounded-lg shadow-lg flex items-center gap-3 z-[100] transform translate-y-[150%] transition-transform duration-300 ease-in-out">
+        <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5"></i>
+        <span id="toast-message"></span>
+    </div>
+</body>
+</html>

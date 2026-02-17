@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin - Elina IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom scrollbar for tables */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background-color: #1e293b;
+            /* slate-800 */
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #475569;
+            /* slate-600 */
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #64748b;
+            /* slate-500 */
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900 text-slate-200">
+    <div id="loader" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-50">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-cyan-400"></div>
+    </div>
+
+    <div id="app-container" class="hidden min-h-screen flex flex-col">
+        <header class="bg-slate-800/80 backdrop-blur-md border-b border-slate-700 p-4 sticky top-0 z-20 shadow-sm">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+                <h1 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+                    <i data-lucide="shield-check" class="text-cyan-400"></i>
+                    Panel de Super Administrador
+                </h1>
+
+                <div class="flex items-center gap-4 w-full sm:w-auto overflow-x-auto">
+                    <nav class="flex space-x-1 bg-slate-900/50 p-1 rounded-lg">
+                        <button
+                            class="nav-tab px-4 py-2 rounded-md text-sm font-medium bg-cyan-600 text-white shadow transition-all duration-200"
+                            data-target="users-section">Usuarios</button>
+                        <button
+                            class="nav-tab px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all duration-200"
+                            data-target="affiliates-section">Afiliados</button>
+                        <button
+                            class="nav-tab px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all duration-200"
+                            data-target="withdrawals-section">Retiros</button>
+                        <button
+                            class="nav-tab px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all duration-200"
+                            data-target="plans-section">Planes</button>
+                        <button
+                            class="nav-tab px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all duration-200"
+                            data-target="ai-config-section">Configuración IA</button>
+                    </nav>
+                    <a href="/dashboard.html"
+                        class="flex-shrink-0 bg-slate-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-600 text-sm transition-colors flex items-center gap-2">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-8">
+
+            <!-- Sección de Usuarios (DEFAULT) -->
+            <section id="users-section" class="tab-content block animate-fade-in">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-3xl font-bold text-white">Gestión de Usuarios</h2>
+                        <p class="text-slate-400 text-sm mt-1">Administra cuentas, planes y referidos.</p>
+                    </div>
+                    <div class="relative w-full sm:w-64">
+                        <i data-lucide="search"
+                            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4"></i>
+                        <input type="search" id="user-search" placeholder="Buscar usuario..."
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all">
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg flex flex-col">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead
+                                class="bg-slate-750/50 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-900/40">
+                                <tr>
+                                    <th class="p-4 border-b border-slate-700">Usuario</th>
+                                    <th class="p-4 border-b border-slate-700">Plan</th>
+                                    <th class="p-4 border-b border-slate-700">Estado</th>
+                                    <th class="p-4 border-b border-slate-700 text-center">Es Afiliado</th>
+                                    <th class="p-4 border-b border-slate-700">Referido Por</th>
+                                    <th class="p-4 border-b border-slate-700 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body" class="divide-y divide-slate-700 text-sm">
+                                <tr id="users-loader">
+                                    <td colspan="6" class="p-12 text-center text-slate-400">
+                                        <div class="flex flex-col items-center gap-3">
+                                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400">
+                                            </div>
+                                            <span>Cargando usuarios...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Afiliados (NUEVA) -->
+            <section id="affiliates-section" class="tab-content hidden animate-fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-3xl font-bold text-white">Gestión de Afiliados</h2>
+                        <p class="text-slate-400 text-sm mt-1">Supervisa el rendimiento de tus socios.</p>
+                    </div>
+                    <button
+                        class="bg-cyan-600/10 text-cyan-400 px-4 py-2 rounded-lg border border-cyan-600/20 text-sm font-medium hover:bg-cyan-600/20 transition-colors"
+                        onclick="loadAffiliates()">
+                        <i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i> Actualizar
+                    </button>
+                </div>
+
+                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead
+                                class="bg-slate-900/40 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                <tr>
+                                    <th class="p-4 border-b border-slate-700">Afiliado</th>
+                                    <th class="p-4 border-b border-slate-700 text-center">Refs. Totales</th>
+                                    <th class="p-4 border-b border-slate-700 text-center">Refs. Activos</th>
+                                    <th class="p-4 border-b border-slate-700 text-right">Comisión Est.</th>
+                                    <th class="p-4 border-b border-slate-700 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="affiliates-table-body" class="divide-y divide-slate-700 text-sm">
+                                <tr>
+                                    <td colspan="5" class="p-12 text-center text-slate-400">Cargando datos de
+                                        afiliados...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Retiros (NUEVA) -->
+            <section id="withdrawals-section" class="tab-content hidden animate-fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-3xl font-bold text-white">Gestión de Retiros</h2>
+                        <p class="text-slate-400 text-sm mt-1">Aprueba o rechaza solicitudes de pago de afiliados.</p>
+                    </div>
+                    <button
+                        class="bg-cyan-600/10 text-cyan-400 px-4 py-2 rounded-lg border border-cyan-600/20 text-sm font-medium hover:bg-cyan-600/20 transition-colors"
+                        onclick="loadWithdrawals()">
+                        <i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i> Actualizar
+                    </button>
+                </div>
+
+                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead
+                                class="bg-slate-900/40 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                <tr>
+                                    <th class="p-4 border-b border-slate-700">Afiliado</th>
+                                    <th class="p-4 border-b border-slate-700 text-right">Monto</th>
+                                    <th class="p-4 border-b border-slate-700 text-center">Estado</th>
+                                    <th class="p-4 border-b border-slate-700">Fecha Solicitud</th>
+                                    <th class="p-4 border-b border-slate-700 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawals-table-body" class="divide-y divide-slate-700 text-sm">
+                                <tr>
+                                    <td colspan="5" class="p-12 text-center text-slate-400">Cargando solicitudes de
+                                        retiro...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Planes -->
+            <section id="plans-section" class="tab-content hidden animate-fade-in">
+                <h2 class="text-3xl font-bold text-white mb-6">Gestión de Planes</h2>
+                <div id="plans-container" class="grid grid-cols-1 gap-6">
+                    <!-- Los formularios de los planes se cargarán aquí -->
+                </div>
+            </section>
+
+            <!-- Sección de Configuración IA (Edge Functions) -->
+            <section id="ai-config-section" class="tab-content hidden animate-fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-3xl font-bold text-white">Configuración de IA</h2>
+                        <p class="text-slate-400 text-sm mt-1">Administra prompts, flujo y parámetros del agente.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button
+                            class="bg-slate-700 text-slate-200 px-4 py-2 rounded-lg text-sm hover:bg-slate-600 transition-colors"
+                            onclick="restoreAiDefaults()">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4 inline mr-1"></i> Restaurar
+                        </button>
+                        <button
+                            class="bg-cyan-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-cyan-500 shadow-lg shadow-cyan-900/20 transition-all"
+                            onclick="saveAiConfig()">
+                            <i data-lucide="save" class="w-4 h-4 inline mr-1"></i> Guardar Todo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub-tabs para IA -->
+                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg p-6">
+                    <div class="flex border-b border-slate-700 mb-6 gap-6">
+                        <button
+                            class="ai-sub-tab pb-3 text-sm font-medium border-b-2 border-cyan-500 text-cyan-400 transition-colors"
+                            data-target="ai-prompts">
+                            System Prompts
+                        </button>
+                        <button
+                            class="ai-sub-tab pb-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors"
+                            data-target="ai-flow">
+                            Flujo de Procesamiento
+                        </button>
+                        <button
+                            class="ai-sub-tab pb-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors"
+                            data-target="ai-params">
+                            Parámetros Modelo
+                        </button>
+                    </div>
+
+                    <div id="ai-loader" class="hidden py-12 text-center text-slate-400">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400 mx-auto mb-3"></div>
+                        Cargando configuración...
+                    </div>
+
+                    <div id="ai-config-content">
+                        <!-- AI Prompts -->
+                        <div id="ai-prompts" class="ai-tab-content space-y-6">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-slate-300">Base Prompt</label>
+                                    <p class="text-xs text-slate-500">Instrucciones fundamentales del agente. Define su
+                                        rol básico.</p>
+                                    <textarea id="ai-base-prompt" rows="6"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:ring-2 focus:ring-cyan-500 outline-none font-mono"
+                                        placeholder="Default: Eres Elina, una IA asistente..."></textarea>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-slate-300">Personality Context</label>
+                                    <p class="text-xs text-slate-500">Define el tono, estilo y personalidad.</p>
+                                    <textarea id="ai-personality-context" rows="6"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:ring-2 focus:ring-cyan-500 outline-none font-mono"
+                                        placeholder="Default: Tu tono es profesional pero cercano..."></textarea>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-slate-300">Placeholder
+                                        Instructions</label>
+                                    <p class="text-xs text-slate-500">Reglas para el uso de variables como {{nombre}}.
+                                    </p>
+                                    <textarea id="ai-placeholder-instructions" rows="6"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:ring-2 focus:ring-cyan-500 outline-none font-mono"
+                                        placeholder="Default: Usa placeholders siempre que sea posible..."></textarea>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-slate-300">Appointment Rules</label>
+                                    <p class="text-xs text-slate-500">Lógica específica para agendar citas.</p>
+                                    <textarea id="ai-appointment-rules" rows="6"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:ring-2 focus:ring-cyan-500 outline-none font-mono"
+                                        placeholder="Default: Solo ofrece citas si hay disponibilidad..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Flow -->
+                        <div id="ai-flow" class="ai-tab-content hidden space-y-4">
+                            <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-4">
+                                <h4 class="text-blue-400 font-bold text-sm mb-1">Control del Pipeline</h4>
+                                <p class="text-xs text-blue-300/80">Activa o desactiva pasos específicos del
+                                    procesamiento del mensaje. Desactivar pasos puede reducir latencia pero limitar
+                                    funcionalidad.</p>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <label
+                                    class="flex items-center p-4 bg-slate-900/50 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700/30 transition-colors">
+                                    <input type="checkbox" id="ai-enable-appointment"
+                                        class="w-5 h-5 text-cyan-500 rounded focus:ring-cyan-500 bg-slate-800 border-slate-600">
+                                    <div class="ml-3">
+                                        <span class="block text-sm font-medium text-slate-200">Detección de Citas</span>
+                                        <span class="block text-xs text-slate-500">Identifica intención de
+                                            agendar/reservar.</span>
+                                    </div>
+                                </label>
+
+                                <label
+                                    class="flex items-center p-4 bg-slate-900/50 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700/30 transition-colors">
+                                    <input type="checkbox" id="ai-enable-critical"
+                                        class="w-5 h-5 text-cyan-500 rounded focus:ring-cyan-500 bg-slate-800 border-slate-600">
+                                    <div class="ml-3">
+                                        <span class="block text-sm font-medium text-slate-200">Detección Crítica</span>
+                                        <span class="block text-xs text-slate-500">Detecta emergencias o solicitudes de
+                                            humano.</span>
+                                    </div>
+                                </label>
+
+                                <label
+                                    class="flex items-center p-4 bg-slate-900/50 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700/30 transition-colors">
+                                    <input type="checkbox" id="ai-enable-product"
+                                        class="w-5 h-5 text-cyan-500 rounded focus:ring-cyan-500 bg-slate-800 border-slate-600">
+                                    <div class="ml-3">
+                                        <span class="block text-sm font-medium text-slate-200">Detección de
+                                            Productos</span>
+                                        <span class="block text-xs text-slate-500">Identifica preguntas sobre
+                                            precios/servicios.</span>
+                                    </div>
+                                </label>
+
+                                <label
+                                    class="flex items-center p-4 bg-slate-900/50 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700/30 transition-colors">
+                                    <input type="checkbox" id="ai-enable-quote"
+                                        class="w-5 h-5 text-cyan-500 rounded focus:ring-cyan-500 bg-slate-800 border-slate-600">
+                                    <div class="ml-3">
+                                        <span class="block text-sm font-medium text-slate-200">Detección de
+                                            Cotización</span>
+                                        <span class="block text-xs text-slate-500">Genera presupuestos
+                                            automáticos.</span>
+                                    </div>
+                                </label>
+
+                                <label
+                                    class="flex items-center p-4 bg-slate-900/50 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700/30 transition-colors">
+                                    <input type="checkbox" id="ai-enable-sentiment"
+                                        class="w-5 h-5 text-cyan-500 rounded focus:ring-cyan-500 bg-slate-800 border-slate-600">
+                                    <div class="ml-3">
+                                        <span class="block text-sm font-medium text-slate-200">Análisis de
+                                            Sentimiento</span>
+                                        <span class="block text-xs text-slate-500">Ajusta el tono según emoción del
+                                            usuario.</span>
+                                    </div>
+                                </label>
+
+                                <label
+                                    class="flex items-center p-4 bg-slate-900/50 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700/30 transition-colors">
+                                    <input type="checkbox" id="ai-enable-preferences"
+                                        class="w-5 h-5 text-cyan-500 rounded focus:ring-cyan-500 bg-slate-800 border-slate-600">
+                                    <div class="ml-3">
+                                        <span class="block text-sm font-medium text-slate-200">Sistema de
+                                            Preferencias</span>
+                                        <span class="block text-xs text-slate-500">Recuerda gustos y datos del
+                                            usuario.</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- AI Params -->
+                        <div id="ai-params" class="ai-tab-content hidden space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-slate-300">Modelo LLM</label>
+                                    <select id="ai-llm-model"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:ring-2 focus:ring-cyan-500 outline-none">
+                                        <option value="gpt-5-nano-2025-08-07">GPT-5 Nano (Recomendado)</option>
+                                        <option value="gpt-4o-mini">GPT-4o Mini (Rápido)</option>
+                                        <option value="gpt-4o">GPT-4o (Más inteligente)</option>
+                                    </select>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-slate-300">Modo de Inyección de
+                                        Inventario</label>
+                                    <select id="ai-inventory-mode"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:ring-2 focus:ring-cyan-500 outline-none">
+                                        <option value="conditional">Condicional (Smart)</option>
+                                        <option value="always">Siempre (Legacy)</option>
+                                        <option value="never">Nunca (Desactivado)</option>
+                                    </select>
+                                    <p class="text-xs text-slate-500">"Condicional" inyecta productos solo cuando el
+                                        usuario pregunta por precios o servicios.</p>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-slate-300">Max Tokens</label>
+                                    <div class="flex items-center gap-4">
+                                        <input type="range" id="ai-max-tokens-slider" min="500" max="4000" step="100"
+                                            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                                        <input type="number" id="ai-max-tokens"
+                                            class="w-20 bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-center text-slate-200"
+                                            value="2000">
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-slate-300">Temperatura
+                                        (Creatividad)</label>
+                                    <div class="flex items-center gap-4">
+                                        <input type="range" id="ai-temperature-slider" min="0" max="2" step="0.1"
+                                            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                                        <input type="number" id="ai-temperature"
+                                            class="w-20 bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-center text-slate-200"
+                                            value="0.7">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Modal para Cambiar Plan -->
+    <div id="change-plan-modal"
+        class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300">
+        <div
+            class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md transform transition-all scale-100">
+            <div class="p-6 border-b border-slate-700">
+                <h3 class="text-xl font-bold text-white">Cambiar Plan de Usuario</h3>
+                <p class="text-sm text-slate-400 mt-1" id="modal-user-email"></p>
+                <input type="hidden" id="modal-user-id">
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label for="modal-plan-select" class="block text-sm font-medium text-slate-300 mb-1">Nuevo
+                        Plan</label>
+                    <select id="modal-plan-select"
+                        class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-cyan-500 outline-none">
+                        <option value="grow">Grow</option>
+                        <option value="business">Business</option>
+                    </select>
+                </div>
+                <div class="flex items-start gap-3 p-3 bg-slate-700/30 rounded-lg border border-slate-700/50">
+                    <input type="checkbox" id="modal-override-payment"
+                        class="mt-1 h-4 w-4 rounded bg-slate-700 border-slate-600 text-cyan-500 focus:ring-cyan-500">
+                    <label for="modal-override-payment" class="text-sm text-slate-300 pointer-events-none">
+                        <span class="font-medium text-white block">Forzar cambio manual</span>
+                        <span class="text-xs text-slate-400">Asigna el plan sin procesar pago en Stripe. Útil para
+                            correcciones o regalos.</span>
+                    </label>
+                </div>
+            </div>
+            <div class="p-6 bg-slate-900/50 flex justify-end gap-3 rounded-b-xl border-t border-slate-700">
+                <button type="button" id="cancel-change-plan-btn"
+                    class="bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">Cancelar</button>
+                <button type="button" id="confirm-change-plan-btn"
+                    class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg shadow-cyan-900/20 transition-all transform active:scale-95">Guardar
+                    Cambio</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Asignar Referido -->
+    <div id="assign-referrer-modal"
+        class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md">
+            <div class="p-6 border-b border-slate-700">
+                <h3 class="text-xl font-bold text-white">Asignar Referido</h3>
+                <div class="mt-2 text-sm text-slate-300 bg-slate-700/30 p-2 rounded border border-slate-700">
+                    Usuario: <span id="assign-referrer-user-email" class="font-mono text-white"></span>
+                </div>
+                <input type="hidden" id="assign-referrer-user-id">
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label for="modal-referrer-select" class="block text-sm font-medium text-slate-300 mb-1">Seleccionar
+                        Afiliado</label>
+                    <p class="text-xs text-slate-500 mb-2">Este usuario generará comisiones para el afiliado
+                        seleccionado.</p>
+                    <select id="modal-referrer-select"
+                        class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-cyan-500 outline-none">
+                        <option value="">-- Sin Afiliado --</option>
+                        <!-- Se llenará dinámicamente -->
+                    </select>
+                </div>
+            </div>
+            <div class="p-6 bg-slate-900/50 flex justify-end gap-3 rounded-b-xl border-t border-slate-700">
+                <button type="button" id="cancel-assign-referrer-btn"
+                    class="bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">Cancelar</button>
+                <button type="button" id="confirm-assign-referrer-btn"
+                    class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition-all transform active:scale-95">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="auth.js"></script>
+    <script type="module" src="superadmin.js"></script>
+</body>
+
+</html>

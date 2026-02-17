@@ -1,0 +1,1 @@
+import{j as s}from"./index-Czd6NKCg.js";import{N as o,F as r}from"./LandingPage-mDaXkdpN.js";const t=({children:a})=>s.jsxs("div",{className:"landing-page",children:[s.jsx("div",{className:"noise"}),s.jsx(o,{}),s.jsx("main",{children:a}),s.jsx(r,{})]});export{t as P};

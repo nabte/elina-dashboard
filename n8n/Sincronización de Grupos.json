@@ -1,0 +1,567 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sync-groups",
+        "options": {}
+      },
+      "id": "4bb10f2a-99b5-4f8d-8b9e-ab06de52b42f",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        64
+      ],
+      "webhookId": "sync-groups-webhook-id"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.body.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "id": "3d3a45a0-9ca9-4bde-9502-0253c231ad34",
+      "name": "1. Get User Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        64,
+        64
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "sync_status",
+              "fieldValue": "Sincronizando grupos..."
+            }
+          ]
+        }
+      },
+      "id": "236a8e0e-e71f-46c3-af53-5af23d98aee7",
+      "name": "Update Status: Iniciando",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        304,
+        64
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://evolutionapi-evolution-api.mcjhhb.easypanel.host/group/fetchAllGroups/{{ $('1. Get User Profile').item.json.evolution_instance_name }}?getParticipants=true",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('1. Get User Profile').item.json.evolution_api_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ae021253-2e7e-4617-b89b-f78652de9610",
+      "name": "2. Get Groups (GET)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        544,
+        64
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://evolutionapi-evolution-api.mcjhhb.easypanel.host/group/fetchAllGroups/{{ $('1. Get User Profile').item.json.evolution_instance_name }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('1. Get User Profile').item.json.evolution_api_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"getParticipants\": true\n}",
+        "options": {}
+      },
+      "id": "28e80a22-8d57-473c-8eb4-6eb83b43f448",
+      "name": "2. Get Groups (POST)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        512,
+        240
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-success",
+              "leftValue": "={{ Array.isArray($json) || ($json && !$json.error && !$json.errorMessage && !$json.statusCode && !$json.message) ? 'success' : 'error' }}",
+              "rightValue": "success",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "adba0fd7-8ca6-4ef7-bbfd-4e4ddd1c9f7a",
+      "name": "If GET Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        784,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesar respuesta de Evolution API para grupos\n// IMPORTANTE: Obtener datos directamente del nodo HTTP que tuvo éxito\n// porque el IF puede no pasar los datos correctamente\nlet items = $input.all();\nconst out = [];\n\n// Debug: Log de items recibidos del IF\nconsole.log('=== DEBUG: Procesar Grupos ===');\nconsole.log('Items recibidos del IF:', items.length);\n\n// Si no hay items del IF, intentar obtenerlos directamente del nodo HTTP\nif (items.length === 0) {\n  console.log('No hay items del IF, obteniendo directamente del nodo HTTP...');\n  \n  // Intentar obtener del GET primero\n  const getNode = $('2. Get Groups (GET)');\n  if (getNode && getNode.isExecuted) {\n    const getData = getNode.all();\n    console.log('Datos del GET:', getData.length, 'items');\n    if (getData.length > 0) {\n      // Verificar si el GET fue exitoso (no tiene error)\n      const firstItem = getData[0];\n      if (firstItem.json && !firstItem.json.error && !firstItem.json.errorMessage) {\n        items = getData;\n        console.log('Usando datos del GET');\n      }\n    }\n  }\n  \n  // Si aún no hay items, intentar del POST\n  if (items.length === 0) {\n    const postNode = $('2. Get Groups (POST)');\n    if (postNode && postNode.isExecuted) {\n      const postData = postNode.all();\n      console.log('Datos del POST:', postData.length, 'items');\n      if (postData.length > 0) {\n        const firstItem = postData[0];\n        if (firstItem.json && !firstItem.json.error && !firstItem.json.errorMessage) {\n          items = postData;\n          console.log('Usando datos del POST');\n        }\n      }\n    }\n  }\n}\n\n// Debug detallado de items\nconsole.log('Items finales a procesar:', items.length);\nitems.forEach((item, idx) => {\n  console.log(`=== Item ${idx} ===`);\n  if (item.json) {\n    console.log('JSON keys:', Object.keys(item.json));\n    console.log('Es array:', Array.isArray(item.json));\n    console.log('JSON (primeros 500 chars):', JSON.stringify(item.json).substring(0, 500));\n  } else {\n    console.log('Item completo:', JSON.stringify(item, null, 2));\n  }\n});\n\n// Obtener perfil del usuario\nconst profile = $('1. Get User Profile').first().json;\nconst userId = profile.id;\n\nconsole.log('User ID:', userId);\n\nif (items.length === 0) {\n  console.log('ERROR: No se pudieron obtener datos de ningún nodo HTTP');\n  return [];\n}\n\nfor (const { json } of items) {\n  // La respuesta puede venir como array directo o dentro de data/groups\n  let groups = [];\n  \n  if (Array.isArray(json)) {\n    groups = json;\n    console.log('Grupos encontrados (array directo):', groups.length);\n  } else if (json.data && Array.isArray(json.data)) {\n    groups = json.data;\n    console.log('Grupos encontrados (en data):', groups.length);\n  } else if (json.groups && Array.isArray(json.groups)) {\n    groups = json.groups;\n    console.log('Grupos encontrados (en groups):', groups.length);\n  } else if (json.group && Array.isArray(json.group)) {\n    groups = json.group;\n    console.log('Grupos encontrados (en group):', groups.length);\n  } else if (json.error || json.errorMessage) {\n    console.log('ERROR recibido de Evolution API:', json.error || json.errorMessage);\n    continue;\n  } else {\n    console.log('WARNING: No se encontraron grupos en el formato esperado.');\n    console.log('JSON recibido:', JSON.stringify(json, null, 2));\n    continue;\n  }\n  \n  // Procesar cada grupo\n  for (const group of groups) {\n    const groupJid = group.jid || group.id;\n    \n    // Validar que sea un grupo (debe terminar en @g.us)\n    if (!groupJid || !groupJid.includes('@g.us')) {\n      console.log('Grupo ignorado (no es @g.us):', groupJid);\n      continue;\n    }\n    \n    // Normalizar participantes\n    const participants = [];\n    const admins = [];\n    \n    if (Array.isArray(group.participants)) {\n      for (const participant of group.participants) {\n        const participantJid = participant.jid || participant.id;\n        if (!participantJid) continue;\n        \n        const participantData = {\n          jid: participantJid,\n          name: participant.name || participant.pushName || null,\n          is_admin: participant.isAdmin || participant.isSuperAdmin || false\n        };\n        \n        participants.push(participantData);\n        \n        if (participantData.is_admin) {\n          admins.push(participantJid);\n        }\n      }\n    }\n    \n    // Si hay admins separados, agregarlos\n    if (Array.isArray(group.admins)) {\n      for (const adminJid of group.admins) {\n        if (!admins.includes(adminJid)) {\n          admins.push(adminJid);\n        }\n      }\n    }\n    \n    out.push({\n      json: {\n        user_id: userId,\n        group_jid: groupJid,\n        group_name: group.subject || group.name || 'Grupo sin nombre',\n        group_description: group.description || null,\n        group_participants: participants,\n        group_admins: admins,\n        participant_count: participants.length,\n        updated_at: new Date().toISOString()\n      }\n    });\n  }\n}\n\nconsole.log('Total grupos procesados:', out.length);\n\n// Si no hay grupos válidos, retornar array vacío en lugar de objeto de error\n// Esto evita que se intente insertar datos inválidos en Supabase\nif (out.length === 0) {\n  console.log('WARNING: No se encontraron grupos válidos. Retornando array vacío.');\n  return [];\n}\n\nreturn out;"
+      },
+      "id": "8f1316ca-0e57-46b6-a8a6-5982c466818b",
+      "name": "3. Procesar Grupos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-has-groups",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "gt",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-has-groups",
+      "name": "If Has Groups",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1280,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 100,
+        "options": {}
+      },
+      "id": "be609e8b-703e-44f0-a29f-bf80fdcec5bb",
+      "name": "4. Loop Over Groups",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1376,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://mytvwfbijlgbihlegmfg.supabase.co/rest/v1/whatsapp_groups?on_conflict=user_id,group_jid",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDQxODk5MCwiZXhwIjoyMDY5OTk0OTkwfQ.07-JQs9AXJlqKYMDxk4tOL_6zOEGQTddaKlQmKQe14U"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDQxODk5MCwiZXhwIjoyMDY5OTk0OTkwfQ.07-JQs9AXJlqKYMDxk4tOL_6zOEGQTddaKlQmKQe14U"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($items().filter(i => i.json.group_jid && !i.json.error).map(i => ({\n  user_id: i.json.user_id,\n  group_jid: i.json.group_jid,\n  group_name: i.json.group_name,\n  group_description: i.json.group_description,\n  group_participants: i.json.group_participants,\n  group_admins: i.json.group_admins,\n  participant_count: i.json.participant_count,\n  updated_at: i.json.updated_at\n}))) }}",
+        "options": {}
+      },
+      "id": "fe191520-616d-4549-973e-17c5affeb285",
+      "name": "5. Upsert Groups to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1424,
+        -80
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "group_jid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cc4fc1f7-626d-4e0b-a84a-a548d7af2f2e",
+      "name": "6. Aggregate Groups",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1776,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "set-user-id",
+              "name": "id",
+              "value": "={{ $('1. Get User Profile').first().json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6b37a017-fed0-48a7-9b0d-0d1961eeddb7",
+      "name": "7. Set Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2048,
+        -112
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "sync_status",
+              "fieldValue": "Completado"
+            },
+            {
+              "fieldId": "sync_status_message",
+              "fieldValue": "={{ $if($('6. Aggregate Groups').isExecuted, $('6. Aggregate Groups').item.json.length + ' grupos sincronizados', 'Sincronización completada (sin grupos nuevos)') }}"
+            }
+          ]
+        }
+      },
+      "id": "6b08927c-7203-4161-9afb-415e61542918",
+      "name": "8. Update Status: Completado",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2240,
+        144
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "1. Get User Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Get User Profile": {
+      "main": [
+        [
+          {
+            "node": "Update Status: Iniciando",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status: Iniciando": {
+      "main": [
+        [
+          {
+            "node": "2. Get Groups (GET)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Get Groups (GET)": {
+      "main": [
+        [
+          {
+            "node": "If GET Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Get Groups (POST)": {
+      "main": [
+        [
+          {
+            "node": "If GET Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If GET Success": {
+      "main": [
+        [
+          {
+            "node": "3. Procesar Grupos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "2. Get Groups (POST)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Procesar Grupos": {
+      "main": [
+        [
+          {
+            "node": "If Has Groups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has Groups": {
+      "main": [
+        [
+          {
+            "node": "4. Loop Over Groups",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "8. Update Status: Completado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Loop Over Groups": {
+      "main": [
+        [
+          {
+            "node": "6. Aggregate Groups",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "5. Upsert Groups to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Upsert Groups to Supabase": {
+      "main": [
+        [
+          {
+            "node": "4. Loop Over Groups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Aggregate Groups": {
+      "main": [
+        [
+          {
+            "node": "7. Set Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. Set Fields": {
+      "main": [
+        [
+          {
+            "node": "8. Update Status: Completado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "Webhook": [
+      {
+        "headers": {
+          "host": "n8n-n8n.mcjhhb.easypanel.host",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+          "content-length": "59",
+          "accept": "application/json",
+          "accept-encoding": "gzip, deflate, br, zstd",
+          "accept-language": "es-ES,es;q=0.8",
+          "cache-control": "no-cache",
+          "content-type": "application/json",
+          "origin": "https://app.elinaia.com.mx",
+          "pragma": "no-cache",
+          "priority": "u=1, i",
+          "referer": "https://app.elinaia.com.mx/",
+          "sec-ch-ua": "\"Brave\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-platform": "\"Windows\"",
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "cross-site",
+          "sec-gpc": "1",
+          "x-forwarded-for": "189.162.152.156",
+          "x-forwarded-host": "n8n-n8n.mcjhhb.easypanel.host",
+          "x-forwarded-port": "443",
+          "x-forwarded-proto": "https",
+          "x-forwarded-server": "35f5005c00d4",
+          "x-real-ip": "189.162.152.156"
+        },
+        "params": {},
+        "query": {},
+        "body": {
+          "body": {
+            "user_id": "2914fa5f-fc15-43fa-b677-126b336c3c7a"
+          }
+        },
+        "webhookUrl": "https://n8n-n8n.mcjhhb.easypanel.host/webhook/sync-groups",
+        "executionMode": "production"
+      }
+    ]
+  },
+  "meta": {
+    "instanceId": "32906a5f2bdc653e88c8f6fde14f7365d097573b5e9053a6781ad64c78a4c371"
+  }
+}

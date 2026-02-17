@@ -1,0 +1,4 @@
+INSERT INTO "public"."message_templates" ("id", "user_id", "name", "content", "created_at") VALUES ('3', '808d2e8e-dc76-4244-9584-3e7d4dea0246', 'testa', '¡Atención, jóvenes! ¡La fiesta de Navidad está a la vuelta de la esquina! Prepárense para una noche llena de diversión y sorpresas. ¡No se lo pierdan!', '2025-10-29 10:45:12.136312+00'), ('4', '5ef13a72-e674-491d-888d-721adf102539', 'Saludo y Presentación', '¡Hola y bienvenido(a) a BOP Consumibles! 🙌
+Nos encanta que nos visites.
+Aquí encontrarás cartuchos, tóneres y consumibles con el mejor rendimiento para tus equipos.
+Cuéntame, ¿qué modelo de impresora tienes? Así te ayudo a elegir el producto perfecto.', '2025-11-03 04:06:10.589089+00');

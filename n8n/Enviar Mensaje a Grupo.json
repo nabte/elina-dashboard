@@ -1,0 +1,381 @@
+{
+  "name": "Enviar Mensaje a Grupo",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "manual-send-group",
+        "options": {}
+      },
+      "id": "webhook-send-group",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        400
+      ],
+      "webhookId": "manual-send-group-webhook"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Webhook').item.json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "id": "get-profile",
+      "name": "1. Get User Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        400
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "whatsapp_groups",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Webhook').item.json.body.group_id }}"
+            },
+            {
+              "keyName": "user_id",
+              "keyValue": "={{ $('Webhook').item.json.body.user_id }}"
+            }
+          ]
+        }
+      },
+      "id": "get-group",
+      "name": "2. Get Group",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        80,
+        400
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-media",
+              "leftValue": "={{ $('Webhook').item.json.body.media_url }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-has-media",
+      "name": "3. IF: ¿Tiene Media?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "={{ $('1. Get User Profile').item.json.evolution_instance_name }}",
+        "remoteJid": "={{ $('2. Get Group').item.json.group_jid }}",
+        "messageText": "={{ $('Webhook').item.json.body.message }}",
+        "options_message": {
+          "delay": "={{ Math.floor(1000 + Math.random() * 1500) }}"
+        }
+      },
+      "id": "send-text",
+      "name": "4. Enviar Texto",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        560,
+        320
+      ],
+      "credentials": {
+        "evolutionApi": {
+          "id": "1NdmmRm4cT4v7Ciq",
+          "name": "Evolution account 3"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "operation": "send-image",
+        "instanceName": "={{ $('1. Get User Profile').item.json.evolution_instance_name }}",
+        "remoteJid": "={{ $('2. Get Group').item.json.group_jid }}",
+        "media": "={{ $('Webhook').item.json.body.media_url }}",
+        "caption": "={{ $('Webhook').item.json.body.message }}",
+        "options_message": {
+          "delay": "={{ Math.floor(1000 + Math.random() * 1500) }}"
+        }
+      },
+      "id": "send-image",
+      "name": "4. Enviar Imagen",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        560,
+        480
+      ],
+      "credentials": {
+        "evolutionApi": {
+          "id": "1NdmmRm4cT4v7Ciq",
+          "name": "Evolution account 3"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener datos del webhook y del grupo\nconst webhookData = $('Webhook').item.json.body;\nconst group = $('2. Get Group').item.json;\nconst profile = $('1. Get User Profile').item.json;\n\n// Determinar el tipo de mensaje enviado\nconst hasMedia = webhookData.media_url && webhookData.media_url.trim() !== '';\nconst messageType = hasMedia ? 'image' : 'text';\n\n// Preparar contenido para guardar\nconst content = hasMedia \n  ? `${webhookData.message || ''} ${webhookData.media_url}`.trim()\n  : webhookData.message;\n\nreturn [{\n  json: {\n    user_id: profile.id,\n    group_id: group.id,\n    message_type: 'ai',\n    content: content,\n    sender_jid: null,\n    sender_name: profile.full_name || 'Tú',\n    is_from_me: true,\n    group_jid: group.group_jid,\n    message_sent: true\n  }\n}];"
+      },
+      "id": "prepare-save",
+      "name": "5. Preparar para Guardar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "group_chat_history",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $json.user_id }}"
+            },
+            {
+              "fieldId": "group_id",
+              "fieldValue": "={{ $json.group_id }}"
+            },
+            {
+              "fieldId": "message_type",
+              "fieldValue": "={{ $json.message_type }}"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $json.content }}"
+            },
+            {
+              "fieldId": "sender_jid",
+              "fieldValue": "={{ $json.sender_jid }}"
+            },
+            {
+              "fieldId": "sender_name",
+              "fieldValue": "={{ $json.sender_name }}"
+            },
+            {
+              "fieldId": "is_from_me",
+              "fieldValue": "={{ $json.is_from_me }}"
+            }
+          ]
+        }
+      },
+      "id": "save-message",
+      "name": "6. Guardar Mensaje",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        400
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, message: 'Mensaje enviado al grupo exitosamente', group_id: $('2. Get Group').item.json.id }) }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "7. Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        400
+      ]
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "content-type": "application/json"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "user_id": "f2ef49c6-4646-42f8-8130-aa5cd0d3c84f",
+            "group_id": 1,
+            "group_jid": "120363123456789012@g.us",
+            "message": "Hola grupo! Este es un mensaje de prueba.",
+            "media_url": ""
+          },
+          "webhookUrl": "https://n8n-n8n.mcjhhb.easypanel.host/webhook/manual-send-group",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "1. Get User Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Get User Profile": {
+      "main": [
+        [
+          {
+            "node": "2. Get Group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Get Group": {
+      "main": [
+        [
+          {
+            "node": "3. IF: ¿Tiene Media?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. IF: ¿Tiene Media?": {
+      "main": [
+        [
+          {
+            "node": "4. Enviar Imagen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4. Enviar Texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Enviar Texto": {
+      "main": [
+        [
+          {
+            "node": "5. Preparar para Guardar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Enviar Imagen": {
+      "main": [
+        [
+          {
+            "node": "5. Preparar para Guardar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Preparar para Guardar": {
+      "main": [
+        [
+          {
+            "node": "6. Guardar Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Guardar Mensaje": {
+      "main": [
+        [
+          {
+            "node": "7. Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveExecutionProgress": true
+  },
+  "versionId": "send-group-message-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "send-group-message-workflow",
+  "tags": []
+}
+

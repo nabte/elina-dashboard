@@ -1,0 +1,190 @@
+﻿<!-- Contenido del panel de Etiquetas IA -->
+<div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+    <h2 class="text-2xl sm:text-3xl font-bold">Etiquetas Inteligentes</h2>
+    <div class="flex items-center gap-2">
+        <button id="add-smart-label-btn"
+            class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nueva Automatizaci&oacute;n
+        </button>
+        <button id="manage-labels-btn"
+            class="bg-slate-200 text-slate-800 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300 flex items-center gap-2">
+            <i data-lucide="settings-2" class="w-4 h-4"></i> Gestionar Etiquetas
+        </button>
+    </div>
+</div>
+
+<div id="smart-labels-loader" class="p-8 text-center text-slate-500">
+    <div class="flex flex-col items-center gap-3">
+        <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p class="font-medium">Cargando etiquetas inteligentes...</p>
+    </div>
+</div>
+
+<div id="smart-labels-content" class="hidden">
+    <!-- Funnels de Etiquetas -->
+    <div class="mb-8">
+        <h3 class="text-xl font-bold text-slate-800 mb-4">Funnels de Ventas</h3>
+        <div id="funnels-container" class="space-y-6">
+            <!-- Los funnels se renderizarÃ¡n aquÃ­ -->
+        </div>
+    </div>
+
+    <!-- Etiquetas Individuales -->
+    <div>
+        <h3 class="text-xl font-bold text-slate-800 mb-4">Etiquetas Individuales</h3>
+        <div id="individual-labels-container" class="space-y-6">
+            <!-- Las etiquetas individuales se renderizarÃ¡n aquÃ­ -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Etiqueta Inteligente -->
+<div id="smart-label-modal"
+    class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center p-6 border-b border-slate-200">
+            <h3 id="smart-label-modal-title" class="text-2xl font-bold text-slate-800">Nueva Automatizaci&oacute;n
+            </h3>
+            <button id="cancel-smart-label-btn" class="text-slate-500 hover:text-slate-800">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <form id="smart-label-form" class="flex-grow overflow-y-auto p-6 space-y-6">
+            <input type="hidden" id="smart-label-id">
+
+            <div id="label-selector-container" class="space-y-2">
+                <label for="smart-label-select" class="font-semibold text-slate-700">Etiqueta a automatizar</label>
+                <select id="smart-label-select"
+                    class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <!-- Opciones din&aacute;micas -->
+                </select>
+            </div>
+
+            <div id="new-label-fields-container"
+                class="hidden space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <div class="space-y-2">
+                    <label for="smart-label-name" class="font-semibold text-slate-700">Nombre de la nueva
+                        etiqueta</label>
+                    <input type="text" id="smart-label-name" class="w-full p-3 border border-slate-300 rounded-lg"
+                        placeholder="Ej: Lead Caliente">
+                </div>
+                <div class="space-y-2">
+                    <label for="smart-label-color" class="font-semibold text-slate-700">Color</label>
+                    <input type="color" id="smart-label-color"
+                        class="w-full h-12 p-1 border border-slate-300 rounded-lg" value="#607D8B">
+                </div>
+            </div>
+
+            <div
+                class="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:border-blue-100 group/item">
+                <div class="flex flex-col">
+                    <span class="font-bold text-slate-800">Activar automatización con IA</span>
+                    <span class="text-[11px] text-slate-500 font-medium">La IA analizará el contexto de los chats
+                        automáticamente</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="smart-label-is-automated" class="sr-only peer">
+                    <div
+                        class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                    </div>
+                </label>
+            </div>
+
+            <div id="ai-fields-container" class="hidden space-y-4 pl-8 border-l-2 border-blue-200">
+                <div class="space-y-2">
+                    <label for="smart-label-prompt" class="font-semibold text-slate-700 flex items-center gap-2">
+                        <i data-lucide="brain-circuit" class="w-5 h-5 text-blue-600"></i>
+                        Instrucci&oacute;n para la IA
+                    </label>
+                    <p class="text-sm text-slate-500">Describe cu&aacute;ndo se debe aplicar esta
+                        automatizaci&oacute;n.
+                        La IA analizar&aacute; los chats para asignarla.</p>
+                    <textarea id="smart-label-prompt" class="w-full p-3 border border-slate-300 rounded-lg h-32"
+                        placeholder="Ej: Asignar esta etiqueta si el cliente muestra un fuerte inter&eacute;s en comprar, menciona un presupuesto o pide una demostraci&oacute;n."></textarea>
+                    <button id="smart-label-ai-enhance-btn" type="button"
+                        class="text-sm text-blue-600 hover:underline font-semibold flex items-center gap-1">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        Mejorar con IA
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-4 pt-4 border-t border-slate-200">
+                <h4 class="font-semibold text-slate-700">Opciones adicionales</h4>
+                <div
+                    class="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 shadow-sm transition-all hover:border-slate-200">
+                    <span class="text-sm font-medium text-slate-600">Asignar también la etiqueta <strong
+                            class="text-slate-900">“ignorar”</strong> (Ignorar con IA)</span>
+                    <label class="relative inline-flex items-center cursor-pointer scale-90">
+                        <input type="checkbox" id="smart-label-ignore-in-chats" class="sr-only peer">
+                        <div
+                            class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-600">
+                        </div>
+                    </label>
+                </div>
+
+                <div
+                    class="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 shadow-sm transition-all hover:border-slate-200">
+                    <span class="text-sm font-medium text-slate-600">Notificarme cuando la IA asigne esta
+                        etiqueta</span>
+                    <label class="relative inline-flex items-center cursor-pointer scale-90">
+                        <input type="checkbox" id="smart-label-notify" class="sr-only peer">
+                        <div
+                            class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="space-y-4 pt-4 border-t border-slate-200">
+                <div
+                    class="flex items-center justify-between p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100 transition-all hover:bg-white hover:border-indigo-200 group/funnel">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-indigo-900">Organizar dentro de un funnel</span>
+                        <span class="text-[11px] text-indigo-500 font-medium">Define el orden y etapa de esta
+                            etiqueta</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="smart-label-enable-funnel" class="sr-only peer">
+                        <div
+                            class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600">
+                        </div>
+                    </label>
+                </div>
+                <div id="funnel-fields-container"
+                    class="hidden space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label for="smart-label-funnel-name" class="font-medium text-slate-600">Nombre del
+                                funnel</label>
+                            <input type="text" id="smart-label-funnel-name" list="funnel-names-list"
+                                class="w-full p-3 border border-slate-300 rounded-lg"
+                                placeholder="Ej: Proceso de Venta">
+                            <datalist id="funnel-names-list"></datalist>
+                        </div>
+                        <div class="space-y-2">
+                            <label for="smart-label-funnel-order" class="font-medium text-slate-600">Orden dentro
+                                del
+                                funnel</label>
+                            <input type="number" id="smart-label-funnel-order"
+                                class="w-full p-3 border border-slate-300 rounded-lg" placeholder="1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div class="flex justify-between items-center p-6 bg-slate-50 border-t border-slate-200 rounded-b-xl">
+            <button id="delete-smart-label-btn" type="button"
+                class="text-red-600 hover:text-red-800 font-semibold hidden">Eliminar</button>
+            <div class="flex gap-4">
+                <button type="button" id="cancel-smart-label-btn-footer"
+                    class="bg-white border border-slate-300 text-slate-700 font-bold py-2 px-6 rounded-lg hover:bg-slate-50">Cancelar</button>
+                <button type="submit" form="smart-label-form"
+                    class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">Guardar
+                    automatizaci&oacute;n</button>
+            </div>
+        </div>
+    </div>
+</div>

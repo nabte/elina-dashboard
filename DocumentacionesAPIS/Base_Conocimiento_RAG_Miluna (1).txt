@@ -1,0 +1,193 @@
+﻿BASE DE CONOCIMIENTO GLOBAL - LUNA TELECOMUNICACIONES (MILUNAA)
+1. INFORMACIÓN GENERAL DE LA EMPRESA
+* Nombre Legal: LUNA TELECOMUNICACIONES, S.A.P.I. de C.V.
+* RFC: TLU240410576
+* Marca Comercial: Luna / Mi Luna
+* Sitio Web: https://www.milunaa.com/
+* Descripción: Operador Móvil Virtual (OMV) en México que ofrece servicios de telecomunicaciones, planes de datos móviles, telefonía y venta de eSIMs (SIM virtual) y SIMs físicas. Operan utilizando la red de Altán Redes.
+* Domicilio Fiscal/Legal: Calle Real del Valle No. 142, Colonia Real del Valle, Montemorelos, Nuevo León, C.P. 67515, México.
+2. ATENCIÓN AL CLIENTE Y SOPORTE (CONTACTO)
+* Horario de atención: 24 horas del día, los 365 días del año.
+* Teléfono de Soporte y Quejas: 82 4348 2670
+* Correo de Soporte General: ayuda@milunaa.com
+* Correo para temas legales/justicia: areajuridica@milunaa.com
+* Reporte de Fallas/Robo/Extravío: Se debe realizar inmediatamente llamando al 82 4348 2670 o escribiendo a ayuda@milunaa.com.
+3. VENTAJAS COMPETITIVAS Y CARACTERÍSTICAS DEL SERVICIO
+* Activación instantánea: Compra en línea y configuración de eSIM en minutos.
+* Transferencia sencilla (Portabilidad): Permite conservar el mismo número sin complicaciones (regido bajo lineamientos del IFT).
+* Múltiples líneas: El usuario puede usar tanto su eSIM como su SIM física en un mismo dispositivo compatible.
+* Seguridad eSIM: Evita el riesgo de extravío o robo que tienen las tarjetas SIM físicas.
+* Gestión de Tráfico: Luna asegura la inviolabilidad de comunicaciones privadas. NO utiliza técnicas DPI/DFI para monitorear el tráfico del usuario (100% privacidad).
+4. PAQUETES Y PLANES PREPAGO (PRECIOS EN MXN)
+Nota para el bot: Todos los planes incluyen Política de Uso Justo (PUJ).
+Planes de Corta Duración
+* MI LUNA 69: * Precio: $69 MXN
+   * Datos: 6GB
+   * Minutos y Mensajes: Ilimitados
+   * Redes Sociales: Ilimitadas
+   * Vigencia: 7 días
+   * Hotspot (Compartir datos): Sí permite.
+* MI LUNA 135: * Precio: $135 MXN
+   * Datos: 10GB
+   * Minutos y Mensajes: Ilimitados
+   * Redes Sociales: Ilimitadas
+   * Vigencia: 15 días
+   * Hotspot (Compartir datos): Sí permite.
+Planes Mensuales (30 Días)
+* MI LUNA 149:
+   * Precio: $149 MXN
+   * Datos: 4GB
+   * Minutos y Mensajes: Ilimitados
+   * Redes Sociales: Ilimitadas
+   * Vigencia: 30 días
+   * Hotspot (Compartir datos): Sí permite.
+* MI LUNA 199:
+   * Precio: $199 MXN
+   * Datos: 12GB
+   * Minutos y Mensajes: Ilimitados
+   * Redes Sociales: Ilimitadas
+   * Vigencia: 30 días
+   * Hotspot (Compartir datos): Sí permite.
+* MI LUNA 310:
+   * Precio: $310 MXN
+   * Datos: 35GB
+   * Minutos y Mensajes: Ilimitados
+   * Redes Sociales: Ilimitadas
+   * Vigencia: 30 días
+   * Hotspot (Compartir datos): Sí permite.
+Planes Multimes (Pago por Adelantado)
+* MI LUNA 3M (Trimestral):
+   * Precio: $447 MXN
+   * Beneficios: Redes sociales ilimitadas, Minutos/SMS (según tarifa base).
+   * Vigencia: 90 días (entregado en periodos de 30 días x 3 meses).
+   * Hotspot (Compartir datos): Sí permite.
+* MI LUNA 6M (Semestral):
+   * Precio: $747 MXN
+   * Beneficios: Redes sociales ilimitadas, Minutos/SMS (según tarifa base).
+   * Vigencia: 180 días (entregado en periodos de 30 días x 6 meses).
+   * Hotspot (Compartir datos): Sí permite.
+5. ENLACES DIRECTOS Y HERRAMIENTAS (HIPERVÍNCULOS OFICIALES)
+Nota para el bot: Entrega estos enlaces al usuario siempre que pregunte cómo o dónde realizar estos trámites.
+* Página principal (compras y recargas): https://www.milunaa.com/
+* Validación de Compatibilidad (IMEI): https://milunaa.com/compatibilidad/
+* Mapa de Cobertura: https://milunaa.com/cobertura/
+* Portabilidad (Trámite Pásate a Luna): https://www.milunaa.com/portabilidad/
+* Aviso de Privacidad (Legal): https://www.milunaa.com/static/legales/Aviso_Privacidad.pdf
+* Contrato de Adhesión (Legal): https://milunaa.com/static/legales/Contrato_Adhesion.pdf
+* Código de Prácticas Comerciales: https://www.milunaa.com/static/legales/Codigo_Practicas_Comerciales.pdf
+6. PROCESOS OPERATIVOS PASO A PASO
+A) Cómo validar si un equipo es compatible con Luna (IMEI)
+1. El usuario debe obtener el IMEI de su teléfono marcando *#06#.
+2. Ingresar a la herramienta oficial: https://milunaa.com/compatibilidad/
+3. Colocar el IMEI de 15 dígitos en el buscador.
+4. El sistema indicará si el equipo soporta la Red de Luna, si soporta eSIM, si soporta VoLTE y si el equipo está bloqueado por otra compañía o liberado.
+B) Cómo realizar la Portabilidad (Conservar tu mismo número)
+1. El usuario ya debe tener en sus manos y activada la nueva SIM o eSIM de Luna.
+2. Desde su chip de la compañía anterior, debe enviar un mensaje de texto (SMS) con la palabra NIP al número 051.
+3. Recibirá un NIP de 4 dígitos con vigencia de 5 días.
+4. El usuario debe ingresar a https://www.milunaa.com/portabilidad/ e ingresar el número de serie de la nueva SIM de Luna junto con el NIP obtenido y su número actual.
+5. El proceso se completa en un máximo de 24 horas hábiles (de acuerdo al IFT).
+7. PREGUNTAS FRECUENTES (FAQ PARA RESPUESTAS RÁPIDAS)
+P: ¿Qué necesito para usar una eSIM de Luna?
+R: Necesitas un teléfono celular liberado (sin reporte de robo ni ataduras a otra compañía) y que sea compatible con la tecnología eSIM y banda 28 (Altán).
+P: ¿Puedo compartir mis datos (hacer Hotspot) con otras personas?
+R: Sí, todos los planes actuales de Mi Luna (69, 135, 149, 199, 310, 3M y 6M) permiten compartir tus datos con otros dispositivos.
+P: ¿Qué pasa si mis datos se terminan antes de mi vigencia?
+R: Se aplica la Política de Uso Justo (PUJ). La velocidad de navegación se reducirá, pero seguirás conectado. Requerirás adquirir un nuevo paquete para recuperar la velocidad de banda ancha de alta velocidad.
+P: ¿Cómo reporto que me robaron mi teléfono o perdí mi SIM?
+R: Debes llamar inmediatamente al 82 4348 2670 (disponible 24/7) para que bloqueemos la línea y el equipo (IMEI), evitando mal uso de tus datos.
+8. POLÍTICAS, TÉRMINOS Y CONDICIONES (RESUMEN LEGAL PARA EL BOT)
+* Aviso de Privacidad: Luna recaba datos personales para proveer el servicio. Los clientes pueden ejercer sus derechos ARCO enviando un correo a ayuda@milunaa.com con la documentación que acredite identidad.
+* Responsabilidad Técnica: Luna no asume responsabilidad por daños derivados de sitios enlazados de terceros. Su obligación técnica recae en el aseguramiento de la conectividad en alianza con Altán Redes.
+* Bonificaciones y Compensaciones (Contrato de Adhesión): Si la interrupción del servicio es imputable a Luna y dura más de 24 horas, el cliente debe ser compensado con la parte proporcional del servicio que dejó de prestarse más una bonificación de al menos el 20% del monto del periodo de afectación. Las solicitudes deben hacerse al 82 4348 2670.
+* Seguridad y Justicia: Luna colabora con las autoridades mexicanas en materia de seguridad (Arts. 189 y 190). Las autoridades deben dirigirse a areajuridica@milunaa.com.
+9. BASE EXTENDIDA DE PREGUNTAS Y RESPUESTAS (FAQ BOT)
+Nota de entrenamiento para el bot: Responde de manera amigable, directa y breve usando esta base.
+¿Qué planes tienen?
+Contamos con paquetes desde $69 MXN por 7 días, hasta paquetes semestrales de $747 MXN con datos de alta velocidad, además de minutos y redes ilimitadas.
+¿Cuánto cuesta el plan?
+Nuestros precios van desde los $69, $135, $149, $199, $310 y planes de $447 (trimestral) o $747 (semestral).
+¿Cuántos días dura el plan?
+Depende del plan que elijas, pero tenemos vigencias de 7, 15, 30, 90 y 180 días.
+¿Dónde puedo recargar?
+Puedes recargar de forma fácil y segura directamente en nuestra página web: https://www.milunaa.com/.
+¿Cómo consulto mi saldo?
+Revisa tu consumo y vigencia en nuestra página web o solicita ayuda contactando a soporte en ayuda@milunaa.com.
+¿Tienen cobertura en mi zona?
+¡Claro! Trabajamos con la red de Altán Redes, brindando una de las mayores coberturas a nivel nacional en México.
+¿Cómo saber si hay cobertura en mi estado/municipio/comunidad?
+Puedes revisar con exactitud tu comunidad ingresando a nuestro mapa interactivo en: https://milunaa.com/cobertura/
+¿Puedo conservar mi número?
+¡Por supuesto! El trámite se llama Portabilidad y es gratis, rápido y muy sencillo.
+¿Puedo cambiar mi lada?
+Si haces portabilidad, te traes exactamente el mismo número con tu lada actual. Si quieres una lada distinta, te sugerimos comprar una línea y número totalmente nuevo con nosotros.
+¿Cómo hago la portabilidad?
+Envía un SMS con la palabra NIP al 051 desde tu chip viejo. Con ese código de 4 dígitos, entra a https://www.milunaa.com/portabilidad/ y llena tus datos. Nosotros nos encargamos del resto.
+¿Cuánto tarda la portabilidad?
+Por ley del IFT, tu número se pasará con nosotros en un máximo de 24 horas hábiles tras hacer tu solicitud.
+¿Cómo saco mi NIP?
+Solo manda un mensaje de texto (SMS) desde la línea de tu antigua compañía al número 051 con la palabra NIP.
+¿Mi teléfono es compatible?
+Para asegurar que tu teléfono está liberado y funciona en nuestra red, obtén tu IMEI marcando *#06# e ingrésalo en: https://milunaa.com/compatibilidad/.
+¿Mi sim tiene vigencia?
+Sí, como en todas las compañías prepago, si dejas de recargar tu línea por varios meses consecutivos, el número se suspende y eventualmente se dará de baja definitivamente.
+¿Por qué ya no puedo hacer llamadas?
+Puede ser que se te haya terminado tu saldo, que no hayas activado la función "VoLTE" en los ajustes de tu teléfono, o que te encuentres fuera del área de cobertura. Escríbenos a ayuda@milunaa.com para revisar tu línea en sistema.
+¿Por qué mi sim está bloqueada?
+Esto puede suceder por falta de recargas durante mucho tiempo o porque la línea tiene un reporte de robo/extravío. Llámanos al 82 4348 2670 para apoyarte.
+¿Cómo saco el IMEI?
+Ve a la aplicación de llamadas de tu celular y marca *#06#. Verás un número largo en la pantalla, ese es tu IMEI.
+¿Tienen eSIM?
+¡Sí! Contamos con eSIM para que te conectes en minutos.
+¿Qué es una eSIM?
+Es una SIM virtual. En lugar de recibir un plástico por paquetería, te enviamos un código QR por correo electrónico; lo escaneas con la cámara de tu teléfono y tu línea queda lista para usarse.
+¿En cuánto tiempo se activa la eSIM?
+La activación es instantánea. Una vez que realizas el pago en nuestra web, te llegará en minutos para que la escanees y comiences a usarla.
+¿Venden teléfonos? / ¿Qué modelos de celulares tienen?
+Por el momento no vendemos equipos de forma dedicada. Te invitamos a utilizar tu propio celular; solo asegúrate de que esté liberado y revisa su compatibilidad en nuestra página: https://milunaa.com/compatibilidad/.
+¿Cómo activo VoLTE en mi teléfono?
+Ve a los Ajustes o Configuración de tu teléfono > Redes Celulares / Redes Móviles > Opciones y asegúrate de encender la pestaña que dice "VoLTE" o "Llamadas 4G".
+¿Dan factura?
+Sí, emitimos facturas de todas tus compras y recargas.
+¿Cómo puedo facturar mi recarga o plan?
+Contacta a soporte en ayuda@milunaa.com con el comprobante de tu recarga y tu constancia de situación fiscal actualizada.
+¿Puedo usar mi línea en iPhone / Android?
+Sí funciona en ambos sistemas operativos, siempre y cuando tu celular esté liberado y sea compatible con la Banda 28 (puedes revisarlo en nuestra página de compatibilidad).
+¿Qué pasa si no recargo?
+Tu línea se suspenderá para hacer llamadas o usar datos, pero seguirás recibiendo llamadas por unos días más. Si dejas pasar meses, tu línea se cancelará.
+¿Puedo compartir internet (hotspot)?
+¡Sí! Todos nuestros paquetes permiten hacer hotspot y compartir tus datos con otros dispositivos.
+¿Cómo activo mi línea?
+Solo inserta tu SIM física o escanea el QR de tu eSIM. Entra a los Ajustes de Red Celular en tu teléfono y asegúrate de activar "Datos Móviles", "VoLTE" y el "Roaming / Itinerancia de Datos".
+¿Llamadas y mensajes son ilimitados?
+Sí, todos nuestros planes actuales cuentan con minutos y SMS ilimitados a México y Estados Unidos.
+¿Los datos son ilimitados?
+Todos los paquetes cuentan con una cantidad fija de Gigabytes a alta velocidad y una Política de Uso Justo (PUJ). Si consumes esos GB antes de tu vigencia, seguirás conectado pero navegando a menor velocidad.
+¿Puedo tener dos líneas en el mismo teléfono?
+Sí, siempre y cuando tu celular tenga ranura para dos SIMs, o te permita tener una SIM física más una eSIM activas al mismo tiempo (Dual SIM).
+¿Cuántas líneas puedo tener registradas a mi nombre?
+Puedes tener hasta un máximo de 10 líneas registradas a tu nombre, de acuerdo con nuestras políticas comerciales y lineamientos de seguridad para prevención de fraude.
+¿La eSIM se puede cambiar a la sim física?
+Sí, puedes comunicarte al soporte de Luna y solicitar el reemplazo por una tarjeta SIM física en caso de requerirlo.
+¿Tienen atención a distribuidores? / ¿Cómo puedo ser distribuidor? / ¿Qué necesito? / ¿Zonas?
+¡Nos encantaría que te unas a nuestro equipo! Si te interesa ser distribuidor oficial de Mi Luna, envíanos un correo a ayuda@milunaa.com. Un asesor te contactará para compartirte los requisitos, esquemas de comisión y zonas disponibles.
+¿Es necesario registrar mi línea?
+No existe un registro nacional gubernamental obligatorio actualmente, pero la línea quedará asociada a tus datos de contacto básicos que proporcionas al momento de comprar el plan.
+Perdí mi sim ¿cómo puedo recuperar mi número?
+Llámanos inmediatamente al 82 4348 2670 para suspender tu SIM perdida y proteger tus datos. Luego podrás adquirir una reposición conservando tu mismo número.
+¿Por qué en mi teléfono no aparece el volte?
+Puede ser que tu dispositivo no esté actualizado a la última versión del sistema operativo, que tu modelo en particular no sea compatible con nuestra red, o que simplemente debas prenderlo manualmente en los Ajustes.
+¿Qué días y a qué hora puedo subir los datos para la portabilidad?
+Nuestra web (https://www.milunaa.com/portabilidad/) está abierta 24/7. Las solicitudes se procesan en días y horas hábiles.
+¿Por qué mi teléfono se conecta en roaming?
+Porque usamos la Red Compartida. Donde no tenemos antenas directas, nos enlazamos automáticamente con otras compañías nacionales para que nunca te quedes sin señal. No te cobraremos extra por ello.
+¿Cómo puedo configurar mi teléfono?
+Es sencillo: ve a "Ajustes", luego a "Redes Celulares" y asegúrate de encender tres opciones fundamentales: "Datos Móviles", "VoLTE" e "Itinerancia / Roaming de Datos".
+¿Qué significa cuando en mi teléfono en la parte superior aparece la R?
+Significa "Roaming". Es completamente normal en nuestra red extendida y te asegura que sigues conectado y con señal en todo momento.
+¿Cuál es la importancia de conectar en operadores de red en modo Automático?
+Es vital para que, a medida que te muevas por la ciudad o carretera, tu teléfono cambie sin interrupciones a la mejor antena disponible sin que tengas que buscar señal manualmente.
+¿Si no me acabo mis megas son acumulables?
+Por lo general, nuestros planes prepago tienen una vigencia estricta. Al terminar la vigencia (ej. 7, 15 o 30 días), los megas restantes no se acumulan para el siguiente ciclo.
+¿Si adquiero la sim física en qué tiempo llegaría? / ¿Envíos a toda la república? / ¿Costo?
+Hacemos envíos a toda la República. Al momento de confirmar tu compra, te haremos llegar por correo electrónico tu guía de rastreo. En ese correo vendrán especificados los tiempos exactos de entrega y si aplica algún costo de envío según tu código postal.

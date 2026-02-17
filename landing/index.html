@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elina IA | Automatiza ventas y soporte en WhatsApp 24/7</title>
+
+    <!-- SEO / Meta Tags -->
+    <meta name="description"
+        content="Automatiza tus ventas y soporte en WhatsApp con Inteligencia Artificial. Elina IA aumenta tus cierres un 72% mientras duermes. Prueba gratis 7 días.">
+    <meta name="keywords"
+        content="WhatsApp IA, Chatbot Ventas, Automatización WhatsApp, CRM WhatsApp, Inteligencia Artificial Ventas, Elina IA">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://elinaia.com.mx/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://elinaia.com.mx/">
+    <meta property="og:title" content="Elina IA | Tu Asistente de Ventas 24/7 en WhatsApp">
+    <meta property="og:description"
+        content="Convierte chats en clientes automáticamente. Respuestas humanas con IA, diseño gráfico automático y videos generados al instante.">
+    <meta property="og:image" content="https://brandcode.com.mx/Elina-logo.jpg">
+    <meta property="og:locale" content="es_MX">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://elinaia.com.mx/">
+    <meta name="twitter:title" content="Elina IA | Vende más por WhatsApp con IA">
+    <meta name="twitter:description"
+        content="Automatiza conversaciones, diseños y videos. Aumenta tu conversión un 72%.">
+    <meta name="twitter:image" content="https://brandcode.com.mx/Elina-logo.jpg">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpg" href="https://brandcode.com.mx/Elina-logo.jpg">
+
+    <!-- Fonts & Scripts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Elina IA",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, WhatsApp",
+      "offers": {
+        "@type": "Offer",
+        "price": "999",
+        "priceCurrency": "MXN",
+        "priceValidUntil": "2026-12-31"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "150"
+      },
+      "description": "Plataforma de automatización de ventas y soporte para WhatsApp usando Inteligencia Artificial Generativa."
+    }
+    </script>
+
+    <style>
+        :root {
+            color-scheme: dark;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle at top, rgba(59, 130, 246, 0.15), transparent 45%), #020617;
+            color: #e2e8f0;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.55);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            backdrop-filter: blur(18px);
+        }
+
+        .hero-gradient {
+            background: linear-gradient(140deg, rgba(37, 99, 235, 0.35), rgba(126, 34, 206, 0.35));
+        }
+
+        .floating-light {
+            position: absolute;
+            inset: auto;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, transparent 70%);
+            filter: blur(70px);
+            opacity: 0.7;
+        }
+
+        .animate-in {
+            opacity: 0;
+            transform: translateY(24px) scale(0.98);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .animate-in[data-state="visible"] {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        @media (max-width: 768px) {
+            .floating-light {
+                display: none;
+            }
+        }
+
+        /* Sticky header styles */
+        header {
+            transition: all 0.3s ease;
+        }
+
+        header.sticky {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            background: rgba(2, 6, 23, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        header.sticky nav {
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #06b6d4, #3b82f6);
+            z-index: 100;
+            transition: width 0.1s ease;
+        }
+
+        /* Pulse animation for CTAs */
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 30px rgba(6, 182, 212, 0.6);
+            }
+        }
+
+        .cta-pulse {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        /* Number counter animation */
+        .counter {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100">
+    <div class="progress-bar" id="progressBar"></div>
+    <header class="relative z-10" id="mainHeader">
+        <nav class="max-w-7xl mx-auto flex items-center justify-between px-6 py-6">
+            <a href="#" class="flex items-center gap-2" aria-label="Elina IA - Inicio">
+                <img src="https://brandcode.com.mx/Elina-logo.jpg" alt="Logo de Elina IA"
+                    class="h-10 w-10 rounded-full border border-cyan-400/40" loading="lazy">
+                <span class="text-lg font-bold tracking-wide">Elina IA</span>
+            </a>
+            <div class="hidden md:flex items-center gap-8 text-sm text-slate-300">
+                <a href="#features" class="hover:text-slate-50 transition" aria-label="Ver funciones">Funciones</a>
+                <a href="#modules" class="hover:text-slate-50 transition" aria-label="Ver módulos">Módulos</a>
+                <a href="#pricing" class="hover:text-slate-50 transition" aria-label="Ver planes">Planes</a>
+                <a href="#faq" class="hover:text-slate-50 transition"
+                    aria-label="Ver preguntas frecuentes">Preguntas</a>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="../auth.html?tab=login"
+                    class="hidden md:inline-flex px-4 py-2 text-sm font-semibold text-slate-200 hover:text-white transition"
+                    aria-label="Ingresar a la aplicación">Iniciar Sesión</a>
+                <a href="../auth.html?tab=register"
+                    class="inline-flex items-center gap-2 rounded-full bg-blue-500 hover:bg-blue-400 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/40 transition cta-pulse"
+                    aria-label="Probar gratis 7 días">Empezar gratis<i data-lucide="sparkles" class="w-4 h-4"></i></a>
+                <a href="https://wa.me/5219995169313" target="_blank" rel="noopener"
+                    class="hidden md:inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2 text-sm font-semibold text-white/80 hover:text-white hover:border-white/40 transition"
+                    aria-label="Contactar por WhatsApp">WhatsApp<i data-lucide="phone-call" class="w-4 h-4"></i></a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="relative z-10 overflow-hidden">
+        <div class="floating-light top-24 left-1/3"></div>
+        <section id="hero" class="max-w-7xl mx-auto px-6 pt-10 pb-20" data-admin-block="hero">
+            <div class="hero-gradient rounded-3xl p-8 md:p-16 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-72 h-72 bg-cyan-400/20 blur-3xl"></div>
+                <div class="grid lg:grid-cols-2 gap-12 relative">
+                    <div class="flex flex-col gap-6 animate-in" data-delay="0">
+                        <div class="flex items-center gap-3">
+                            <span
+                                class="inline-flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-cyan-200"
+                                data-admin-field="hero_badge">IA + WhatsApp + Automatización</span>
+                            <span
+                                class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200 text-xs font-semibold border border-emerald-400/30">Prueba
+                                gratuita 7 días • Sin tarjeta</span>
+                        </div>
+                        <h1 class="text-3xl md:text-5xl font-bold text-white leading-tight"
+                            data-admin-field="hero_title">Aumenta tus ventas 72% mientras duermes</h1>
+                        <p class="text-slate-200/80 text-base md:text-lg max-w-xl" data-admin-field="hero_copy">Elina
+                            cuida a tus contactos 24/7 y convierte chats en clientes. Combina respuestas humanas con IA,
+                            workflows automatizados y producción de contenido multimedia sin salir del panel.</p>
+                        <div class="flex flex-wrap gap-3 items-center">
+                            <a href="../auth.html?tab=register"
+                                class="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-cyan-400 text-slate-900 font-semibold shadow-lg shadow-cyan-400/40 hover:bg-cyan-300 transition cta-pulse"
+                                aria-label="Empezar prueba gratuita">Empezar gratis →<i data-lucide="rocket"
+                                    class="w-5 h-5"></i></a>
+                            <a href="https://wa.me/5219995169313" target="_blank" rel="noopener"
+                                class="inline-flex items-center gap-3 px-5 py-3 rounded-full bg-emerald-400/20 text-emerald-100 font-semibold border border-emerald-300/40 hover:bg-emerald-400/30 transition"
+                                aria-label="Hablar por WhatsApp">Hablar por WhatsApp<i data-lucide="message-circle"
+                                    class="w-5 h-5"></i></a>
+                            <a href="#pricing"
+                                class="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-white/20 text-white hover:bg-white/10 transition"
+                                aria-label="Ver planes y precios">Ver planes<i data-lucide="chevron-right"
+                                    class="w-4 h-4"></i></a>
+                        </div>
+                        <p class="text-xs text-slate-400">Sin tarjeta de crédito • Cancela cuando quieras</p>
+                        <dl class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-6 text-left text-sm text-slate-200/80">
+                            <div class="glass rounded-2xl px-4 py-3 border border-white/10">
+                                <dt class="text-xs uppercase tracking-[0.25em] text-slate-400">Mensajes atendidos</dt>
+                                <dd class="text-2xl font-bold text-white counter" data-admin-field="hero_stat_messages"
+                                    data-target="180">+180k</dd>
+                                <dd class="text-xs text-slate-400">/ mes</dd>
+                            </div>
+                            <div class="glass rounded-2xl px-4 py-3 border border-white/10">
+                                <dt class="text-xs uppercase tracking-[0.25em] text-slate-400">Cierres con IA</dt>
+                                <dd class="text-2xl font-bold text-white counter" data-admin-field="hero_stat_closings"
+                                    data-target="72">72%</dd>
+                                <dd class="text-xs text-slate-400">más vs. manual</dd>
+                            </div>
+                            <div class="glass rounded-2xl px-4 py-3 border border-white/10 col-span-2 sm:col-span-1">
+                                <dt class="text-xs uppercase tracking-[0.25em] text-slate-400">Tiempo de activación</dt>
+                                <dd class="text-2xl font-bold text-white" data-admin-field="hero_stat_time">15 min</dd>
+                                <dd class="text-xs text-slate-400">configuración</dd>
+                            </div>
+                        </dl>
+                        <p class="text-xs uppercase tracking-[0.3em] text-slate-400/70" data-admin-field="hero_note">
+                            Confían equipos de retail, inmobiliarias, agencias y academias.</p>
+                    </div>
+                    <div class="space-y-6 animate-in" data-delay="150">
+                        <div class="glass rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+                            <div class="aspect-video bg-slate-900/70">
+                                <iframe class="w-full h-full"
+                                    src="https://www.youtube-nocookie.com/embed/p1Ak5_8G7v0?rel=0" title="Demo Elina IA"
+                                    loading="lazy"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                            </div>
+                            <div class="p-6 flex items-center justify-between gap-6">
+                                <div>
+                                    <p class="text-sm font-semibold text-white" data-admin-field="hero_video_title">Ver
+                                        recorrido en 90 segundos</p>
+                                    <p class="text-xs text-slate-400" data-admin-field="hero_video_caption">Conecta
+                                        WhatsApp, crea plantillas y lanza campañas sin codigo.</p>
+                                </div>
+                                <a href="../auth.html?tab=register"
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/80 hover:bg-blue-500 text-white text-xs font-semibold transition">Probar
+                                    ahora<i data-lucide="play" class="w-4 h-4"></i></a>
+                            </div>
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="glass rounded-2xl border border-cyan-400/30 p-4">
+                                <p class="text-sm font-semibold text-white" data-admin-field="hero_highlight_1_title">
+                                    Templates dinamicos</p>
+                                <p class="text-xs text-slate-400" data-admin-field="hero_highlight_1_copy">Duplica
+                                    funnels y contenidos en segundos desde el panel de administracion.</p>
+                            </div>
+                            <div class="glass rounded-2xl border border-purple-400/30 p-4">
+                                <p class="text-sm font-semibold text-white" data-admin-field="hero_highlight_2_title">
+                                    Analiticas accionables</p>
+                                <p class="text-xs text-slate-400" data-admin-field="hero_highlight_2_copy">Identifica
+                                    leads calientes, tareas pendientes y rendimiento por asesor.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="max-w-6xl mx-auto px-6 pb-20">
+            <div class="text-center max-w-2xl mx-auto space-y-6 mb-12">
+                <p class="text-xs uppercase tracking-[0.4em] text-slate-500">Confianza y resultados</p>
+                <h2 class="text-3xl font-bold text-white">Únete a empresas que confían en Elina IA</h2>
+                <div class="flex items-center justify-center gap-8 text-sm text-slate-300">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-cyan-400 counter" data-target="150">150+</p>
+                        <p class="text-xs text-slate-400">Empresas activas</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-cyan-400 counter" data-target="98">98%</p>
+                        <p class="text-xs text-slate-400">Satisfacción</p>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-6 text-slate-400 text-sm mb-12">
+                <div class="glass rounded-xl py-3 px-4 text-center">Agencias Creativas</div>
+                <div class="glass rounded-xl py-3 px-4 text-center">Escuelas y Cursos</div>
+                <div class="glass rounded-xl py-3 px-4 text-center">E-commerce</div>
+                <div class="glass rounded-xl py-3 px-4 text-center">Consultorías</div>
+                <div class="glass rounded-xl py-3 px-4 text-center">Propiedad Raíz</div>
+            </div>
+        </section>
+
+        <section id="features" class="max-w-6xl mx-auto px-6 pb-20">
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="glass rounded-2xl p-8 space-y-4 animate-in" data-delay="0">
+                    <i data-lucide="bot" class="w-9 h-9 text-cyan-300"></i>
+                    <h3 class="text-xl font-semibold text-white">Respuestas humanas, gestionadas por IA</h3>
+                    <p class="text-slate-300 text-sm">Scripts personalizados por tono y negocio, memoria de
+                        conversaciones y transferencia a asesores en un clic.</p>
+                    <ul class="text-sm text-slate-400 space-y-2">
+                        <li class="flex items-center gap-2"><span
+                                class="w-2 h-2 bg-cyan-300 rounded-full"></span>Aprende de cada chat y mejora su
+                            discurso</li>
+                        <li class="flex items-center gap-2"><span class="w-2 h-2 bg-cyan-300 rounded-full"></span>Modo
+                            compliance: evita promesas o descuentos no autorizados</li>
+                    </ul>
+                </div>
+                <div class="glass rounded-2xl p-8 space-y-4 animate-in" data-delay="120">
+                    <i data-lucide="palette" class="w-9 h-9 text-purple-300"></i>
+                    <h3 class="text-xl font-semibold text-white">Diseña sin brief en minutos</h3>
+                    <p class="text-slate-300 text-sm">Genera artes, mockups y videos Veo 3.1 con tus logos, colores y
+                        referencias fotográficas.</p>
+                    <ul class="text-sm text-slate-400 space-y-2">
+                        <li class="flex items-center gap-2"><span
+                                class="w-2 h-2 bg-purple-300 rounded-full"></span>Biblioteca de plantillas para retail,
+                            servicios y eventos</li>
+                        <li class="flex items-center gap-2"><span class="w-2 h-2 bg-purple-300 rounded-full"></span>Sube
+                            referencias de producto y genera variantes ilimitadas</li>
+                    </ul>
+                </div>
+                <div class="glass rounded-2xl p-8 space-y-4 animate-in" data-delay="240">
+                    <i data-lucide="sparkles" class="w-9 h-9 text-sky-300"></i>
+                    <h3 class="text-xl font-semibold text-white">Automatizaciones sin romper WhatsApp</h3>
+                    <p class="text-slate-300 text-sm">Secuencias de seguimiento, embudos por etiqueta y envíos
+                        programados con horarios de descanso.</p>
+                    <ul class="text-sm text-slate-400 space-y-2">
+                        <li class="flex items-center gap-2"><span
+                                class="w-2 h-2 bg-sky-300 rounded-full"></span>Sincroniza con Chatwoot, HubSpot o tu CRM
+                            interno</li>
+                        <li class="flex items-center gap-2"><span
+                                class="w-2 h-2 bg-sky-300 rounded-full"></span>Reportes diarios con métricas de
+                            conversión</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="roi" class="max-w-6xl mx-auto px-6 pb-20">
+            <div class="text-center max-w-2xl mx-auto space-y-4 mb-12">
+                <h2 class="text-3xl font-bold text-white">Calcula tu ahorro con Elina IA</h2>
+                <p class="text-slate-300 text-sm">Compara el costo de contratar servicios por separado vs. tener todo en
+                    una plataforma</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="glass rounded-3xl p-8 space-y-6 animate-in" data-delay="0">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="x-circle" class="w-8 h-8 text-red-400"></i>
+                        <h3 class="text-2xl font-semibold text-white">Sin Elina IA</h3>
+                    </div>
+                    <div class="space-y-4 text-sm">
+                        <div class="flex justify-between items-center py-2 border-b border-white/10">
+                            <span class="text-slate-300">Asistente de WhatsApp</span>
+                            <span class="text-slate-400">$2,500/mes</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-white/10">
+                            <span class="text-slate-300">Diseñador freelance</span>
+                            <span class="text-slate-400">$8,000/mes</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-white/10">
+                            <span class="text-slate-300">Editor de video</span>
+                            <span class="text-slate-400">$5,000/mes</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-white/10">
+                            <span class="text-slate-300">Automatizaciones</span>
+                            <span class="text-slate-400">$3,000/mes</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-4 border-t-2 border-red-400/30">
+                            <span class="text-lg font-bold text-white">Total aproximado</span>
+                            <span class="text-xl font-bold text-red-400">$18,500/mes</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass rounded-3xl p-8 space-y-6 border-2 border-cyan-400/40 animate-in" data-delay="120">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="check-circle" class="w-8 h-8 text-cyan-400"></i>
+                        <h3 class="text-2xl font-semibold text-white">Con Elina IA</h3>
+                    </div>
+                    <div class="space-y-4 text-sm">
+                        <div class="flex justify-between items-center py-2 border-b border-white/10">
+                            <span class="text-slate-300">Todo incluido</span>
+                            <span class="text-cyan-400 font-semibold">$1,999/mes</span>
+                        </div>
+                        <div class="bg-cyan-500/10 rounded-xl p-4 space-y-2 mt-4">
+                            <p class="text-xs uppercase tracking-[0.2em] text-cyan-300">Ahorro mensual</p>
+                            <p class="text-3xl font-bold text-cyan-400">$16,501</p>
+                            <p class="text-xs text-slate-400">Ahorro anual: $198,012</p>
+                        </div>
+                        <div class="pt-4 space-y-2">
+                            <p class="text-sm font-semibold text-white">Incluye:</p>
+                            <ul class="text-xs text-slate-300 space-y-1">
+                                <li class="flex items-center gap-2"><i data-lucide="check"
+                                        class="w-3 h-3 text-cyan-400"></i>IA conversacional 24/7</li>
+                                <li class="flex items-center gap-2"><i data-lucide="check"
+                                        class="w-3 h-3 text-cyan-400"></i>Diseño con IA ilimitado</li>
+                                <li class="flex items-center gap-2"><i data-lucide="check"
+                                        class="w-3 h-3 text-cyan-400"></i>Videos VEO 3.1 incluidos</li>
+                                <li class="flex items-center gap-2"><i data-lucide="check"
+                                        class="w-3 h-3 text-cyan-400"></i>Automatizaciones avanzadas</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 text-center">
+                <p class="text-sm text-slate-400">* Cálculo basado en costos promedio del mercado mexicano. Ahorro real
+                    puede variar según tu caso.</p>
+            </div>
+        </section>
+
+        <section id="modules" class="max-w-6xl mx-auto px-6 pb-20">
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="glass rounded-3xl p-8 space-y-6 animate-in" data-delay="0">
+                    <span class="text-xs uppercase tracking-[0.3em] text-slate-400">Diseñador IA</span>
+                    <h3 class="text-2xl font-semibold text-white">Panel creativo listo para equipos sin diseñador</h3>
+                    <p class="text-sm text-slate-300">Flyers, mockups, retratos corporativos y catálogos en un flujo
+                        guiado. Guarda galería, exporta a Bunny CDN y comparte con tu equipo.</p>
+                    <div class="grid sm:grid-cols-2 gap-4 text-sm text-slate-300">
+                        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+                            <p class="font-semibold text-white">Galería inteligente</p>
+                            <p class="mt-2 text-slate-400">Guarda activos generados y compártelos con cualquier área.
+                            </p>
+                        </div>
+                        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+                            <p class="font-semibold text-white">Aspect ratios y referencias</p>
+                            <p class="mt-2 text-slate-400">Pide formatos 1:1, 9:16, 16:9 o auto. Sube productos para
+                                mantener identidad.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass rounded-3xl p-8 space-y-6 animate-in" data-delay="120">
+                    <span class="text-xs uppercase tracking-[0.3em] text-slate-400">Video IA</span>
+                    <h3 class="text-2xl font-semibold text-white">Genera video corto con audio en Veo 3.1 Flash</h3>
+                    <p class="text-sm text-slate-300">Textos o frames de referencia, audio incluido y subida automática
+                        al CDN de tu marca.</p>
+                    <div class="grid sm:grid-cols-2 gap-4 text-sm text-slate-300">
+                        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+                            <p class="font-semibold text-white">Estado en tiempo real</p>
+                            <p class="mt-2 text-slate-400">Consulta el progreso de la tarea Kie y vuelve a intentar si
+                                es necesario.</p>
+                        </div>
+                        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+                            <p class="font-semibold text-white">Sin procesos manuales</p>
+                            <p class="mt-2 text-slate-400">Descarga, comparte o inserta en tu secuencia de envío en
+                                segundos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="integrations" class="max-w-6xl mx-auto px-6 pb-20">
+            <div class="text-center max-w-2xl mx-auto space-y-4 mb-12">
+                <h2 class="text-3xl font-bold text-white">Integraciones en 2 clics</h2>
+                <p class="text-slate-300 text-sm">Conecta Elina con tus herramientas favoritas y sincroniza datos
+                    automáticamente</p>
+            </div>
+            <div class="grid md:grid-cols-4 gap-6">
+                <div class="glass rounded-2xl p-6 text-center space-y-3 animate-in" data-delay="0">
+                    <div class="w-16 h-16 mx-auto bg-blue-500/20 rounded-xl flex items-center justify-center">
+                        <i data-lucide="message-square" class="w-8 h-8 text-blue-400"></i>
+                    </div>
+                    <h4 class="font-semibold text-white">Chatwoot</h4>
+                    <p class="text-xs text-slate-400">Sincroniza conversaciones y contactos</p>
+                </div>
+                <div class="glass rounded-2xl p-6 text-center space-y-3 animate-in" data-delay="80">
+                    <div class="w-16 h-16 mx-auto bg-purple-500/20 rounded-xl flex items-center justify-center">
+                        <i data-lucide="briefcase" class="w-8 h-8 text-purple-400"></i>
+                    </div>
+                    <h4 class="font-semibold text-white">HubSpot</h4>
+                    <p class="text-xs text-slate-400">CRM completo integrado</p>
+                </div>
+                <div class="glass rounded-2xl p-6 text-center space-y-3 animate-in" data-delay="160">
+                    <div class="w-16 h-16 mx-auto bg-green-500/20 rounded-xl flex items-center justify-center">
+                        <i data-lucide="webhook" class="w-8 h-8 text-green-400"></i>
+                    </div>
+                    <h4 class="font-semibold text-white">Webhooks</h4>
+                    <p class="text-xs text-slate-400">Conecta con cualquier sistema</p>
+                </div>
+                <div class="glass rounded-2xl p-6 text-center space-y-3 animate-in" data-delay="240">
+                    <div class="w-16 h-16 mx-auto bg-orange-500/20 rounded-xl flex items-center justify-center">
+                        <i data-lucide="database" class="w-8 h-8 text-orange-400"></i>
+                    </div>
+                    <h4 class="font-semibold text-white">API REST</h4>
+                    <p class="text-xs text-slate-400">Integración personalizada</p>
+                </div>
+            </div>
+            <div class="text-center mt-8">
+                <a href="mailto:hola@elinaia.com.mx"
+                    class="inline-flex items-center gap-2 text-sm text-cyan-300 hover:text-cyan-200 transition">Ver
+                    todas las integraciones<i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+            </div>
+        </section>
+
+        <section class="max-w-6xl mx-auto px-6 pb-20">
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="glass rounded-2xl p-6 space-y-3 animate-in" data-delay="0">
+                    <h4 class="text-lg font-semibold text-white">Equipos de marketing</h4>
+                    <p class="text-sm text-slate-300">Planea promociones, carga catálogos, genera piezas y lanza
+                        campañas con aprobaciones centralizadas.</p>
+                </div>
+                <div class="glass rounded-2xl p-6 space-y-3 animate-in" data-delay="120">
+                    <h4 class="text-lg font-semibold text-white">Ventas consultivas</h4>
+                    <p class="text-sm text-slate-300">Scripts adaptados a cada etapa del embudo, seguimiento automático
+                        y transferencias a asesores senior.</p>
+                </div>
+                <div class="glass rounded-2xl p-6 space-y-3 animate-in" data-delay="240">
+                    <h4 class="text-lg font-semibold text-white">Academias y coaches</h4>
+                    <p class="text-sm text-slate-300">Automatiza recordatorios, entrega materiales visuales y califica
+                        prospectos antes de agendar sesiones.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="pricing" class="max-w-6xl mx-auto px-6 pb-20" data-admin-block="pricing">
+            <div class="text-center max-w-2xl mx-auto space-y-4">
+                <h2 class="text-3xl font-bold text-white" data-admin-field="pricing_title">Planes simples para escalar
+                    tu equipo</h2>
+                <p class="text-slate-300 text-sm" data-admin-field="pricing_copy">Todos incluyen conexión directa a
+                    WhatsApp, diseño con IA, video VEO 3.1, automatizaciones y acceso al panel administrativo.</p>
+            </div>
+            <div class="grid lg:grid-cols-3 gap-6 mt-12">
+                <div class="glass rounded-3xl p-8 flex flex-col gap-5 animate-in" data-delay="0">
+                    <span class="text-xs uppercase tracking-[0.3em] text-slate-400"
+                        data-admin-field="plan_starter_badge">Starter</span>
+                    <h3 class="text-3xl font-bold text-white" data-admin-field="plan_starter_price">$999 MXN / mes</h3>
+                    <ul class="text-sm text-slate-300 space-y-2">
+                        <li class="flex gap-2" data-admin-field="plan_starter_feature_1"><i data-lucide="check"
+                                class="w-4 h-4 text-cyan-300"></i>1 numero de WhatsApp + 2 agentes</li>
+                        <li class="flex gap-2" data-admin-field="plan_starter_feature_2"><i data-lucide="check"
+                                class="w-4 h-4 text-cyan-300"></i>300 respuestas IA y 30 imágenes</li>
+                        <li class="flex gap-2" data-admin-field="plan_starter_feature_3"><i data-lucide="check"
+                                class="w-4 h-4 text-cyan-300"></i>Automatizaciones básicas y un flujo de seguimiento
+                        </li>
+                    </ul>
+                    <a href="../auth.html?tab=register&plan=starter"
+                        class="mt-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white text-slate-900 font-semibold hover:bg-slate-100 transition">Empezar
+                        gratis<i data-lucide="rocket" class="w-4 h-4"></i></a>
+                    <p class="text-xs text-center text-slate-400">Sin tarjeta • Cancela cuando quieras</p>
+                </div>
+                <div class="glass rounded-3xl p-8 border border-cyan-400/40 shadow-xl shadow-cyan-500/20 flex flex-col gap-5 animate-in"
+                    data-delay="120">
+                    <div class="flex items-center justify-between">
+                        <span class="inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-cyan-200"
+                            data-admin-field="plan_grow_badge">Plan recomendado</span>
+                        <span
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-200 text-xs font-semibold">Más
+                            popular</span>
+                    </div>
+                    <h3 class="text-3xl font-bold text-white" data-admin-field="plan_grow_price">Grow $1,999 MXN / mes
+                    </h3>
+                    <ul class="text-sm text-slate-200 space-y-2">
+                        <li class="flex gap-2" data-admin-field="plan_grow_feature_1"><i data-lucide="check"
+                                class="w-4 h-4 text-cyan-300"></i>WhatsApp ilimitado con enrutamiento a asesores</li>
+                        <li class="flex gap-2" data-admin-field="plan_grow_feature_2"><i data-lucide="check"
+                                class="w-4 h-4 text-cyan-300"></i>80 imágenes + 12 videos VEO 3.1 cada mes</li>
+                        <li class="flex gap-2" data-admin-field="plan_grow_feature_3"><i data-lucide="check"
+                                class="w-4 h-4 text-cyan-300"></i>Campañas masivas ilimitadas con programación</li>
+                        <li class="flex gap-2" data-admin-field="plan_grow_feature_4"><i data-lucide="check"
+                                class="w-4 h-4 text-cyan-300"></i>Integraciones Chatwoot, HubSpot y webhooks</li>
+                    </ul>
+                    <a href="../auth.html?tab=register&plan=grow"
+                        class="mt-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-blue-500 hover:bg-blue-400 text-white font-semibold transition cta-pulse">Empezar
+                        gratis<i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+                    <p class="text-xs text-center text-slate-400">Sin tarjeta • Cancela cuando quieras</p>
+                </div>
+                <div class="glass rounded-3xl p-8 flex flex-col gap-5 animate-in" data-delay="240">
+                    <span class="text-xs uppercase tracking-[0.3em] text-slate-400"
+                        data-admin-field="plan_business_badge">Business</span>
+                    <h3 class="text-3xl font-bold text-white" data-admin-field="plan_business_price">$2,799 MXN / mes
+                    </h3>
+                    <ul class="text-sm text-slate-300 space-y-2">
+                        <li class="flex gap-2" data-admin-field="plan_business_feature_1"><i data-lucide="check"
+                                class="w-4 h-4 text-cyan-300"></i>3 números, atención 24/7 y colas de prioridad</li>
+                        <li class="flex gap-2" data-admin-field="plan_business_feature_2"><i data-lucide="check"
+                                class="w-4 h-4 text-cyan-300"></i>150 imágenes + 25 videos VEO 3.1 al mes</li>
+                        <li class="flex gap-2" data-admin-field="plan_business_feature_3"><i data-lucide="check"
+                                class="w-4 h-4 text-cyan-300"></i>API abierta, roles avanzados y auditorias</li>
+                        <li class="flex gap-2" data-admin-field="plan_business_feature_4"><i data-lucide="check"
+                                class="w-4 h-4 text-cyan-300"></i>Onboarding dedicado y migración de datos</li>
+                    </ul>
+                    <a href="../auth.html?tab=register&plan=business"
+                        class="mt-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full border border-white/20 text-white hover:bg-white/10 transition">Empezar
+                        gratis<i data-lucide="calendar" class="w-4 h-4"></i></a>
+                    <p class="text-xs text-center text-slate-400">Sin tarjeta • Cancela cuando quieras</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Blog Section -->
+        <section id="blog" class="max-w-6xl mx-auto px-6 pb-20" data-admin-block="blog">
+            <div class="text-center max-w-2xl mx-auto space-y-4">
+                <span class="text-xs uppercase tracking-[0.3em] text-slate-500"
+                    data-admin-field="blog_badge">Blog</span>
+                <h2 class="text-3xl font-bold text-white" data-admin-field="blog_title">Ideas y playbooks para potenciar
+                    tu canal de WhatsApp</h2>
+                <p class="text-slate-300 text-sm" data-admin-field="blog_copy">Explora guias, casos de exito y
+                    tutoriales publicados por el equipo de Elina. Cada entrada vive en /blog/nombre-de-entrada.</p>
+            </div>
+            <!-- Dynamic blog listing would go here. For now static placeholder. -->
+            <div class="grid md:grid-cols-3 gap-6 mt-12" id="blog-posts-container">
+                <article class="glass rounded-3xl p-6 flex flex-col gap-4 border border-white/10"
+                    data-admin-field="blog_card_1">
+                    <p class="text-xs text-slate-400 uppercase tracking-[0.3em]">Estrategia</p>
+                    <h3 class="text-xl font-semibold text-white">/blog/automatiza-prospectos-calientes</h3>
+                    <p class="text-sm text-slate-300 flex-1">Como configurar secuencias de seguimiento con IA para no
+                        perder oportunidades despues del primer contacto.</p>
+                    <a href="/blog/automatiza-prospectos-calientes"
+                        class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 hover:text-cyan-200 transition">Leer
+                        articulo<i data-lucide="arrow-up-right" class="w-4 h-4"></i></a>
+                </article>
+                <article class="glass rounded-3xl p-6 flex flex-col gap-4 border border-white/10"
+                    data-admin-field="blog_card_2">
+                    <p class="text-xs text-slate-400 uppercase tracking-[0.3em]">Creatividad</p>
+                    <h3 class="text-xl font-semibold text-white">/blog/piezas-veo-que-si-cierran</h3>
+                    <p class="text-sm text-slate-300 flex-1">Ideas de piezas generadas con VEO 3.1 y ajustes
+                        recomendados para retail y educacion.</p>
+                    <a href="/blog/piezas-veo-que-si-cierran"
+                        class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 hover:text-cyan-200 transition">Leer
+                        articulo<i data-lucide="arrow-up-right" class="w-4 h-4"></i></a>
+                </article>
+                <article class="glass rounded-3xl p-6 flex flex-col gap-4 border border-white/10"
+                    data-admin-field="blog_card_3">
+                    <p class="text-xs text-slate-400 uppercase tracking-[0.3em]">Producto</p>
+                    <h3 class="text-xl font-semibold text-white">/blog/configurar-inbox-compartido</h3>
+                    <p class="text-sm text-slate-300 flex-1">Pasos y mejores practicas para trabajar con agentes humanos
+                        e IA en un mismo inbox.</p>
+                    <a href="/blog/configurar-inbox-compartido"
+                        class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 hover:text-cyan-200 transition">Leer
+                        articulo<i data-lucide="arrow-up-right" class="w-4 h-4"></i></a>
+                </article>
+            </div>
+            <div class="text-center mt-10">
+                <a href="/blog"
+                    class="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-white/20 text-white/80 hover:text-white hover:border-white/40 text-sm font-semibold transition">Ver
+                    todas las entradas<i data-lucide="notebook" class="w-4 h-4"></i></a>
+            </div>
+        </section>
+
+        <section id="trust" class="max-w-6xl mx-auto px-6 pb-20">
+            <div class="glass rounded-3xl p-10 md:p-14 space-y-8 animate-in" data-delay="0">
+                <div class="text-center space-y-4">
+                    <h2 class="text-3xl font-bold text-white">Tu seguridad y satisfacción garantizadas</h2>
+                    <p class="text-slate-300 text-sm max-w-2xl mx-auto">En Elina IA protegemos tus datos y te ofrecemos
+                        garantías claras para que pruebes sin riesgo</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="text-center space-y-3">
+                        <div class="w-16 h-16 mx-auto bg-emerald-500/20 rounded-full flex items-center justify-center">
+                            <i data-lucide="shield-check" class="w-8 h-8 text-emerald-400"></i>
+                        </div>
+                        <h4 class="font-semibold text-white">Datos encriptados</h4>
+                        <p class="text-xs text-slate-400">Cumplimiento GDPR y protección de datos</p>
+                    </div>
+                    <div class="text-center space-y-3">
+                        <div class="w-16 h-16 mx-auto bg-cyan-500/20 rounded-full flex items-center justify-center">
+                            <i data-lucide="clock" class="w-8 h-8 text-cyan-400"></i>
+                        </div>
+                        <h4 class="font-semibold text-white">Prueba 7 días gratis</h4>
+                        <p class="text-xs text-slate-400">Sin tarjeta de crédito, cancela cuando quieras</p>
+                    </div>
+                    <div class="text-center space-y-3">
+                        <div class="w-16 h-16 mx-auto bg-purple-500/20 rounded-full flex items-center justify-center">
+                            <i data-lucide="headphones" class="w-8 h-8 text-purple-400"></i>
+                        </div>
+                        <h4 class="font-semibold text-white">Soporte dedicado</h4>
+                        <p class="text-xs text-slate-400">Equipo disponible para ayudarte a configurar</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="faq" class="max-w-4xl mx-auto px-6 pb-24">
+            <h2 class="text-3xl font-bold text-center text-white mb-10">Preguntas frecuentes</h2>
+            <div class="space-y-4">
+                <details class="glass rounded-2xl p-5 animate-in" data-delay="0" open>
+                    <summary class="cursor-pointer text-lg font-semibold text-white flex items-center justify-between">
+                        ¿Necesito un número de WhatsApp Business?<i data-lucide="plus" class="w-4 h-4"></i></summary>
+                    <p class="mt-3 text-sm text-slate-300">Puedes conectar tu número personal o empresarial mediante
+                        nuestra integración con Evolution API. Te guiamos paso a paso.</p>
+                </details>
+                <details class="glass rounded-2xl p-5 animate-in" data-delay="80">
+                    <summary class="cursor-pointer text-lg font-semibold text-white flex items-center justify-between">
+                        ¿La IA respeta mi tono de marca?<i data-lucide="plus" class="w-4 h-4"></i></summary>
+                    <p class="mt-3 text-sm text-slate-300">Sí. El asistente se configura con tu wizard inicial:
+                        propósito, tono, prohibiciones y procesos. Puedes editar el prompt maestro en cualquier momento.
+                    </p>
+                </details>
+                <details class="glass rounded-2xl p-5 animate-in" data-delay="160">
+                    <summary class="cursor-pointer text-lg font-semibold text-white flex items-center justify-between">
+                        ¿Qué pasa si se agotan mis créditos?<i data-lucide="plus" class="w-4 h-4"></i></summary>
+                    <p class="mt-3 text-sm text-slate-300">Seguimos operando tus automatizaciones. Podrás comprar
+                        paquetes adicionales de imágenes o videos sin subir de plan.</p>
+                </details>
+                <details class="glass rounded-2xl p-5 animate-in" data-delay="240">
+                    <summary class="cursor-pointer text-lg font-semibold text-white flex items-center justify-between">
+                        ¿Cuánto tiempo toma la configuración inicial?<i data-lucide="plus" class="w-4 h-4"></i>
+                    </summary>
+                    <p class="mt-3 text-sm text-slate-300">En promedio, nuestros clientes tienen Elina funcionando en
+                        menos de 15 minutos. Incluye conexión de WhatsApp, configuración de tono y primera
+                        automatización.</p>
+                </details>
+                <details class="glass rounded-2xl p-5 animate-in" data-delay="320">
+                    <summary class="cursor-pointer text-lg font-semibold text-white flex items-center justify-between">
+                        ¿Puedo integrar con mi CRM existente?<i data-lucide="plus" class="w-4 h-4"></i></summary>
+                    <p class="mt-3 text-sm text-slate-300">Sí. Elina se integra con Chatwoot, HubSpot y cualquier
+                        sistema mediante webhooks o API REST. Nuestro equipo te ayuda con la configuración.</p>
+                </details>
+                <details class="glass rounded-2xl p-5 animate-in" data-delay="400">
+                    <summary class="cursor-pointer text-lg font-semibold text-white flex items-center justify-between">
+                        ¿Qué tipo de soporte ofrecen?<i data-lucide="plus" class="w-4 h-4"></i></summary>
+                    <p class="mt-3 text-sm text-slate-300">Ofrecemos soporte por email, WhatsApp y documentación
+                        completa. Los planes Business incluyen onboarding dedicado y soporte prioritario.</p>
+                </details>
+                <details class="glass rounded-2xl p-5 animate-in" data-delay="480">
+                    <summary class="cursor-pointer text-lg font-semibold text-white flex items-center justify-between">
+                        ¿Puedo cancelar en cualquier momento?<i data-lucide="plus" class="w-4 h-4"></i></summary>
+                    <p class="mt-3 text-sm text-slate-300">Sí, puedes cancelar tu suscripción en cualquier momento desde
+                        el panel. No hay contratos de permanencia ni penalizaciones.</p>
+                </details>
+            </div>
+        </section>
+
+        <section class="max-w-5xl mx-auto px-6 pb-24">
+            <div class="glass rounded-3xl p-10 md:p-14 text-center space-y-6 animate-in" data-delay="0">
+                <div
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/20 text-cyan-200 text-xs font-semibold border border-cyan-400/30 mb-4">
+                    <i data-lucide="trending-up" class="w-4 h-4"></i>
+                    Únete a 150+ empresas que aumentaron sus ventas 72%
+                </div>
+                <h2 class="text-3xl font-bold text-white">Haz que tu WhatsApp venda mientras tu equipo crea</h2>
+                <p class="text-slate-300 text-sm max-w-2xl mx-auto">Activa Elina IA hoy, importa tus contactos, define
+                    tu tono y lanza tu primera automatización en menos de una hora.</p>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <a href="../auth.html?tab=register"
+                        class="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-cyan-400 text-slate-900 font-semibold shadow-lg shadow-cyan-400/40 hover:bg-cyan-300 transition cta-pulse">Empezar
+                        gratis →<i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+                    <a href="mailto:hola@elinaia.com.mx"
+                        class="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/20 text-white hover:bg-white/10 transition">Hablar
+                        con un especialista<i data-lucide="message-circle" class="w-4 h-4"></i></a>
+                </div>
+                <p class="text-xs text-slate-400">Prueba gratuita 7 días • Sin tarjeta de crédito • Cancela cuando
+                    quieras</p>
+            </div>
+        </section>
+    </main>
+
+    <a href="https://wa.me/5219995169313" target="_blank" rel="noopener" aria-label="Hablar con Elina por WhatsApp"
+        class="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/40 hover:bg-emerald-400 transition">
+        <i data-lucide="message-circle" class="w-5 h-5"></i>
+        WhatsApp
+    </a>
+
+    <footer class="border-t border-white/10 bg-slate-950/80">
+        <div class="max-w-6xl mx-auto px-6 py-12">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <img src="https://brandcode.com.mx/Elina-logo.jpg" alt="Elina IA"
+                            class="h-8 w-8 rounded-full border border-cyan-400/40" loading="lazy">
+                        <span class="font-bold text-white">Elina IA</span>
+                    </div>
+                    <p class="text-xs text-slate-400">Automatiza ventas y soporte en WhatsApp con IA generativa.</p>
+                </div>
+                <div>
+                    <h5 class="font-semibold text-white mb-4 text-sm">Producto</h5>
+                    <ul class="space-y-2 text-xs text-slate-400">
+                        <li><a href="#features" class="hover:text-slate-200 transition">Funciones</a></li>
+                        <li><a href="#pricing" class="hover:text-slate-200 transition">Planes</a></li>
+                        <li><a href="#integrations" class="hover:text-slate-200 transition">Integraciones</a></li>
+                        <li><a href="/blog" class="hover:text-slate-200 transition">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-semibold text-white mb-4 text-sm">Soporte</h5>
+                    <ul class="space-y-2 text-xs text-slate-400">
+                        <li><a href="#faq" class="hover:text-slate-200 transition">Preguntas frecuentes</a></li>
+                        <li><a href="mailto:hola@elinaia.com.mx" class="hover:text-slate-200 transition">Contacto</a>
+                        </li>
+                        <li><a href="https://wa.me/5219995169313" target="_blank" rel="noopener"
+                                class="hover:text-slate-200 transition">WhatsApp</a></li>
+                        <li><a href="../auth.html?tab=login" class="hover:text-slate-200 transition">Iniciar Sesión</a>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-semibold text-white mb-4 text-sm">Legal</h5>
+                    <ul class="space-y-2 text-xs text-slate-400">
+                        <li><a href="/terminos" class="hover:text-slate-200 transition">Términos y Condiciones</a></li>
+                        <li><a href="/privacidad" class="hover:text-slate-200 transition">Política de Privacidad</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div
+                class="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+                <p>&#169; 2025 Elina IA. Todos los derechos reservados.</p>
+                <div class="flex items-center gap-4">
+                    <a href="mailto:hola@elinaia.com.mx" class="hover:text-slate-200 transition"
+                        aria-label="Contacto por email">hola@elinaia.com.mx</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Sticky header
+        const header = document.getElementById('mainHeader');
+        const progressBar = document.getElementById('progressBar');
+
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrollPercent = (scrollTop / scrollHeight) * 100;
+
+            // Progress bar
+            if (progressBar) {
+                progressBar.style.width = scrollPercent + '%';
+            }
+
+            // Sticky header
+            if (header) {
+                if (scrollTop > 100) {
+                    header.classList.add('sticky');
+                } else {
+                    header.classList.remove('sticky');
+                }
+            }
+        });
+
+        // Animate counters
+        function animateCounter(element) {
+            const target = parseInt(element.dataset.target);
+            const duration = 2000;
+            const increment = target / (duration / 16);
+            let current = 0;
+
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    element.textContent = target + (element.textContent.includes('%') ? '%' : element.textContent.includes('+') ? '+' : '');
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current) + (element.textContent.includes('%') ? '%' : element.textContent.includes('+') ? '+' : '');
+                }
+            }, 16);
+        }
+
+        // Intersection Observer for animations
+        document.querySelectorAll('.animate-in').forEach((el, index) => {
+            const delay = Number(el.dataset.delay || index * 60);
+            el.style.transitionDelay = `${delay}ms`;
+        });
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.dataset.state = 'visible';
+
+                    // Animate counters when visible
+                    const counters = entry.target.querySelectorAll('.counter[data-target]');
+                    counters.forEach(counter => {
+                        if (!counter.dataset.animated) {
+                            counter.dataset.animated = 'true';
+                            animateCounter(counter);
+                        }
+                    });
+
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+
+        document.querySelectorAll('.animate-in').forEach(el => observer.observe(el));
+
+        // Initialize Lucide icons
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+
+            // Update icons on dynamic content
+            const iconObserver = new MutationObserver(() => {
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
+            });
+
+            iconObserver.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href !== '#' && href.length > 1) {
+                    e.preventDefault();
+                    const target = document.querySelector(href);
+                    if (target) {
+                        const headerOffset = 100;
+                        const elementPosition = target.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

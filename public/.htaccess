@@ -1,0 +1,54 @@
+RewriteEngine On
+RewriteBase /
+
+# Configurar tipos MIME correctos para JavaScript
+AddType application/javascript .js
+AddType application/json .json
+
+# Permitir acceso directo a TODOS los archivos y directorios existentes (PRIMERA PRIORIDAD)
+# Esto evita que los archivos .js sean redirigidos
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Remover .html de las URLs si se accede directamente
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s([^.]+)\.html [NC]
+RewriteRule ^ %1 [R=301,L]
+
+# Reglas para URLs limpias de páginas principales
+RewriteRule ^dashboard$ dashboard.html [L]
+RewriteRule ^settings$ settings.html [L]
+RewriteRule ^auth$ auth.html [L]
+RewriteRule ^login$ auth.html [L]
+RewriteRule ^booking$ booking.html [L]
+RewriteRule ^blog$ blog.html [L]
+RewriteRule ^privacy$ privacy.html [L]
+RewriteRule ^terms$ terms.html [L]
+RewriteRule ^data-usage$ data-usage.html [L]
+RewriteRule ^appointments$ appointments.html [L]
+RewriteRule ^chats$ chats.html [L]
+RewriteRule ^products$ products.html [L]
+RewriteRule ^templates$ templates.html [L]
+RewriteRule ^kanban$ kanban.html [L]
+RewriteRule ^follow-ups$ follow-ups.html [L]
+RewriteRule ^video-ai$ video-ai.html [L]
+RewriteRule ^forgot-password$ forgot-password.html [L]
+RewriteRule ^reset-password$ reset-password.html [L]
+RewriteRule ^company-admin$ company-admin.html [L]
+RewriteRule ^superadmin$ superadmin.html [L]
+RewriteRule ^accept-invitation$ accept-invitation.html [L]
+RewriteRule ^personal-tasks$ personal-tasks.html [L]
+RewriteRule ^designer-ai$ designer-ai.html [L]
+RewriteRule ^bulk-sending$ bulk-sending.html [L]
+RewriteRule ^smart-labels$ smart-labels.html [L]
+
+# Regla para links de agendamiento (Slugs)
+# Si no es un archivo ni directorio, y no son rutas de sistema/assets, se asume que es un slug de empresa
+RewriteCond %{REQUEST_URI} !^/(assets|css|js|img|node_modules|dist|public|supabase|n8n|api) [NC]
+RewriteCond %{REQUEST_URI} !\.(json|js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|html|map)$ [NC]
+RewriteRule ^([a-zA-Z0-9-]+)$ booking.html [L,QSA]
+
+# Fallback general a index.html si no coincide con nada anterior
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.html [L]

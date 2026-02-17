@@ -1,0 +1,33 @@
+﻿
+--- TEST: Unknown User (Sales Mode) ---
+node : Error: SyntaxError: Unexpected token '<', "<html>
+En línea: 1 Carácter: 1
++ node test_invoke.cjs > output_debug.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Error: SyntaxEr...en '<', "<htm 
+   l>:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+<h"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at parseJSONFromBytes (node:internal/deps/undici/undici:5852:19)
+    at successSteps (node:internal/deps/undici/undici:5833:27)
+    at fullyReadBody (node:internal/deps/undici/undici:4725:9)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:105:5)
+    at async consumeBody (node:internal/deps/undici/undici:5842:7)
+    at async runTest (H:\DESAL\ELina 26\test_invoke.cjs:28:22)
+    at async main (H:\DESAL\ELina 26\test_invoke.cjs:72:5)
+
+--- TEST: Known Client (Support Mode) ---
+Error: SyntaxError: Unexpected token '<', "<html>
+<h"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at parseJSONFromBytes (node:internal/deps/undici/undici:5852:19)
+    at successSteps (node:internal/deps/undici/undici:5833:27)
+    at fullyReadBody (node:internal/deps/undici/undici:4725:9)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:105:5)
+    at async consumeBody (node:internal/deps/undici/undici:5842:7)
+    at async runTest (H:\DESAL\ELina 26\test_invoke.cjs:28:22)
+    at async main (H:\DESAL\ELina 26\test_invoke.cjs:76:5)

@@ -1,0 +1,31 @@
+<!-- Contenido del panel de Productos -->
+<div class="flex justify-between items-center mb-6 gap-4">
+    <div>
+        <h2 class="text-2xl sm:text-3xl font-bold">Productos</h2>
+        <p id="products-count" class="text-sm text-slate-500 mt-1">0 productos</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <button id="add-product-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nuevo Producto
+        </button>
+        <button id="download-template-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300 flex items-center gap-2" title="Descargar plantilla para importación masiva">
+            <i data-lucide="download" class="w-3 h-3"></i> Descargar Plantilla
+        </button>
+        <button id="export-products-btn" class="bg-amber-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-amber-600 flex items-center gap-2">
+            <i data-lucide="share" class="w-4 h-4"></i> Exportar Productos
+        </button>
+        <label class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 cursor-pointer flex items-center gap-2">
+            <i data-lucide="upload" class="w-3 h-3"></i> Importar CSV
+            <input type="file" id="import-csv-input" class="hidden" accept=".csv,.xlsx,.xls">
+        </label>
+    </div>
+</div>
+<div class="bg-white rounded-xl shadow-md overflow-x-auto">
+    <table class="w-full text-left">
+        <thead class="bg-slate-50">
+            <tr><th class="p-4 font-semibold">Nombre</th><th class="p-4 font-semibold">SKU</th><th class="p-4 font-semibold">Precio</th><th class="p-4 font-semibold">Disponibilidad</th><th class="p-4 font-semibold">Media</th><th class="p-4 font-semibold">Acciones</th></tr>
+        </thead>
+        <tbody id="products-table-body" class="divide-y divide-slate-200"></tbody>
+    </table>
+    <div id="products-loader" class="p-8 text-center text-slate-500">Cargando productos...</div>
+</div>

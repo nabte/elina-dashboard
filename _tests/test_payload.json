@@ -1,0 +1,16 @@
+{
+    "event": "messages.upsert",
+    "instance": "instancia-test",
+    "data": {
+        "key": {
+            "remoteJid": "5215512345678@s.whatsapp.net",
+            "fromMe": false,
+            "id": "TEST_ID"
+        },
+        "message": {
+            "conversation": "llaveros"
+        },
+        "messageTimestamp": 1770918164,
+        "pushName": "Test User"
+    }
+}

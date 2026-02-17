@@ -1,0 +1,376 @@
+/* ========================================
+   SIDEBAR STYLES
+   ======================================== */
+
+/* Sidebar Base */
+.main-sidebar {
+    transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
+    width: 16rem;
+    /* 256px */
+    overflow-x: hidden;
+}
+
+/* Sidebar Collapsed State */
+.main-sidebar.sidebar-collapsed {
+    width: 5rem;
+    /* 80px */
+}
+
+.main-sidebar.sidebar-collapsed .sidebar-text {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: opacity 0.2s ease-out, width 0.2s ease-out, height 0.2s ease-out;
+}
+
+.main-sidebar.sidebar-collapsed .nav-link {
+    justify-content: center;
+}
+
+.main-sidebar.sidebar-collapsed #upgrade-collapsed-btn {
+    display: flex;
+}
+
+/* Mobile Sidebar */
+@media (max-width: 1023px) {
+    .main-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        z-index: 100;
+        transform: translateX(-100%);
+    }
+
+    .main-sidebar.open {
+        transform: translateX(0);
+    }
+}
+
+/* ========================================
+   TOGGLE BUTTON STYLES
+   ======================================== */
+
+#toggle-sidebar-collapse-btn {
+    left: 15.5rem;
+    /* Default position when sidebar is open */
+    transition: left 0.3s ease-in-out;
+}
+
+#toggle-sidebar-collapse-btn.collapsed {
+    left: 4.5rem;
+    /* Position when sidebar is collapsed */
+}
+
+#toggle-sidebar-collapse-btn i {
+    transition: transform 0.3s ease-in-out;
+}
+
+#toggle-sidebar-collapse-btn.collapsed i {
+    transform: rotate(180deg);
+}
+
+/* ========================================
+   MAIN CONTENT AREA
+   ======================================== */
+
+#main-content-area {
+    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+@media (min-width: 1024px) {
+    #main-content-area {
+        margin-left: 1rem;
+    }
+
+    .sidebar-collapsed+#main-content-area {
+        margin-left: 1rem;
+    }
+}
+
+/* ========================================
+   FORM ELEMENTS STYLING
+   ======================================== */
+
+.form-input,
+.form-textarea,
+.custom-select {
+    background-color: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    color: #1e293b;
+    width: 100%;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.custom-select:focus {
+    outline: none;
+    border-color: #22c55e;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+/* Custom Select styling */
+select.form-input,
+select.custom-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 12px;
+    padding-right: 2.5rem;
+}
+
+/* Custom Checkbox */
+input[type="checkbox"] {
+    appearance: none;
+    background-color: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+input[type="checkbox"]:checked {
+    background-color: #22c55e;
+    border-color: #22c55e;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Date and Time inputs */
+input[type="date"],
+input[type="time"] {
+    background-color: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: #1e293b;
+    cursor: pointer;
+}
+
+input[type="date"]:focus,
+input[type="time"]:focus {
+    outline: none;
+    border-color: #22c55e;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+/* ========================================
+   CONTENT PANELS
+   ======================================== */
+
+.content-panel {
+    display: none;
+}
+
+.content-panel.active {
+    display: block;
+}
+
+/* ========================================
+   GROUP TABS STYLING
+   ======================================== */
+
+.group-tabs-container {
+    margin-bottom: 1.5rem;
+}
+
+.group-tabs {
+    display: flex;
+    gap: 0.75rem;
+    padding-bottom: 0.5rem;
+    flex-wrap: wrap;
+    border-bottom: none;
+}
+
+.group-tab {
+    padding: 0.625rem 1.25rem;
+    font-weight: 600;
+    color: #64748b;
+    background-color: #f8fafc;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #e2e8f0;
+    font-size: 0.875rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.group-tab:hover:not(.active) {
+    color: #1e293b;
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+.group-tab.active {
+    color: white;
+    background-color: #22c55e;
+    border-color: #22c55e;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+}
+
+/* ========================================
+   SCROLLBAR STYLES
+   ======================================== */
+
+.main-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.main-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.main-sidebar::-webkit-scrollbar-thumb {
+    background-color: #3d4a6b;
+    border-radius: 10px;
+}
+
+.main-sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: #4b5a82;
+}
+
+/* General scrollbar for all elements */
+*::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background-color: #9ca3af;
+}
+
+/* ========================================
+   COLOR SWATCH STYLING
+   ======================================== */
+
+.color-palette-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.color-swatch-wrapper {
+    position: relative;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f8fafc;
+}
+
+.color-swatch-input {
+    width: 100%;
+    height: 3rem;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    appearance: none;
+    background-color: transparent;
+}
+
+.color-swatch-input::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-swatch-input::-webkit-color-swatch {
+    border: none;
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+/* ========================================
+   WIZARD ANIMATIONS
+   ======================================== */
+
+@keyframes animate-pulse-slow {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.95;
+        transform: scale(1.02);
+    }
+}
+
+.animate-pulse-slow {
+    animation: animate-pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Botón flotante del wizard */
+#floating-wizard-btn {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Mejoras para el botón del dashboard */
+#dashboard-wizard-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+#dashboard-wizard-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+#dashboard-wizard-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Mejoras para el botón de settings */
+#settings-wizard-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+#settings-wizard-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+#settings-wizard-btn:hover::after {
+    left: 100%;
+}

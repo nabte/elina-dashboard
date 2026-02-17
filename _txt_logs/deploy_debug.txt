@@ -1,0 +1,20 @@
+open supabase\.temp\profile: The system cannot find the file specified.
+Using access token for profile: supabase
+Loading project ref from flag: mytvwfbijlgbihlegmfg
+Supabase CLI 2.75.5
+Using profile: supabase (supabase.co)
+WARNING: Docker is not running
+Using access token for profile: supabase
+2026/02/05 11:36:41 HTTP POST: https://api.supabase.com/v1/projects/mytvwfbijlgbihlegmfg/functions/deploy?slug=process-chat-message
+Uploading asset (process-chat-message): supabase/functions/process-chat-message/index.ts
+Uploading asset (process-chat-message): supabase/functions/process-chat-message/media.ts
+Uploading asset (process-chat-message): supabase/functions/process-chat-message/supabase-client.ts
+Uploading asset (process-chat-message): supabase/functions/process-chat-message/evolution-client.ts
+Uploading asset (process-chat-message): supabase/functions/process-chat-message/logic.ts
+Uploading asset (process-chat-message): supabase/functions/process-chat-message/llm.ts
+Uploading asset (process-chat-message): supabase/functions/process-chat-message/tools.ts
+Uploading asset (process-chat-message): supabase/functions/process-chat-message/rag.ts
+Uploading asset (process-chat-message): supabase/functions/process-chat-message/context.ts
+Uploading asset (process-chat-message): supabase/functions/process-chat-message/redis-cache.ts
+Uploading asset (process-chat-message): supabase/functions/process-chat-message/cors.ts
+unexpected deploy status 400: {"message":"Bundle generation timed out"}

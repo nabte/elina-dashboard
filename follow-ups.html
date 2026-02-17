@@ -1,0 +1,23 @@
+<!-- Contenido del panel de Seguimientos -->
+<div id="follow-ups-access-denied" class="hidden bg-white rounded-xl shadow-md p-8 text-center">
+    <i data-lucide="lock" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
+    <h3 class="text-xl font-bold">Función Exclusiva del Plan Grow</h3>
+    <p class="text-slate-500 mt-2 max-w-md mx-auto">Automatiza tus seguimientos y nunca más pierdas una venta por falta de atención. ¡Desbloquea esta función mejorando tu plan!</p>
+    <button id="upgrade-to-grow-from-followups" class="mt-6 bg-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-700">
+        Mejorar a Plan Grow
+    </button>
+</div>
+
+<div id="follow-ups-container" class="hidden">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl sm:text-3xl font-bold">Secuencias de Seguimiento</h2>
+        <button id="add-sequence-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nueva Secuencia
+        </button>
+    </div>
+    <div id="followups-list" class="space-y-4">
+        <!-- Las secuencias se renderizarán aquí -->
+        <div id="followups-loader" class="text-center text-slate-500 p-8">Cargando secuencias...</div>
+    </div>
+</div>
+

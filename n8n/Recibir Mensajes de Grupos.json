@@ -1,0 +1,397 @@
+{
+  "name": "Recibir Mensajes de Grupos",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "group-messages",
+        "options": {}
+      },
+      "id": "webhook-group-messages",
+      "name": "Webhook: Mensajes de Grupos",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "group-messages-webhook-id"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Detectar si el mensaje es de un grupo\n// Los grupos tienen JID que termina en @g.us\nconst webhookData = $input.first().json;\nconst remoteJid = webhookData?.body?.data?.key?.remoteJid || '';\n\n// Verificar si es un grupo\nconst isGroup = remoteJid.includes('@g.us');\n\nif (!isGroup) {\n  // No es un grupo, terminar el flujo\n  return [];\n}\n\n// Extraer información del mensaje\nconst messageData = webhookData.body?.data || {};\nconst messageKey = messageData.key || {};\nconst messageContent = messageData.message || {};\n\n// Determinar el tipo de mensaje y extraer contenido\nlet messageText = '';\nlet messageType = 'text';\nlet mediaUrl = null;\n\nif (messageContent.conversation) {\n  messageText = messageContent.conversation;\n  messageType = 'text';\n} else if (messageContent.extendedTextMessage) {\n  messageText = messageContent.extendedTextMessage.text || '';\n  messageType = 'text';\n} else if (messageContent.imageMessage) {\n  messageText = messageContent.imageMessage.caption || '';\n  messageType = 'image';\n  // Evolution API puede proporcionar la URL de la imagen\n  if (messageContent.imageMessage.url) {\n    mediaUrl = messageContent.imageMessage.url;\n  }\n} else if (messageContent.audioMessage) {\n  messageText = 'Audio recibido';\n  messageType = 'audio';\n} else if (messageContent.videoMessage) {\n  messageText = messageContent.videoMessage.caption || 'Video recibido';\n  messageType = 'video';\n} else if (messageContent.documentMessage) {\n  messageText = messageContent.documentMessage.caption || 'Documento recibido';\n  messageType = 'document';\n}\n\n// Extraer información del remitente\nconst senderJid = messageKey.participant || messageKey.remoteJid || '';\nconst senderName = messageData.pushName || messageData.notifyName || 'Usuario';\nconst isFromMe = messageData.key?.fromMe || false;\nconst messageTimestamp = messageData.date_time || new Date().toISOString();\n\n// Obtener información de la instancia\nconst instanceName = webhookData.body?.instance || '';\nconst apiKey = webhookData.body?.apikey || '';\n\nreturn [{\n  json: {\n    is_group: true,\n    group_jid: remoteJid,\n    sender_jid: senderJid,\n    sender_name: senderName,\n    message_text: messageText,\n    message_type: messageType,\n    media_url: mediaUrl,\n    is_from_me: isFromMe,\n    message_timestamp: messageTimestamp,\n    instance_name: instanceName,\n    api_key: apiKey,\n    raw_data: webhookData.body\n  }\n}];"
+      },
+      "id": "detect-group-message",
+      "name": "1. Detectar y Extraer Mensaje de Grupo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-is-group",
+              "leftValue": "={{ $json.is_group }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-is-group",
+      "name": "2. IF: ¿Es Grupo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "whatsapp_groups",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "group_jid",
+              "condition": "eq",
+              "keyValue": "={{ $json.group_jid }}"
+            }
+          ]
+        }
+      },
+      "id": "get-group",
+      "name": "3. Obtener Grupo de Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        960,
+        220
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-group-exists",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "gt",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-group-exists",
+      "name": "4. IF: ¿Grupo Existe?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar datos para guardar el mensaje en group_chat_history\nconst messageData = $('1. Detectar y Extraer Mensaje de Grupo').item.json;\nconst groupData = $('3. Obtener Grupo de Supabase').item.json;\n\n// Construir el contenido del mensaje\nlet content = messageData.message_text || '';\nif (messageData.media_url) {\n  content = content ? `${content} ${messageData.media_url}` : messageData.media_url;\n}\n\nreturn [{\n  json: {\n    user_id: groupData.user_id,\n    group_id: groupData.id,\n    group_jid: messageData.group_jid,\n    message_type: messageData.is_from_me ? 'ai' : 'human',\n    content: content,\n    sender_jid: messageData.sender_jid,\n    sender_name: messageData.sender_name,\n    is_from_me: messageData.is_from_me,\n    created_at: messageData.message_timestamp\n  }\n}];"
+      },
+      "id": "prepare-message",
+      "name": "5. Preparar Mensaje para Guardar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "group_chat_history",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $json.user_id }}"
+            },
+            {
+              "fieldId": "group_id",
+              "fieldValue": "={{ $json.group_id }}"
+            },
+            {
+              "fieldId": "message_type",
+              "fieldValue": "={{ $json.message_type }}"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $json.content }}"
+            },
+            {
+              "fieldId": "sender_jid",
+              "fieldValue": "={{ $json.sender_jid }}"
+            },
+            {
+              "fieldId": "sender_name",
+              "fieldValue": "={{ $json.sender_name }}"
+            },
+            {
+              "fieldId": "is_from_me",
+              "fieldValue": "={{ $json.is_from_me }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "save-message",
+      "name": "6. Guardar Mensaje en Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        140
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "whatsapp_groups",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('5. Preparar Mensaje para Guardar').item.json.group_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "last_message_at",
+              "fieldValue": "={{ $('5. Preparar Mensaje para Guardar').item.json.created_at }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-last-message",
+      "name": "7. Actualizar last_message_at",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        140
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mhKY7YSuY0L0jM2B",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "response-success",
+              "name": "success",
+              "value": "true",
+              "type": "boolean"
+            },
+            {
+              "id": "response-message",
+              "name": "message",
+              "value": "Mensaje de grupo guardado correctamente",
+              "type": "string"
+            },
+            {
+              "id": "response-group-jid",
+              "name": "group_jid",
+              "value": "={{ $('1. Detectar y Extraer Mensaje de Grupo').item.json.group_jid }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-response",
+      "name": "8. Preparar Respuesta",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2160,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "9. Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2400,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook: Mensajes de Grupos": {
+      "main": [
+        [
+          {
+            "node": "1. Detectar y Extraer Mensaje de Grupo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Detectar y Extraer Mensaje de Grupo": {
+      "main": [
+        [
+          {
+            "node": "2. IF: ¿Es Grupo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. IF: ¿Es Grupo?": {
+      "main": [
+        [
+          {
+            "node": "3. Obtener Grupo de Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Obtener Grupo de Supabase": {
+      "main": [
+        [
+          {
+            "node": "4. IF: ¿Grupo Existe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. IF: ¿Grupo Existe?": {
+      "main": [
+        [
+          {
+            "node": "5. Preparar Mensaje para Guardar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Preparar Mensaje para Guardar": {
+      "main": [
+        [
+          {
+            "node": "6. Guardar Mensaje en Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Guardar Mensaje en Supabase": {
+      "main": [
+        [
+          {
+            "node": "7. Actualizar last_message_at",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. Actualizar last_message_at": {
+      "main": [
+        [
+          {
+            "node": "8. Preparar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8. Preparar Respuesta": {
+      "main": [
+        [
+          {
+            "node": "9. Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-12-12T00:00:00.000Z",
+  "versionId": "1"
+}
+

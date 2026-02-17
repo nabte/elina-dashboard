@@ -1,0 +1,464 @@
+<h2 class="text-2xl sm:text-3xl font-bold mb-6">Configuración</h2>
+<form id="settings-form" class="bg-white p-8 rounded-xl shadow-md space-y-8 max-w-4xl mx-auto">
+    <!-- Horario Laboral -->
+    <div>
+        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Horario de Atención</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label for="work-start-hour" class="block text-sm font-medium text-slate-700">Hora
+                    de Apertura</label><input type="time" id="work-start-hour"
+                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm form-input min-w-[140px]">
+            </div>
+            <div><label for="work-end-hour" class="block text-sm font-medium text-slate-700">Hora de
+                    Cierre</label><input type="time" id="work-end-hour"
+                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm form-input min-w-[140px]">
+            </div>
+        </div>
+        <p class="text-xs text-slate-500 mt-2">Define las horas en las que Elina enviará
+            seguimientos automáticos.</p>
+    </div>
+
+    <!-- Información de la Empresa -->
+    <div>
+        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Información de la Empresa</h3>
+        <div class="space-y-4">
+            <div>
+                <label for="company-name" class="block text-sm font-medium text-slate-700">Nombre de
+                    la Empresa *</label>
+                <input type="text" id="company-name" placeholder="Ej: Mi Empresa S.A."
+                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm form-input" required>
+                <p class="text-xs text-slate-500 mt-1">El nombre de tu empresa que aparecerá en
+                    cotizaciones y comunicaciones.</p>
+            </div>
+            <div>
+                <label for="company-description" class="block text-sm font-medium text-slate-700">Descripción
+                    General</label>
+                <textarea id="company-description" rows="5"
+                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"
+                    placeholder="Ej: Somos una agencia de marketing digital en CDMX..."></textarea>
+                <p class="text-xs text-slate-500 mt-2">La IA usará esto para entender mejor tu
+                    negocio y responder preguntas generales.</p>
+            </div>
+            <div>
+                <label for="business-type" class="block text-sm font-medium text-slate-700">Tipo de
+                    Negocio *</label>
+                <select id="business-type" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm form-input"
+                    required>
+                    <option value="both">Ambos (E-commerce y Servicios)</option>
+                    <option value="ecommerce">E-commerce (Productos Físicos)</option>
+                    <option value="services">Servicios</option>
+                </select>
+                <p class="text-xs text-slate-500 mt-1">Esta configuración afecta cómo Elina maneja
+                    productos y citas. Si es "Servicios" o "Ambos", podrás crear servicios con
+                    duración.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contacto y Redes -->
+    <div>
+        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Contacto y Redes Sociales</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label for="website" class="block text-sm font-medium text-slate-700">Sitio
+                    Web</label><input type="text" id="website" placeholder="tuempresa.com"
+                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+            <div>
+                <label for="admin-phone-number" class="block text-sm font-medium text-slate-700 mb-1">Número al
+                    que te
+                    mandaremos notificaciones de tus clientes</label>
+                <p class="text-xs text-slate-500 mb-2">Elina te escribirá a este número cuando
+                    detecte situaciones que requieran tu atención (conversaciones críticas, cambios
+                    en etiquetas IA, etc.)</p>
+                <div class="flex items-center gap-2 mt-1">
+                    <input type="tel" id="admin-phone-input" placeholder="+521234567890"
+                        class="form-input w-full border-slate-300 rounded-lg">
+                </div>
+            </div>
+            <div><label for="social-instagram" class="block text-sm font-medium text-slate-700">Instagram</label><input
+                    type="text" id="social-instagram" placeholder="tu_usuario_de_instagram"
+                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+            <div><label for="social-facebook" class="block text-sm font-medium text-slate-700">Facebook</label><input
+                    type="text" id="social-facebook" placeholder="tu_pagina_de_facebook"
+                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm"></div>
+        </div>
+    </div>
+
+    <!-- Datos del Negocio -->
+    <div>
+        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Datos del Negocio</h3>
+        <p class="text-xs text-slate-500 mb-4">Esta información se usará para que la IA responda
+            preguntas sobre tu negocio. Si no completas un campo, la IA NO inventará datos y dirá
+            que no tiene esa información disponible.</p>
+        <div class="space-y-4">
+            <div>
+                <label for="business-address" class="block text-sm font-medium text-slate-700">Dirección del
+                    Negocio</label>
+                <input type="text" id="business-address" placeholder="Calle, Número, Colonia, Ciudad"
+                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm">
+                <p class="text-xs text-slate-500 mt-1">Si no completas esto, la IA no inventará
+                    direcciones.</p>
+            </div>
+            <div>
+                <label for="business-phone" class="block text-sm font-medium text-slate-700">Teléfono de
+                    Contacto del
+                    Negocio</label>
+                <input type="tel" id="business-phone" placeholder="+521234567890"
+                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm">
+                <p class="text-xs text-slate-500 mt-1">Teléfono que la IA puede compartir con
+                    clientes. Si no lo completas, la IA no inventará números.</p>
+            </div>
+            <div>
+                <label for="pickup-location" class="block text-sm font-medium text-slate-700">Ubicación de
+                    Recogida (si
+                    aplica)</label>
+                <input type="text" id="pickup-location"
+                    placeholder="Dirección donde los clientes pueden recoger pedidos"
+                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm">
+                <p class="text-xs text-slate-500 mt-1">Solo completa si ofreces recogida en tienda o
+                    punto de recogida.</p>
+            </div>
+            <div class="flex items-center gap-2 pt-2">
+                <input type="checkbox" id="has-shipping-system" class="h-4 w-4 rounded text-blue-600">
+                <label for="has-shipping-system" class="text-sm font-medium text-slate-700">Tengo
+                    sistema de tracking de envíos</label>
+            </div>
+            <p class="text-xs text-slate-500">Si NO tienes sistema de tracking, las preguntas sobre
+                envíos se marcarán como críticas y un humano responderá.</p>
+        </div>
+    </div>
+
+    <!-- Branding y Activos Visuales -->
+    <div>
+        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Branding y Activos Visuales</h3>
+        <div class="space-y-6">
+            <!-- Logo -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">Logo de la
+                    Empresa</label>
+                <div class="flex items-center gap-4">
+                    <img id="logo-preview" src="https://placehold.co/100x100/e2e8f0/475569?text=Logo"
+                        alt="Vista previa del logo" class="w-24 h-24 rounded-lg object-contain bg-slate-100 p-1">
+                    <input type="file" id="logo-input" class="hidden"
+                        accept="image/png, image/jpeg, image/webp, image/svg+xml">
+                    <button type="button" id="upload-logo-btn"
+                        class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">Cambiar
+                        Logo</button>
+                </div>
+            </div>
+            <!-- Paleta de Colores -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">Paleta de Colores de
+                    Marca</label>
+                <div class="flex gap-4">
+                    <input type="color" id="brand-color-1" value="#3b82f6"
+                        class="h-12 w-full rounded-lg cursor-pointer">
+                    <input type="color" id="brand-color-2" value="#10b981"
+                        class="h-12 w-full rounded-lg cursor-pointer">
+                    <input type="color" id="brand-color-3" value="#f97316"
+                        class="h-12 w-full rounded-lg cursor-pointer">
+                    <input type="color" id="brand-color-4" value="#1e293b"
+                        class="h-12 w-full rounded-lg cursor-pointer">
+                </div>
+            </div>
+            <!-- Tipografía -->
+            <div>
+                <label for="brand-font" class="block text-sm font-medium text-slate-700">Tipografía
+                    de Marca</label>
+                <div class="custom-select-wrapper mt-1">
+                    <select id="brand-font" class="custom-select form-input">
+                        <option>Poppins</option>
+                        <option>Roboto</option>
+                        <option>Lato</option>
+                        <option>Montserrat</option>
+                        <option>Oswald</option>
+                        <option>Open Sans</option>
+                    </select>
+                    <i data-lucide="chevron-down" class="select-icon w-5 h-5 text-slate-400"></i>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">Por el momento no podemos cargar fuentes
+                    personalizadas, pero tenemos un amplio catálogo para que elijas.</p>
+            </div>
+            <!-- Imágenes de Referencia -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">Imágenes de Referencia
+                    para IA</label>
+                <div id="reference-images-container" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                    <!-- Las imágenes existentes se cargarán aquí -->
+                    <div id="add-ref-image-slot"
+                        class="aspect-square bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-slate-200 hover:border-slate-400">
+                        <i data-lucide="plus" class="w-8 h-8 text-slate-400"></i>
+                    </div>
+                </div>
+                <input type="file" id="reference-image-input" class="hidden" accept="image/png, image/jpeg, image/webp"
+                    multiple>
+                <p class="text-xs text-slate-500 mt-2">Sube hasta 3 imágenes. La IA las tomará como
+                    referencia para tus diseños gráficos.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sistema de Citas y Calendario -->
+    <div>
+        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Sistema de Citas y Calendario</h3>
+        <div class="space-y-6">
+            <!-- Toggle para activar sistema de citas -->
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+                <div class="flex items-center gap-3 mb-2">
+                    <input type="checkbox" id="appointments-enabled"
+                        class="h-5 w-5 rounded text-green-600 focus:ring-green-500 focus:ring-2 cursor-pointer">
+                    <label for="appointments-enabled"
+                        class="text-base font-semibold text-slate-800 cursor-pointer">Activar
+                        sistema de citas</label>
+                </div>
+                <p class="text-sm text-slate-600 ml-8">Cuando está activado, la IA detectará
+                    automáticamente cuando los clientes quieren agendar citas y les ofrecerá
+                    horarios disponibles.</p>
+            </div>
+
+            <!-- Configuración General -->
+            <div id="appointments-config" class="hidden space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="appointment-timezone" class="block text-sm font-medium text-slate-700">Zona
+                            Horaria</label>
+                        <select id="appointment-timezone"
+                            class="mt-1 block w-full rounded-md border-slate-300 shadow-sm form-input">
+                            <option value="America/Mexico_City">Ciudad de México (GMT-6)</option>
+                            <option value="America/New_York">Nueva York (GMT-5)</option>
+                            <option value="America/Los_Angeles">Los Ángeles (GMT-8)</option>
+                            <option value="America/Bogota">Bogotá (GMT-5)</option>
+                            <option value="America/Argentina/Buenos_Aires">Buenos Aires (GMT-3)
+                            </option>
+                            <option value="America/Santiago">Santiago (GMT-3)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="appointment-default-duration"
+                            class="block text-sm font-medium text-slate-700">Duración por Defecto
+                            (minutos)</label>
+                        <input type="number" id="appointment-default-duration" min="15" step="15" value="60"
+                            class="mt-1 block w-full rounded-md border-slate-300 shadow-sm form-input">
+                    </div>
+                    <div>
+                        <label for="appointment-buffer-time" class="block text-sm font-medium text-slate-700">Tiempo
+                            entre Citas
+                            (minutos)</label>
+                        <input type="number" id="appointment-buffer-time" min="0" step="5" value="15"
+                            class="mt-1 block w-full rounded-md border-slate-300 shadow-sm form-input">
+                    </div>
+                    <div>
+                        <label for="appointment-advance-days" class="block text-sm font-medium text-slate-700">Días de
+                            Anticipación
+                            Máximos</label>
+                        <input type="number" id="appointment-advance-days" min="1" value="30"
+                            class="mt-1 block w-full rounded-md border-slate-300 shadow-sm form-input">
+                    </div>
+                    <div>
+                        <label for="appointment-max-per-day" class="block text-sm font-medium text-slate-700">Máximo de
+                            Citas por
+                            Día</label>
+                        <input type="number" id="appointment-max-per-day" min="1" placeholder="Sin límite"
+                            class="mt-1 block w-full rounded-md border-slate-300 shadow-sm form-input">
+                        <p class="text-xs text-slate-500 mt-1">Deja vacío para permitir citas
+                            ilimitadas por día</p>
+                    </div>
+                </div>
+
+                <!-- Horarios por Día de la Semana -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-md font-semibold">Horarios de Atención</h4>
+                        <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Configura
+                            tus horarios disponibles</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3">Activa los días en los que atiendes y
+                        define tus horarios de inicio y fin. Estos horarios se usarán para calcular
+                        los slots disponibles al agendar citas.</p>
+                    <div id="appointment-hours-container" class="space-y-2">
+                        <!-- Los horarios se cargarán dinámicamente aquí -->
+                    </div>
+                    <div id="appointment-hours-empty"
+                        class="hidden p-4 bg-yellow-50 border border-yellow-200 rounded-lg mt-3">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="alert-circle" class="w-5 h-5 text-yellow-600 mt-0.5"></i>
+                            <div>
+                                <p class="sm font-medium text-yellow-800">No hay horarios
+                                    configurados</p>
+                                <p class="text-xs text-yellow-700 mt-1">Activa al menos un día de la
+                                    semana y configura sus horarios para poder agendar citas.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tipos de Citas -->
+                <div>
+                    <h4 class="text-md font-semibold mb-3">Tipos de Citas</h4>
+                    <div id="appointment-types-container" class="space-y-3">
+                        <!-- Los tipos de citas se cargarán dinámicamente aquí -->
+                    </div>
+                    <button type="button" id="add-appointment-type-btn"
+                        class="mt-3 bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 text-sm">+
+                        Agregar Tipo de Cita</button>
+                </div>
+
+                <!-- Recordatorios -->
+                <div class="border-t pt-4 mt-4">
+                    <h4 class="text-md font-semibold mb-3">Recordatorios Automáticos</h4>
+                    <div class="space-y-4">
+                        <!-- Toggle para activar recordatorios -->
+                        <div class="flex items-center gap-3">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="reminders-enabled" class="sr-only peer">
+                                <div
+                                    class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                </div>
+                            </label>
+                            <label for="reminders-enabled"
+                                class="text-sm font-medium text-slate-700 cursor-pointer">Activar
+                                recordatorios automáticos</label>
+                        </div>
+                        <p class="text-xs text-slate-500">Cuando está activado, se enviarán
+                            recordatorios automáticos a los contactos antes de sus citas.</p>
+
+                        <!-- Configuración de recordatorios (solo visible si está activado) -->
+                        <div id="reminders-config" class="hidden space-y-4">
+                            <!-- Configuración de tipos de recordatorios -->
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                                <h5 class="text-sm font-semibold text-blue-900">Tipos de
+                                    Recordatorios</h5>
+
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-3">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="reminder-days-enabled" class="sr-only peer">
+                                            <div
+                                                class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                            </div>
+                                        </label>
+                                        <label for="reminder-days-enabled"
+                                            class="text-sm font-medium text-slate-700 cursor-pointer">Recordatorio
+                                            días antes</label>
+                                    </div>
+                                    <div id="reminder-days-config" class="hidden ml-6">
+                                        <label for="reminder-days-before"
+                                            class="block text-xs font-medium text-slate-600 mb-1">Días
+                                            antes de la cita</label>
+                                        <select id="reminder-days-before"
+                                            class="block w-32 rounded-md border-slate-300 shadow-sm text-sm form-input">
+                                            <option value="1">1 día</option>
+                                            <option value="2">2 días</option>
+                                            <option value="3">3 días</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-3">
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="reminder-24h-enabled" class="sr-only peer" checked>
+                                        <div
+                                            class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                        </div>
+                                    </label>
+                                    <label for="reminder-24h-enabled"
+                                        class="text-sm font-medium text-slate-700 cursor-pointer">Recordatorio
+                                        24 horas antes</label>
+                                </div>
+
+                                <div class="flex items-center gap-3">
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="reminder-2h-enabled" class="sr-only peer" checked>
+                                        <div
+                                            class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                        </div>
+                                    </label>
+                                    <label for="reminder-2h-enabled"
+                                        class="text-sm font-medium text-slate-700 cursor-pointer">Recordatorio
+                                        2 horas antes</label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="reminder-message-template"
+                                    class="block text-sm font-medium text-slate-700">Mensaje de
+                                    Recordatorio</label>
+                                <textarea id="reminder-message-template" rows="4"
+                                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm form-input"
+                                    placeholder="Hola {nombre}, te recordamos que tienes una cita de {servicio} el día {fecha} a las {hora}. Por favor confirma tu asistencia respondiendo a este mensaje."></textarea>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    Plantilla personalizada para los recordatorios. Variables
+                                    disponibles:
+                                    <code class="bg-slate-100 px-1 rounded">{nombre}</code>,
+                                    <code class="bg-slate-100 px-1 rounded">{servicio}</code>,
+                                    <code class="bg-slate-100 px-1 rounded">{fecha}</code>,
+                                    <code class="bg-slate-100 px-1 rounded">{hora}</code>,
+                                    <code class="bg-slate-100 px-1 rounded">{fecha_completa}</code>
+                                </p>
+                                <p class="text-xs text-slate-400 mt-1">Deja vacío para usar el
+                                    mensaje por defecto.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sistema de Cotizaciones -->
+    <div>
+        <h3 class=\"text-lg font-semibold border-b pb-2 mb-4\">Sistema de Cotizaciones</h3>
+        <div class=\"bg-gradient-to-r from-blue-50 to-sky-50 border-2 border-blue-300 rounded-lg p-6\">
+            <div class=\"flex items-center gap-4 mb-3\">
+                <input type=\"checkbox\" id=\"quotes-enabled\" class=\"h-6 w-6 rounded text-blue-600 focus:ring-blue-500
+                    focus:ring-2 cursor-pointer\">
+                <label for=\"quotes-enabled\" class=\"text-lg font-bold text-blue-900 cursor-pointer\">Activar
+                    Sistema de Cotizaciones</label>
+            </div>
+            <p class=\"text-sm text-blue-800 ml-10\">Cuando está activado, podrás crear y enviar cotizaciones
+                profesionales en PDF a tus clientes directamente desde el panel. Esto incluye configuración
+                de productos, servicios, y personalización del PDF con tu branding.</p>
+        </div>
+    </div>
+
+    <!-- Gestión de Equipo (Solo para Admins) -->
+    <div id="team-management-panel" class="hidden">
+        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Gestión de Equipo</h3>
+        <div class="bg-slate-50 p-6 rounded-lg">
+            <h4 class="font-semibold mb-2">Invitar Nuevo Miembro</h4>
+            <p class="text-sm text-slate-600 mb-4">La persona recibirá un correo para crear su
+                cuenta y unirse a tu equipo.</p>
+            <div id="invite-member-form" class="flex items-center gap-2">
+                <input type="email" id="invite-email" placeholder="correo@ejemplo.com" required
+                    class="form-input w-full border-slate-300 rounded-lg text-sm">
+                <button type="button" id="invite-member-btn"
+                    class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 whitespace-nowrap">Invitar</button>
+            </div>
+        </div>
+        <div class="mt-6">
+            <h4 class="font-semibold mb-2">Miembros del Equipo</h4>
+            <div id="team-members-list" class="space-y-3">
+                <!-- La lista de miembros y sus permisos se renderizará aquí -->
+            </div>
+        </div>
+        <div class="mt-6 bg-slate-50 p-6 rounded-lg">
+            <h4 class="font-semibold mb-2">Configuración de Vendedores</h4>
+            <div class="flex items-center">
+                <input type="checkbox" id="see-all-chats-toggle" class="h-4 w-4 rounded text-blue-600">
+                <label for="see-all-chats-toggle" class="ml-2 block text-sm text-slate-700">Permitir
+                    que los vendedores vean todos los chats</label>
+            </div>
+            <div class="mt-4">
+                <label for="ignore-labels-input" class="block text-sm font-medium text-slate-700">Etiquetas a
+                    ignorar en chats
+                    (separadas por comas)</label>
+                <input type="text" id="ignore-labels-input"
+                    class="mt-1 block w-full rounded-md border-slate-300 shadow-sm form-input">
+            </div>
+        </div>
+    </div>
+
+    <div class="pt-5">
+        <button type="button" id="settings-save-safe-btn" data-settings-primary="true"
+            class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50">Guardar
+            Seguro</button>
+    </div>
+</form>

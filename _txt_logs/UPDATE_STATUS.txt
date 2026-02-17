@@ -1,0 +1,5 @@
+[UPDATE]
+1. Added 'Configuración' button to 'Recordatorios Asistente' tab.
+2. Implemented dynamic reminder rules (Hours/Days/Weeks before due date).
+3. Updated Edge Function logic to respect these custom user settings.
+4. Please reload the dashboard (Ctrl+Shift+R) to see the new button.

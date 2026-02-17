@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin de Empresa - Elina IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100">
+    <div id="app-container">
+        <header class="bg-white shadow-md p-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-slate-800">Panel de Administrador</h1>
+            <button id="logout-btn" class="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600">Cerrar Sesión</button>
+        </header>
+
+        <main class="p-4 sm:p-6 lg:p-8">
+            <!-- Sección de Crear Usuario Directamente -->
+            <section id="create-user-section" class="mb-8 bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold text-slate-800 mb-4">Crear Vendedor</h2>
+                <p class="text-sm text-slate-600 mb-4">Crea un usuario vendedor directamente. Se creará automáticamente una etiqueta con su nombre.</p>
+                <form id="create-user-form" class="space-y-4">
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="create-user-name" class="block text-sm font-semibold text-slate-600 mb-2">Nombre del Vendedor</label>
+                            <input type="text" id="create-user-name" placeholder="Juan Pérez" required class="form-input w-full border-slate-300 rounded-lg text-sm">
+                            <p class="text-xs text-slate-500 mt-1">Este nombre se usará como etiqueta en el sistema</p>
+                        </div>
+                        <div>
+                            <label for="create-user-email" class="block text-sm font-semibold text-slate-600 mb-2">Correo Electrónico</label>
+                            <input type="email" id="create-user-email" placeholder="juan@empresa.com" required class="form-input w-full border-slate-300 rounded-lg text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="create-user-password" class="block text-sm font-semibold text-slate-600 mb-2">Contraseña (opcional)</label>
+                        <input type="password" id="create-user-password" placeholder="Dejar vacío para generar automática" class="form-input w-full border-slate-300 rounded-lg text-sm">
+                        <p class="text-xs text-slate-500 mt-1">Si no proporcionas una contraseña, se generará una automáticamente</p>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 whitespace-nowrap">Crear Usuario</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Sección de Invitaciones -->
+            <section id="invitations-section" class="mb-8 bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold text-slate-800 mb-4">Invitar Vendedor por Correo</h2>
+                <p class="text-sm text-slate-600 mb-4">Envía una invitación por correo para que el vendedor cree su propia cuenta.</p>
+                <form id="invite-form" class="flex items-center gap-4">
+                    <input type="email" id="invite-email" placeholder="correo@vendedor.com" required class="form-input w-full border-slate-300 rounded-lg text-sm">
+                    <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 whitespace-nowrap">Enviar Invitación</button>
+                </form>
+            </section>
+
+            <!-- Sección de Miembros del Equipo -->
+            <section id="team-section" class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold text-slate-800 mb-4">Gestionar Equipo</h2>
+                <div id="team-members-list" class="space-y-4">
+                    <!-- La lista de miembros se cargará aquí -->
+                </div>
+            </section>
+
+            <!-- Sección de notificaciones -->
+            <section id="notifications-section" class="mt-8 bg-white p-6 rounded-lg shadow-md">
+                <div class="flex flex-col gap-2 mb-6">
+                    <h2 class="text-xl font-bold text-slate-800">Alertas automáticas</h2>
+                    <p class="text-sm text-slate-500">Cuando la IA aplique una etiqueta crítica, enviaremos la notificación a estos canales.</p>
+                    <p id="notifications-helper" class="text-xs text-red-500 hidden"></p>
+                </div>
+                <form id="notifications-form" class="grid md:grid-cols-2 gap-5">
+                    <div>
+                        <label for="notification-phone" class="block text-sm font-semibold text-slate-600 mb-2">Número al que te mandaremos notificaciones</label>
+                        <input id="notification-phone" type="tel" class="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="+52..." />
+                    </div>
+                    <div>
+                        <label for="notification-email" class="block text-sm font-semibold text-slate-600 mb-2">Correo de respaldo</label>
+                        <input id="notification-email" type="email" class="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ventas@empresa.com" />
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="notification-labels" class="block text-sm font-semibold text-slate-600 mb-2">Etiquetas que disparan alerta</label>
+                        <input id="notification-labels" type="text" class="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="separar,por,comas" />
+                        <p class="text-xs text-slate-500 mt-1">Ejemplo: llamar, humano, molesto. Si un contacto recibe alguna de estas etiquetas enviaremos una alerta.</p>
+                    </div>
+                    <div class="md:col-span-2 flex justify-end">
+                        <button type="submit" class="inline-flex items-center gap-2 bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-700">
+                            Guardar alertas
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="auth.js"></script>
+    <script type="module" src="company-admin.js"></script>
+</body>
+</html>

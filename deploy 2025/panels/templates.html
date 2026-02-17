@@ -1,0 +1,28 @@
+<!-- Contenido del panel de Plantillas -->
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl sm:text-3xl font-bold">Plantillas de Mensajes</h2>
+    <button id="add-template-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">
+        <i data-lucide="plus" class="inline-block w-4 h-4 mr-1"></i> Nueva Plantilla
+    </button>
+</div>
+
+<!-- Plantillas Base -->
+<div class="mb-8">
+    <h3 class="text-xl font-semibold mb-4">Plantillas Base</h3>
+    <div id="base-templates-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Las plantillas base se renderizarán aquí -->
+    </div>
+</div>
+
+<!-- Plantillas Personalizadas -->
+<div>
+    <div id="new-template-form-container" class="hidden bg-white p-4 rounded-lg shadow mb-4">
+        <form id="new-template-form" class="space-y-3">
+            <input type="text" id="new-template-name" placeholder="Nombre de la plantilla" required class="form-input w-full border-slate-300 rounded-lg">
+            <textarea id="new-template-content" rows="3" placeholder="Contenido del mensaje... (puedes usar %nombre%)" required class="w-full border-slate-300 rounded-lg p-2"></textarea>
+            <div class="flex justify-end gap-2"><button type="button" id="cancel-new-template-btn" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300">Cancelar</button><button type="submit" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">Guardar Plantilla</button></div>
+        </form>
+    </div>
+    <h3 class="text-xl font-semibold mb-4">Mis Plantillas</h3>
+    <div id="custom-templates-container" class="space-y-4"></div>
+</div>
