@@ -182,8 +182,26 @@ window.auth = {
         });
       return;
     }
+    // Verificación robusta antes de redirigir
     if (!session && !onAuthPage) {
-      window.location.href = '/';
+      // Intento final para recuperar la sesión antes de expulsar
+      this.sb.auth.getSession().then(({ data }) => {
+        if (!data.session) {
+          console.warn('[Auth] No active session found on protected page. Redirecting to home.');
+          window.location.href = '/';
+        } else {
+          console.log('[Auth] Session recovered manually after event miss.');
+          // Si la recuperamos, actualizamos el estado local
+          this.session = data.session;
+          document.dispatchEvent(new CustomEvent('auth:ready', { detail: { session: data.session } }));
+          if (data.session && !onAuthPage) {
+            this.checkAndTriggerOnboarding(data.session.user);
+          }
+        }
+      }).catch(err => {
+        console.error('[Auth] Error verifying session:', err);
+        window.location.href = '/';
+      });
       return;
     }
 
