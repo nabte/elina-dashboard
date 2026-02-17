@@ -133,10 +133,14 @@ window.auth = {
   // --- MANEJO DE SESIÓN ---
   handleAuthStateChange(event, session) {
     this.session = session;
-    const onAuthPage = window.location.pathname.endsWith('/') || window.location.pathname.endsWith('/index.html') || window.location.pathname.endsWith('/auth.html');
+    const path = window.location.pathname;
+
+    // Páginas públicas de autenticación/landing donde si hay sesión, debemos sacar al usuario
+    const isPublicAuthPage = path === '/' || path.endsWith('/index.html') || path.endsWith('/auth.html') || path.endsWith('/auth');
 
     // Solo redirigir si es necesario
-    if (session && onAuthPage) {
+    if (session && isPublicAuthPage) {
+      console.log('[Auth] Usuario autenticado en página pública. Redirigiendo a dashboard...');
       // Primero verificar si es superadmin
       this.sb.from('profiles')
         .select('role')
@@ -182,8 +186,13 @@ window.auth = {
         });
       return;
     }
-    // Verificación robusta antes de redirigir
-    if (!session && !onAuthPage) {
+    // --- LÓGICA DE RUTAS PROTEGIDAS ---
+    const protectedRoutes = ['/dashboard.html', '/dashboard', '/settings.html', '/settings', '/chats.html', '/chats', '/appointments.html', '/appointments'];
+    const isProtectedRoute = protectedRoutes.some(r => path.endsWith(r));
+
+    // Si no hay sesión Y estamos en una ruta protegida
+    if (!session && isProtectedRoute) {
+      console.log('[Auth] Ruta protegida sin sesión visible. Verificando persistencia...');
       // Intento final para recuperar la sesión antes de expulsar
       this.sb.auth.getSession().then(({ data }) => {
         if (!data.session) {
@@ -194,9 +203,7 @@ window.auth = {
           // Si la recuperamos, actualizamos el estado local
           this.session = data.session;
           document.dispatchEvent(new CustomEvent('auth:ready', { detail: { session: data.session } }));
-          if (data.session && !onAuthPage) {
-            this.checkAndTriggerOnboarding(data.session.user);
-          }
+          this.checkAndTriggerOnboarding(data.session.user);
         }
       }).catch(err => {
         console.error('[Auth] Error verifying session:', err);
