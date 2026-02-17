@@ -11,12 +11,6 @@ const initAuthParams = () => {
     const panelRegister = document.getElementById('register-panel');
     const tabIndicator = document.getElementById('tab-indicator');
     const authTitle = document.getElementById('auth-title');
-    if (authTitle) {
-        // SEÑAL VISUAL DE DEPURACIÓN: Borde magenta = main.js cargó
-        authTitle.style.borderLeft = "5px solid #ff00ff";
-        authTitle.style.paddingLeft = "10px";
-        console.log('[main.js] 🟣 Señal visual aplicada al título.');
-    }
     const authSubtitle = document.getElementById('auth-subtitle');
 
     // --- Check for Password Reset Token ---
