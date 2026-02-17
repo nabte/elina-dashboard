@@ -154,7 +154,8 @@ window.auth = {
             .then(({ data, error }) => {
               if (error) {
                 console.warn('Error fetching team info (usuario nuevo o sin equipo):', error.message);
-                window.location.href = '/dashboard.html'; // Default redirect on error
+                // Delay para asegurar persistencia
+                setTimeout(() => window.location.href = '/dashboard.html', 500);
                 return;
               }
 
@@ -163,25 +164,21 @@ window.auth = {
 
               // Solo redirigir a company-admin si es admin de empresa Y el archivo existe
               // Por ahora, redirigir siempre a dashboard para evitar 404
-              // TODO: Verificar existencia del archivo antes de redirigir
               if (data && userRole === 'admin') {
-                // Intentar verificar si el archivo existe (opcional)
-                // Por ahora, redirigir a dashboard para evitar errores 404
                 console.log('Usuario es admin de empresa, pero redirigiendo a dashboard por seguridad');
-                window.location.href = '/dashboard.html';
+                setTimeout(() => window.location.href = '/dashboard.html', 500);
               } else {
-                window.location.href = '/dashboard.html';
+                setTimeout(() => window.location.href = '/dashboard.html', 500);
               }
             })
             .catch((err) => {
-              // Manejar errores de red o cuando el usuario es muy nuevo y no tiene perfil completo
               console.warn('No se pudo obtener info del equipo (probablemente usuario nuevo):', err.message);
-              window.location.href = '/dashboard.html';
+              setTimeout(() => window.location.href = '/dashboard.html', 500);
             });
         })
         .catch((err) => {
           console.error('Error checking profile:', err);
-          window.location.href = '/dashboard.html';
+          setTimeout(() => window.location.href = '/dashboard.html', 500);
         });
       return;
     }
