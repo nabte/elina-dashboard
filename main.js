@@ -1,7 +1,9 @@
 // main.js - Lógica de la página de autenticación
 // auth.js se carga como script tag en auth.html antes de este archivo
 
-document.addEventListener('DOMContentLoaded', () => {
+const initAuthParams = () => {
+    console.log('[main.js] 🚀 Inicializando lógica de autenticación...');
+
     // --- Referencias ---
     const tabLogin = document.getElementById('tab-login');
     const tabRegister = document.getElementById('tab-register');
@@ -9,6 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const panelRegister = document.getElementById('register-panel');
     const tabIndicator = document.getElementById('tab-indicator');
     const authTitle = document.getElementById('auth-title');
+    if (authTitle) {
+        // SEÑAL VISUAL DE DEPURACIÓN: Borde magenta = main.js cargó
+        authTitle.style.borderLeft = "5px solid #ff00ff";
+        authTitle.style.paddingLeft = "10px";
+        console.log('[main.js] 🟣 Señal visual aplicada al título.');
+    }
     const authSubtitle = document.getElementById('auth-subtitle');
 
     // --- Check for Password Reset Token ---
@@ -197,7 +205,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Forms ---
     const loginForm = document.getElementById('login-form');
-    if (loginForm) loginForm.addEventListener('submit', (e) => window.auth.handleLogin(e));
+    if (loginForm) {
+        console.log('[main.js] ✅ Login form found. Attaching listener.');
+        loginForm.addEventListener('submit', (e) => {
+            console.log('[main.js] 🖱️ Login form submitted.');
+            if (window.auth) {
+                window.auth.handleLogin(e);
+            } else {
+                console.error('[main.js] ❌ Fatal: window.auth is not defined!');
+                alert('Error interno: El módulo de autenticación no se cargó.');
+            }
+        });
+    } else {
+        console.error('[main.js] ⚠️ Login form element not found in DOM.');
+    }
 
     const registerForm = document.getElementById('register-form');
     if (registerForm) registerForm.addEventListener('submit', (e) => window.auth.handleRegister(e));
@@ -387,4 +408,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     safeInitializePlugins();
-});
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAuthParams);
+} else {
+    initAuthParams();
+}

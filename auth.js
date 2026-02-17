@@ -53,8 +53,18 @@ function createSupabaseClient() {
 
 
 
+// Función segura para iniciar cliente
+function tryCreateClient() {
+  if (!window.supabase) {
+    console.error('❌ Supabase SDK no cargó. Verifica tu conexión o el CDN.');
+    alert('Error Crítico: No se pudo conectar con el servicio de base de datos (Supabase SDK missing).');
+    return null;
+  }
+  return createSupabaseClient();
+}
+
 window.auth = {
-  sb: createSupabaseClient(), // CORRECCIÓN: Usar la función createSupabaseClient
+  sb: tryCreateClient(),
   session: null,
   /**
    * Invoca una Edge Function evitando encabezados de suplantacion.
