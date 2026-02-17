@@ -8,27 +8,52 @@
     let appointmentsData = []; // Datos de citas cargadas
     let availableContacts = []; // Lista de contactos para búsqueda rápida
 
-    document.addEventListener('panel:activated', ({ detail }) => {
-        if (detail.panelId === 'appointments') {
+    // appointments.js - Lógica para el panel de Citas
+
+    // --- CORRECCIÓN: INIT PATTERN ---
+    function tryInitialize() {
+        // Inicializar SOLO si hay una sesión activa.
+        if (window.auth && window.auth.session) {
             if (!isInitialized) {
                 initAppointmentsPanel();
+                isInitialized = true;
             }
-            // Inicializar vista del calendario
+        }
+    }
+
+    // Escuchar cuando la autenticación esté lista
+    document.addEventListener('auth:ready', () => {
+        if (!isInitialized) {
+            initAppointmentsPanel();
+            isInitialized = true;
+        }
+    });
+
+    // Inicializar al cargar también (pero validando sesión dentro de tryInitialize)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tryInitialize);
+    } else {
+        tryInitialize();
+    }
+
+    document.addEventListener('panel:activated', ({ detail }) => {
+        if (detail.panelId === 'appointments' && !isInitialized && window.auth && window.auth.session) {
+            initAppointmentsPanel();
+            isInitialized = true;
+        }
+        // Original logic for view and loadAppointments, but only if initialized
+        if (isInitialized) {
             if (currentView === 'month') {
                 switchView('month');
             } else {
                 switchView('week');
             }
-            loadAppointments();
+            loadAppointments(); // Assuming loadAppointments is part of the data loading
         }
     });
 
-    document.addEventListener('panel:loaded', ({ detail }) => {
-        if (detail.panelId === 'appointments' && !isInitialized) {
-            initAppointmentsPanel();
-            loadAppointments();
-        }
-    });
+    // The panel:loaded listener is removed as per the new pattern,
+    // as tryInitialize and panel:activated handle initialization.
 
     // Función helper global para formatear hora a formato 12 horas (1:00 PM)
     function formatTime12Hour(time24) {
