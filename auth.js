@@ -1,4 +1,5 @@
 // auth.js - Módulo de Autenticación (Refactorizado)
+
 const SB_URL = 'https://mytvwfbijlgbihlegmfg.supabase.co'; // URL de tu proyecto Supabase
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MTg5OTAsImV4cCI6MjA2OTk5NDk5MH0.eFL6N7pR4nmpOLywRwxZS_sEWwSbq5WGAnY0zBMreDE';
 const FUNCTIONS_BASE_URL = `${SB_URL}/functions/v1`;
@@ -137,296 +138,318 @@ window.auth = {
 
     // Páginas públicas de autenticación/landing donde si hay sesión, debemos sacar al usuario
     const isPublicAuthPage = path === '/' || path.endsWith('/index.html') || path.endsWith('/auth.html') || path.endsWith('/auth');
+    const isAuthPage = path.endsWith('/auth.html') || path.endsWith('/auth');
 
-    // Solo redirigir si es necesario
-    if (session && isPublicAuthPage) {
-      console.log('[Auth] Usuario autenticado en página pública. Redirigiendo a dashboard...');
-      // Primero verificar si es superadmin
-      this.sb.from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single()
-        .then(({ data: profileData, error: profileError }) => {
-          // Si es superadmin, redirigir a dashboard (no a company-admin)
-          if (profileData && profileData.role === 'superadmin') {
-            window.location.href = '/dashboard.html';
-            return;
-          }
+    console.log('[Auth] handleAuthStateChange called:', {
+      event,
+      hasSession: !!session,
+      path,
+      isPublicAuthPage,
+      isAuthPage,
+      userId: session?.user?.id
+    });
 
-          // Si no es superadmin, verificar rol de equipo
-          this.sb.rpc('get_user_team_info')
-            .then(({ data, error }) => {
-              if (error) {
-                console.warn('Error fetching team info (usuario nuevo o sin equipo):', error.message);
-                // Delay para asegurar persistencia
-                setTimeout(() => window.location.href = '/dashboard.html', 500);
-                return;
-              }
-
-              // La función devuelve user_role, no role
-              const userRole = data?.user_role || data?.role;
-
-              // Solo redirigir a company-admin si es admin de empresa Y el archivo existe
-              // Por ahora, redirigir siempre a dashboard para evitar 404
-              if (data && userRole === 'admin') {
-                console.log('Usuario es admin de empresa, pero redirigiendo a dashboard por seguridad');
-                setTimeout(() => window.location.href = '/dashboard.html', 500);
-              } else {
-                setTimeout(() => window.location.href = '/dashboard.html', 500);
-              }
-            })
-            .catch((err) => {
-              console.warn('No se pudo obtener info del equipo (probablemente usuario nuevo):', err.message);
-              setTimeout(() => window.location.href = '/dashboard.html', 500);
-            });
-        })
-        .catch((err) => {
-          console.error('Error checking profile:', err);
-          setTimeout(() => window.location.href = '/dashboard.html', 500);
-        });
+    // IMPORTANTE: Si estamos en la página de auth y es INITIAL_SESSION, NO redirigir
+    // Solo redirigir si es un login exitoso (SIGNED_IN) o password recovery (PASSWORD_RECOVERY)
+    if (session && isAuthPage && event === 'INITIAL_SESSION') {
+      console.log('[Auth] INITIAL_SESSION detectada en auth.html. Permitiendo que el usuario permanezca para hacer login/logout.');
+      // Disparar evento de sesión lista pero NO redirigir
+      document.dispatchEvent(new CustomEvent('auth:ready', { detail: { session } }));
       return;
     }
+
+    // Solo redirigir si es necesario (login exitoso o usuario ya autenticado en página pública)
+    console.log('[Auth] Usuario autenticado en página pública. Redirigiendo a dashboard...');
+
+    // Primero verificar si es superadmin
+    this.sb.from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single()
+      .then(({ data: profileData, error: profileError }) => {
+        // Si es superadmin, redirigir a dashboard (no a company-admin)
+        if (profileData && profileData.role === 'superadmin') {
+          window.location.href = '/dashboard.html';
+          return;
+        }
+
+        // Si no es superadmin, verificar rol de equipo
+        this.sb.rpc('get_user_team_info')
+          .then(({ data, error }) => {
+            if (error) {
+              console.warn('Error fetching team info (usuario nuevo o sin equipo):', error.message);
+              // Delay para asegurar persistencia
+              setTimeout(() => window.location.href = '/dashboard.html', 500);
+              return;
+            }
+
+            // La función devuelve user_role, no role
+            const userRole = data?.user_role || data?.role;
+
+            // Solo redirigir a company-admin si es admin de empresa Y el archivo existe
+            // Por ahora, redirigir siempre a dashboard para evitar 404
+            if (data && userRole === 'admin') {
+              console.log('Usuario es admin de empresa, pero redirigiendo a dashboard por seguridad');
+              setTimeout(() => window.location.href = '/dashboard.html', 500);
+            } else {
+              setTimeout(() => window.location.href = '/dashboard.html', 500);
+            }
+          })
+          .catch((err) => {
+            console.warn('No se pudo obtener info del equipo (probablemente usuario nuevo):', err.message);
+            setTimeout(() => window.location.href = '/dashboard.html', 500);
+          });
+      })
+      .catch((err) => {
+        console.error('Error checking profile:', err);
+        setTimeout(() => window.location.href = '/dashboard.html', 500);
+      });
+    return;
+  }
     // --- LÓGICA DE RUTAS PROTEGIDAS ---
     const protectedRoutes = ['/dashboard.html', '/dashboard', '/settings.html', '/settings', '/chats.html', '/chats', '/appointments.html', '/appointments'];
-    const isProtectedRoute = protectedRoutes.some(r => path.endsWith(r));
+  const isProtectedRoute = protectedRoutes.some(r => path.endsWith(r));
 
-    // Si no hay sesión Y estamos en una ruta protegida
-    if (!session && isProtectedRoute) {
-      console.log('[Auth] Ruta protegida sin sesión visible. Verificando persistencia...');
-      // Intento final para recuperar la sesión antes de expulsar
-      this.sb.auth.getSession().then(({ data }) => {
-        if (!data.session) {
-          console.warn('[Auth] No active session found on protected page. Redirecting to home.');
-          window.location.href = '/';
-        } else {
-          console.log('[Auth] Session recovered manually after event miss.');
-          // Si la recuperamos, actualizamos el estado local
-          this.session = data.session;
-          document.dispatchEvent(new CustomEvent('auth:ready', { detail: { session: data.session } }));
-          this.checkAndTriggerOnboarding(data.session.user);
-        }
-      }).catch(err => {
-        console.error('[Auth] Error verifying session:', err);
-        window.location.href = '/';
-      });
+  // Si no hay sesión Y estamos en una ruta protegida
+  if(!session && isProtectedRoute) {
+  console.log('[Auth] Ruta protegida sin sesión visible. Verificando persistencia...');
+  // Intento final para recuperar la sesión antes de expulsar
+  this.sb.auth.getSession().then(({ data }) => {
+    if (!data.session) {
+      console.warn('[Auth] No active session found on protected page. Redirecting to home.');
+      window.location.href = '/';
+    } else {
+      console.log('[Auth] Session recovered manually after event miss.');
+      // Si la recuperamos, actualizamos el estado local
+      this.session = data.session;
+      document.dispatchEvent(new CustomEvent('auth:ready', { detail: { session: data.session } }));
+      this.checkAndTriggerOnboarding(data.session.user);
+    }
+  }).catch(err => {
+    console.error('[Auth] Error verifying session:', err);
+    window.location.href = '/';
+  });
+  return;
+}
+
+// Dispara un evento personalizado cuando la sesión está lista
+document.dispatchEvent(new CustomEvent('auth:ready', { detail: { session } }));
+
+// Verificar si el usuario necesita onboarding (solo si no estamos en dashboard y acabamos de loguearnos)
+if (session && !isAuthPage) {
+  this.checkAndTriggerOnboarding(session.user);
+}
+  },
+
+onboardingInProgress: new Set(), // Track ongoing onboarding by user ID
+
+  async checkAndTriggerOnboarding(user) {
+  try {
+    // Prevenir ejecuciones duplicadas para el mismo usuario
+    if (this.onboardingInProgress.has(user.id)) {
+      console.log('[Onboarding Check] Already in progress for user:', user.id);
       return;
     }
 
-    // Dispara un evento personalizado cuando la sesión está lista
-    document.dispatchEvent(new CustomEvent('auth:ready', { detail: { session } }));
+    // Verificar si el perfil ya tiene un slug generado (indicador de que el onboarding basico paso)
+    const { data: profile, error } = await this.sb
+      .from('profiles')
+      .select('slug, evolution_instance_name')
+      .eq('id', user.id)
+      .single();
 
-    // Verificar si el usuario necesita onboarding (solo si no estamos en dashboard y acabamos de loguearnos)
-    if (session && !onAuthPage) {
-      this.checkAndTriggerOnboarding(session.user);
+    if (error) {
+      console.warn('[Onboarding Check] Error fetching profile:', error);
+      return;
     }
-  },
 
-  onboardingInProgress: new Set(), // Track ongoing onboarding by user ID
+    // Si no tiene instancia, intentamos correr el onboarding
+    if (!profile.evolution_instance_name) {
+      console.log('[Onboarding Check] User missing instance. Triggering onboarding...');
 
-  async checkAndTriggerOnboarding(user) {
-    try {
-      // Prevenir ejecuciones duplicadas para el mismo usuario
-      if (this.onboardingInProgress.has(user.id)) {
-        console.log('[Onboarding Check] Already in progress for user:', user.id);
-        return;
+      // Marcar como en progreso
+      this.onboardingInProgress.add(user.id);
+
+      try {
+        // Pasar solo el nombre base. La edge function generará el ID único.
+        const baseName = user.user_metadata?.full_name || user.email.split('@')[0];
+
+        await this.triggerOnboarding({
+          name: baseName,
+          email: user.email,
+          phone: user.user_metadata?.phone || '' // OAuth might not provide phone
+        });
+      } finally {
+        // Remover del set después de completar (éxito o error)
+        this.onboardingInProgress.delete(user.id);
       }
-
-      // Verificar si el perfil ya tiene un slug generado (indicador de que el onboarding basico paso)
-      const { data: profile, error } = await this.sb
-        .from('profiles')
-        .select('slug, evolution_instance_name')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.warn('[Onboarding Check] Error fetching profile:', error);
-        return;
-      }
-
-      // Si no tiene instancia, intentamos correr el onboarding
-      if (!profile.evolution_instance_name) {
-        console.log('[Onboarding Check] User missing instance. Triggering onboarding...');
-
-        // Marcar como en progreso
-        this.onboardingInProgress.add(user.id);
-
-        try {
-          // Pasar solo el nombre base. La edge function generará el ID único.
-          const baseName = user.user_metadata?.full_name || user.email.split('@')[0];
-
-          await this.triggerOnboarding({
-            name: baseName,
-            email: user.email,
-            phone: user.user_metadata?.phone || '' // OAuth might not provide phone
-          });
-        } finally {
-          // Remover del set después de completar (éxito o error)
-          this.onboardingInProgress.delete(user.id);
-        }
-      }
-    } catch (err) {
-      console.error('[Onboarding Check] Failed:', err);
-      this.onboardingInProgress.delete(user.id);
     }
-  },
+  } catch (err) {
+    console.error('[Onboarding Check] Failed:', err);
+    this.onboardingInProgress.delete(user.id);
+  }
+},
 
   async triggerOnboarding({ name, email, phone }) {
-    try {
-      console.log('[Onboarding] Triggering for:', email);
-      const { data, error } = await this.invokeFunction('onboarding-evolution', {
-        body: {
-          nombre: name,
-          email: email,
-          telefono_admin: phone
-        }
-      });
-
-      if (error) {
-        console.error('[Onboarding Error]', error);
-        window.showToast('Error configurando tu cuenta. Contacta soporte.', 'error');
-      } else {
-        console.log('[Onboarding Success]', data);
-        window.showToast('¡Cuenta configurada correctamente!', 'success');
-        // Opcional: Recargar o redirigir para refrescar datos
+  try {
+    console.log('[Onboarding] Triggering for:', email);
+    const { data, error } = await this.invokeFunction('onboarding-evolution', {
+      body: {
+        nombre: name,
+        email: email,
+        telefono_admin: phone
       }
-    } catch (err) {
-      console.error('[Onboarding Exception]', err);
-    }
-  },
+    });
 
-  getSession() {
-    return this.session;
-  },
+    if (error) {
+      console.error('[Onboarding Error]', error);
+      window.showToast('Error configurando tu cuenta. Contacta soporte.', 'error');
+    } else {
+      console.log('[Onboarding Success]', data);
+      window.showToast('¡Cuenta configurada correctamente!', 'success');
+      // Opcional: Recargar o redirigir para refrescar datos
+    }
+  } catch (err) {
+    console.error('[Onboarding Exception]', err);
+  }
+},
+
+getSession() {
+  return this.session;
+},
 
   // --- ACCIONES DE FORMULARIO ---
   async handleLogin(event) {
-    event.preventDefault();
-    const form = event.target;
-    const email = document.getElementById('login-email')?.value;
-    const password = document.getElementById('login-password')?.value;
+  event.preventDefault();
+  const form = event.target;
+  const email = document.getElementById('login-email')?.value;
+  const password = document.getElementById('login-password')?.value;
 
-    this.setLoadingState(form, true, 'Verificando...');
+  this.setLoadingState(form, true, 'Verificando...');
 
-    try {
-      if (!email || !password) throw new Error('Credenciales incompletas');
+  try {
+    if (!email || !password) throw new Error('Credenciales incompletas');
 
-      const { error } = await this.sb.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+    const { error } = await this.sb.auth.signInWithPassword({ email, password });
+    if (error) throw error;
 
-      // La redirección la maneja onAuthStateChange
-    } catch (error) {
-      const friendlyMessage = error.message === 'Invalid login credentials' ? 'Correo o contraseña incorrectos.' : error.message;
-      this.setLoadingState(form, false, 'Iniciar Sesión', friendlyMessage);
-    }
-  },
+    // La redirección la maneja onAuthStateChange
+  } catch (error) {
+    const friendlyMessage = error.message === 'Invalid login credentials' ? 'Correo o contraseña incorrectos.' : error.message;
+    this.setLoadingState(form, false, 'Iniciar Sesión', friendlyMessage);
+  }
+},
 
   async handleGoogleLogin() {
-    try {
-      const { error } = await this.sb.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth.html`
-        }
-      });
-      if (error) throw error;
-    } catch (error) {
-      console.error('[Google Login Error]', error);
-      const errorContainer = document.getElementById('error-message');
-      const errorTextEl = document.getElementById('error-text');
-      if (errorContainer && errorTextEl) {
-        errorTextEl.textContent = 'Error iniciando sesión con Google: ' + error.message;
-        errorContainer.style.display = 'flex';
+  try {
+    const { error } = await this.sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth.html`
       }
-    }
-  },
-
-  async handleRegister(event) {
-    event.preventDefault();
-    const form = event.target;
-    const email = document.getElementById('register-email')?.value;
-    const password = document.getElementById('register-password')?.value;
-    const name = document.getElementById('register-name')?.value;
-    const phone = window.iti ? window.iti.getNumber() : document.getElementById('register-phone')?.value; // Obtener número internacional
-
-    this.setLoadingState(form, true, 'Creando...');
-
-    try {
-      if (!email || !password || !name || !phone) throw new Error('Todos los campos son obligatorios.');
-
-      const { data, error } = await this.sb.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: name,
-            phone: phone,
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      // NOTA: El onboarding se ejecuta automáticamente desde onAuthStateChange
-      // para evitar llamadas duplicadas. No llamar aquí.
-
-      if (data.user) {
-        console.log('[Register] Usuario creado. El onboarding se ejecutará automáticamente.');
-
-        // Ocultar formulario y mostrar mensaje de éxito
-        form.style.display = 'none';
-        const successMessage = document.getElementById('register-success-message');
-        successMessage.classList.remove('hidden');
-        lucide.createIcons({ nodes: [successMessage.querySelector('i')] });
-
-      }
-
-    } catch (error) {
-      this.setLoadingState(form, false, 'Crear Cuenta', error.message);
-    }
-  },
-
-  async handleLogout() {
-    try {
-      await this.sb.auth.signOut();
-    } catch (error) {
-      console.error('[Logout Error]', error);
-    }
-  },
-
-  // --- HELPERS DE UI ---
-  setLoadingState(form, isLoading, buttonText, errorMessage = null) {
-    const button = form.querySelector('button[type="submit"]');
-    const textSpan = button.querySelector('.button-text');
-    const spinner = button.querySelector('.loading-spinner');
+    });
+    if (error) throw error;
+  } catch (error) {
+    console.error('[Google Login Error]', error);
     const errorContainer = document.getElementById('error-message');
     const errorTextEl = document.getElementById('error-text');
-
-    if (isLoading) {
-      button.disabled = true;
-      spinner.classList.remove('hidden');
-      textSpan.textContent = buttonText;
-      errorContainer.style.display = 'none';
-    } else {
-      button.disabled = false;
-      spinner.classList.add('hidden');
-      textSpan.textContent = buttonText;
-
-      if (errorMessage) {
-        errorTextEl.textContent = errorMessage;
-        errorContainer.style.display = 'flex';
-        console.error('[Auth Error]', errorMessage);
-      } else {
-        errorContainer.style.display = 'none';
-      }
+    if (errorContainer && errorTextEl) {
+      errorTextEl.textContent = 'Error iniciando sesión con Google: ' + error.message;
+      errorContainer.style.display = 'flex';
     }
   }
+},
+
+  async handleRegister(event) {
+  event.preventDefault();
+  const form = event.target;
+  const email = document.getElementById('register-email')?.value;
+  const password = document.getElementById('register-password')?.value;
+  const name = document.getElementById('register-name')?.value;
+  const phone = window.iti ? window.iti.getNumber() : document.getElementById('register-phone')?.value; // Obtener número internacional
+
+  this.setLoadingState(form, true, 'Creando...');
+
+  try {
+    if (!email || !password || !name || !phone) throw new Error('Todos los campos son obligatorios.');
+
+    const { data, error } = await this.sb.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+          phone: phone,
+        }
+      }
+    });
+
+    if (error) throw error;
+
+    // NOTA: El onboarding se ejecuta automáticamente desde onAuthStateChange
+    // para evitar llamadas duplicadas. No llamar aquí.
+
+    if (data.user) {
+      console.log('[Register] Usuario creado. El onboarding se ejecutará automáticamente.');
+
+      // Ocultar formulario y mostrar mensaje de éxito
+      form.style.display = 'none';
+      const successMessage = document.getElementById('register-success-message');
+      successMessage.classList.remove('hidden');
+      lucide.createIcons({ nodes: [successMessage.querySelector('i')] });
+
+    }
+
+  } catch (error) {
+    this.setLoadingState(form, false, 'Crear Cuenta', error.message);
+  }
+},
+
+  async handleLogout() {
+  try {
+    await this.sb.auth.signOut();
+  } catch (error) {
+    console.error('[Logout Error]', error);
+  }
+},
+
+// --- HELPERS DE UI ---
+setLoadingState(form, isLoading, buttonText, errorMessage = null) {
+  const button = form.querySelector('button[type="submit"]');
+  const textSpan = button.querySelector('.button-text');
+  const spinner = button.querySelector('.loading-spinner');
+  const errorContainer = document.getElementById('error-message');
+  const errorTextEl = document.getElementById('error-text');
+
+  if (isLoading) {
+    button.disabled = true;
+    spinner.classList.remove('hidden');
+    textSpan.textContent = buttonText;
+    errorContainer.style.display = 'none';
+  } else {
+    button.disabled = false;
+    spinner.classList.add('hidden');
+    textSpan.textContent = buttonText;
+
+    if (errorMessage) {
+      errorTextEl.textContent = errorMessage;
+      errorContainer.style.display = 'flex';
+      console.error('[Auth Error]', errorMessage);
+    } else {
+      errorContainer.style.display = 'none';
+    }
+  }
+}
 };
 
 // --- INICIALIZACIÓN ---
 // Escucha los cambios de estado de autenticación para manejar las redirecciones.
+console.log('[Auth] 🔧 Configurando onAuthStateChange listener...');
 window.auth.sb.auth.onAuthStateChange((event, session) => {
+  console.log('[Auth] 🔔 onAuthStateChange triggered:', event, session ? 'Session exists' : 'No session');
   window.auth.handleAuthStateChange(event, session);
 });
+console.log('[Auth] ✅ auth.js completamente cargado');
 
 // --- FUNCIONES GLOBALES REUTILIZABLES ---
 
