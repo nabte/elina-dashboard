@@ -19,10 +19,21 @@
     <link rel="stylesheet" href="flow-builder-animations.css">
     <style>
         /* Forzar ancho completo para intl-tel-input */
-        .iti { width: 100% !important; }
-        .iti__flag-container { position: absolute; }
-        #whatsapp-phone-input { padding-left: 90px !important; }
-        .iti__selected-dial-code { margin-left: 6px; }
+        .iti {
+            width: 100% !important;
+        }
+
+        .iti__flag-container {
+            position: absolute;
+        }
+
+        #whatsapp-phone-input {
+            padding-left: 90px !important;
+        }
+
+        .iti__selected-dial-code {
+            margin-left: 6px;
+        }
     </style>
 </head>
 
@@ -366,12 +377,15 @@
 
                                 <!-- Método de conexión -->
                                 <div id="connection-method-selector" class="mb-4">
-                                    <label class="block text-sm font-medium text-slate-700 mb-2">Método de conexión</label>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Método de
+                                        conexión</label>
                                     <div class="flex gap-2">
-                                        <button id="method-qr-btn" class="flex-1 py-2 px-3 bg-purple-50 text-purple-700 border-2 border-purple-300 font-semibold rounded-lg hover:bg-purple-100 transition">
+                                        <button id="method-qr-btn"
+                                            class="flex-1 py-2 px-3 bg-purple-50 text-purple-700 border-2 border-purple-300 font-semibold rounded-lg hover:bg-purple-100 transition">
                                             📱 Código QR
                                         </button>
-                                        <button id="method-pairing-btn" class="flex-1 py-2 px-3 bg-slate-50 text-slate-700 border-2 border-slate-300 font-semibold rounded-lg hover:bg-slate-100 transition">
+                                        <button id="method-pairing-btn"
+                                            class="flex-1 py-2 px-3 bg-slate-50 text-slate-700 border-2 border-slate-300 font-semibold rounded-lg hover:bg-slate-100 transition">
                                             🔢 Código PIN
                                         </button>
                                     </div>
@@ -379,7 +393,8 @@
 
                                 <!-- Input para número de WhatsApp (ambos métodos) -->
                                 <div id="phone-input-container" class="mb-3">
-                                    <div class="bg-gradient-to-r from-purple-50 to-indigo-50 p-3 rounded-lg border border-purple-200">
+                                    <div
+                                        class="bg-gradient-to-r from-purple-50 to-indigo-50 p-3 rounded-lg border border-purple-200">
                                         <div class="flex items-center gap-2 mb-2">
                                             <div class="bg-purple-600 rounded-full p-1.5 flex-shrink-0">
                                                 <i data-lucide="smartphone" class="w-3.5 h-3.5 text-white"></i>
@@ -387,7 +402,8 @@
                                             <label class="text-xs font-bold text-slate-800 flex-grow">
                                                 Tu número de WhatsApp <span class="text-red-500">*</span>
                                             </label>
-                                            <i data-lucide="info" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" title="Número con el que usas WhatsApp"></i>
+                                            <i data-lucide="info" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0"
+                                                title="Número con el que usas WhatsApp"></i>
                                         </div>
 
                                         <input type="tel" id="whatsapp-phone-input" placeholder="55 1234 5678"
@@ -395,9 +411,12 @@
                                             required>
 
                                         <!-- Error message (hidden by default) -->
-                                        <div id="phone-error-message" class="hidden mt-2 p-2 bg-red-50 border-l-4 border-red-500 rounded flex items-center gap-2">
-                                            <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-600 flex-shrink-0"></i>
-                                            <p class="text-xs text-red-700 font-medium">Ingresa tu número de WhatsApp</p>
+                                        <div id="phone-error-message"
+                                            class="hidden mt-2 p-2 bg-red-50 border-l-4 border-red-500 rounded flex items-center gap-2">
+                                            <i data-lucide="alert-circle"
+                                                class="w-3.5 h-3.5 text-red-600 flex-shrink-0"></i>
+                                            <p class="text-xs text-red-700 font-medium">Ingresa tu número de WhatsApp
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -4850,6 +4869,9 @@
                 }
             });
         </script>
+
+        <!-- Main Application Module - Entry Point -->
+        <script type="module" src="./app.js"></script>
 </body>
 
 </html>
