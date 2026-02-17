@@ -1,4 +1,4 @@
-﻿// app.js - Lógica principal del Dashboard
+﻿// app.js - Lógica principal del Dashboard - v2026-02-17-001
 
 // CORRECCIÓN: Se importan todos los módulos necesarios para que el compilador (Vite) los reconozca.
 import '/auth.js'; // auth.js debe estar primero
@@ -176,1257 +176,1258 @@ class DashboardApp {
                 });
             });
         }
+    }
 
     async checkAppointmentsEnabled() {
-            try {
-                const userId = await window.getUserId();
-                if (!userId) return;
+        try {
+            const userId = await window.getUserId();
+            if (!userId) return;
 
-                const { data: settings, error } = await window.auth.sb
-                    .from('appointment_settings')
-                    .select('is_enabled')
-                    .eq('user_id', userId)
-                    .maybeSingle();
+            const { data: settings, error } = await window.auth.sb
+                .from('appointment_settings')
+                .select('is_enabled')
+                .eq('user_id', userId)
+                .maybeSingle();
 
-                if (error && error.code !== 'PGRST116') {
-                    console.error('[App] Error al verificar estado de citas:', error);
-                    return;
-                }
-
-                // Si no existe la configuración o está deshabilitada, ocultamos el menú
-                const isEnabled = settings ? settings.is_enabled : false;
-
-                const menuItem = document.getElementById('appointments-menu-item');
-                if (menuItem) {
-                    if (isEnabled) menuItem.classList.remove('hidden');
-                    else menuItem.classList.add('hidden');
-                }
-
-                // Mostrar/Ocultar card en el Dashboard
-                const dashboardCard = document.getElementById('booking-link-card');
-                if (dashboardCard) {
-                    if (isEnabled) {
-                        dashboardCard.classList.remove('hidden');
-                        this.renderDashboardBookingLink();
-                    } else {
-                        dashboardCard.classList.add('hidden');
-                    }
-                }
-            } catch (error) {
+            if (error && error.code !== 'PGRST116') {
                 console.error('[App] Error al verificar estado de citas:', error);
+                return;
             }
+
+            // Si no existe la configuración o está deshabilitada, ocultamos el menú
+            const isEnabled = settings ? settings.is_enabled : false;
+
+            const menuItem = document.getElementById('appointments-menu-item');
+            if (menuItem) {
+                if (isEnabled) menuItem.classList.remove('hidden');
+                else menuItem.classList.add('hidden');
+            }
+
+            // Mostrar/Ocultar card en el Dashboard
+            const dashboardCard = document.getElementById('booking-link-card');
+            if (dashboardCard) {
+                if (isEnabled) {
+                    dashboardCard.classList.remove('hidden');
+                    this.renderDashboardBookingLink();
+                } else {
+                    dashboardCard.classList.add('hidden');
+                }
+            }
+        } catch (error) {
+            console.error('[App] Error al verificar estado de citas:', error);
         }
+    }
 
     async renderDashboardBookingLink() {
-            const linkInput = document.getElementById('dashboard-booking-link');
-            const openLinkBtn = document.getElementById('open-dashboard-link-btn');
-            const copyBtn = document.getElementById('copy-dashboard-link-btn');
+        const linkInput = document.getElementById('dashboard-booking-link');
+        const openLinkBtn = document.getElementById('open-dashboard-link-btn');
+        const copyBtn = document.getElementById('copy-dashboard-link-btn');
 
-            if (!linkInput) return;
+        if (!linkInput) return;
 
-            try {
-                // Usar window.getUserId() para asegurar consistencia (especialmente en suplantación)
-                const userId = await window.getUserId();
-                if (!userId) return;
+        try {
+            // Usar window.getUserId() para asegurar consistencia (especialmente en suplantación)
+            const userId = await window.getUserId();
+            if (!userId) return;
 
-                const { data: profile } = await window.auth.sb
-                    .from('profiles')
-                    .select('slug, id')
-                    .eq('id', userId)
-                    .single();
+            const { data: profile } = await window.auth.sb
+                .from('profiles')
+                .select('slug, id')
+                .eq('id', userId)
+                .single();
 
-                if (profile) {
-                    // Generar URL absoluta
-                    const linkSuffix = profile.slug || `booking.html?s=${profile.id}`;
-                    const baseUrl = window.location.origin.replace(/\/$/, '');
-                    const link = `${baseUrl}/${linkSuffix}`;
+            if (profile) {
+                // Generar URL absoluta
+                const linkSuffix = profile.slug || `booking.html?s=${profile.id}`;
+                const baseUrl = window.location.origin.replace(/\/$/, '');
+                const link = `${baseUrl}/${linkSuffix}`;
 
-                    if (linkInput) linkInput.value = link;
-                    if (openLinkBtn) openLinkBtn.setAttribute('href', link);
+                if (linkInput) linkInput.value = link;
+                if (openLinkBtn) openLinkBtn.setAttribute('href', link);
 
-                    if (copyBtn) {
-                        copyBtn.onclick = (e) => {
-                            e.preventDefault();
-                            navigator.clipboard.writeText(link);
-                            window.showToast?.('Link copiado', 'success');
-
-                            const icon = copyBtn.querySelector('i');
-                            if (icon) {
-                                const original = icon.getAttribute('data-lucide');
-                                icon.setAttribute('data-lucide', 'check');
-                                lucide.createIcons({ nodes: [icon] });
-                                setTimeout(() => {
-                                    icon.setAttribute('data-lucide', original);
-                                    lucide.createIcons({ nodes: [icon] });
-                                }, 2000);
-                            }
-                        };
-                    }
-                }
-            } catch (e) {
-                console.error('Error rendering dashboard booking link', e);
-            }
-        }
-
-        setupEventListeners() {
-            // NO VERIFICAR AUTOMÁTICAMENTE - Solo mostrar placeholder inicial
-            document.addEventListener('auth:ready', () => {
-                console.log('[WhatsApp] window.auth disponible, mostrando placeholder inicial');
-                this.renderWhatsappConnection('initial');
-                // this.checkConnectionStatus(); // DESHABILITADO - Solo verificar manualmente
-            });
-
-            // Verificar estado cuando el usuario regresa al tab (solo si cache expiró)
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible' && this.user) {
-                    const CACHE_KEY = 'whatsapp_connection_status';
-                    const CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 horas
-
-                    try {
-                        const cachedData = localStorage.getItem(CACHE_KEY);
-                        if (cachedData) {
-                            const { timestamp } = JSON.parse(cachedData);
-                            const cacheAge = Date.now() - timestamp;
-
-                            // Solo verificar si el cache expiró
-                            if (cacheAge >= CACHE_DURATION) {
-                                console.log('[WhatsApp] 👁️ Usuario regresó al tab y cache expiró, verificando estado...');
-                                this.checkConnectionStatus();
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('[WhatsApp] Error checking cache on visibility change:', e);
-                    }
-                }
-            });
-
-            // Navegación principal
-            document.querySelectorAll('.nav-link[data-target]').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    this.switchPanel(link.dataset.target);
-                });
-            });
-
-            // Event listeners para grupos (cuando se hace clic en el título del grupo)
-            document.querySelectorAll('.nav-link[data-group]').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const groupId = link.dataset.group;
-                    const defaultTab = link.dataset.groupDefault || this.getDefaultTabForGroup(groupId);
-                    if (defaultTab) {
-                        this.switchPanel(defaultTab, { groupId, tabId: defaultTab });
-                    }
-                });
-            });
-
-            // Event listeners para pestañas de grupos
-            document.querySelectorAll('.group-tab[data-target]').forEach(tab => {
-                tab.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const targetId = tab.dataset.target;
-                    const groupId = tab.closest('[data-group-container]')?.dataset.groupContainer;
-                    if (targetId && groupId) {
-                        this.switchPanel(targetId, { groupId, tabId: tab.dataset.tab });
-                    }
-                });
-            });
-
-            // Botón de logout
-            document.getElementById('logout-btn')?.addEventListener('click', (e) => {
-                e.preventDefault();
-                auth.handleLogout();
-            });
-
-            // Formulario de Prompt
-            document.getElementById('prompt-form')?.addEventListener('submit', this.handlePromptSave);
-
-            // Botón de mejora de IA en el prompt principal
-            document.getElementById('main-prompt-ai-enhance-btn')?.addEventListener('click', () => {
-                const textarea = document.getElementById('ai-master-prompt');
-                if (textarea.value) {
-                    // Usar contexto 'behavior_prompt' para prompts de comportamiento del asistente
-                    this.openAiEnhanceModal(textarea.value, (newText) => {
-                        textarea.value = newText;
-                    }, 'behavior_prompt');
-                }
-            });
-            document.getElementById('remake-prompt-btn')?.addEventListener('click', () => {
-                this.wizard.start(true); // true para saltar al paso de Q&A
-            });
-
-            // Botón de historial de versiones
-            document.getElementById('view-history-btn')?.addEventListener('click', this.openPromptHistory);
-            document.getElementById('close-history-modal-btn')?.addEventListener('click', this.closePromptHistory);
-
-            // Botón de QR de WhatsApp
-            document.getElementById('request-qr-btn')?.addEventListener('click', this.checkWhatsappConnection);
-
-            // Botones de método de conexión
-            document.getElementById('method-qr-btn')?.addEventListener('click', () => this.selectConnectionMethod('qr'));
-            document.getElementById('method-pairing-btn')?.addEventListener('click', () => this.selectConnectionMethod('pairing'));
-
-            // Botón de desconectar WhatsApp
-            document.getElementById('disconnect-whatsapp-btn')?.addEventListener('click', this.disconnectWhatsApp.bind(this));
-
-            // Inicializar intl-tel-input para el campo de WhatsApp
-            const whatsappPhoneInput = document.getElementById('whatsapp-phone-input');
-            if (whatsappPhoneInput && typeof window.intlTelInput !== 'undefined') {
-                this.whatsappIti = window.intlTelInput(whatsappPhoneInput, {
-                    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
-                    initialCountry: "mx",
-                    separateDialCode: true,
-                    preferredCountries: ["mx", "co", "ar", "cl", "pe", "es", "us"],
-                    autoPlaceholder: "aggressive"
-                });
-                console.log('[WhatsApp] intl-tel-input inicializado');
-
-                // Pre-llenar el número de WhatsApp guardado
-                this.loadSavedWhatsAppNumber();
-
-                // Ocultar mensaje de error cuando el usuario empieza a escribir
-                whatsappPhoneInput.addEventListener('input', () => {
-                    const phoneErrorMessage = document.getElementById('phone-error-message');
-                    if (phoneErrorMessage) {
-                        phoneErrorMessage.classList.add('hidden');
-                        whatsappPhoneInput.classList.remove('border-red-500', 'border-2');
-                    }
-                });
-
-                // También ocultar error cuando cambia el país
-                whatsappPhoneInput.addEventListener('countrychange', () => {
-                    const phoneErrorMessage = document.getElementById('phone-error-message');
-                    if (phoneErrorMessage) {
-                        phoneErrorMessage.classList.add('hidden');
-                        whatsappPhoneInput.classList.remove('border-red-500', 'border-2');
-                    }
-                });
-            }
-
-            // Enlace a Chatwoot
-            document.getElementById('chatwoot-link')?.addEventListener('click', this.openChatwoot);
-
-            // Botón de menú móvil
-            document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
-                const sidebar = document.getElementById('main-sidebar');
-                sidebar?.classList.add('open'); // CORRECCIÓN: Siempre abre, no alterna
-            });
-
-            // --- INICIO: Listener para el modal de ayuda del prompt ---
-            document.getElementById('prompt-help-btn')?.addEventListener('click', () => document.getElementById('prompt-help-modal')?.classList.remove('hidden'));
-            document.getElementById('close-prompt-help-btn')?.addEventListener('click', () => document.getElementById('prompt-help-modal')?.classList.add('hidden'));
-
-            // --- INICIO: Listeners para el nuevo Wizard ---
-            document.getElementById('dashboard-wizard-btn')?.addEventListener('click', () => this.wizard.start());
-
-            // --- CORRECCIÓN: Añadir listener para el nuevo botón de cerrar ---
-            document.getElementById('close-sidebar-btn')?.addEventListener('click', () => {
-                const sidebar = document.getElementById('main-sidebar');
-                sidebar?.classList.remove('open');
-            });
-
-            document.getElementById('open-tutorials-btn')?.addEventListener('click', () => this.openTutorialsModal());
-            // Carrusel de YouTube
-            this.setupYoutubeCarousel();
-
-            // --- CORRECCIÓN: Centralizar todos los listeners del modal de IA aquí ---
-            document.getElementById('cancel-ai-btn')?.addEventListener('click', () => this.closeAiModal());
-            document.getElementById('generate-ai-btn')?.addEventListener('click', () => this.handleGenerateAi());
-            // --- INICIO: CORRECCIÓN para que el botón de regenerar funcione ---
-            // El botón de regenerar debe llamar a la misma función que el de generar.
-            const regenerateBtn = document.getElementById('regenerate-ai-btn');
-            if (regenerateBtn) {
-                regenerateBtn.addEventListener('click', () => this.handleGenerateAi(true)); // true para indicar que es una regeneración
-            }
-            // --- FIN: CORRECCIÓN ---
-            document.getElementById('regenerate-ai-btn')?.addEventListener('click', () => this.handleGenerateAi());
-            document.getElementById('apply-ai-btn')?.addEventListener('click', () => this.handleApplyAi());
-            document.getElementById('toggle-sidebar-collapse-btn')?.addEventListener('click', () => this.toggleSidebarCollapsed());
-
-            // --- INICIO: Listeners para el modal de pricing ---
-            document.getElementById('cancel-pricing-modal-btn')?.addEventListener('click', () => this.closePricingModal());
-
-            // Listener für die Pricing-Modal-Buttons (usando delegación de eventos)
-            const pricingModal = document.getElementById('pricing-modal');
-            if (pricingModal) {
-                pricingModal.addEventListener('click', (e) => {
-                    const upgradeBtn = e.target.closest('.upgrade-btn');
-                    if (upgradeBtn) {
+                if (copyBtn) {
+                    copyBtn.onclick = (e) => {
                         e.preventDefault();
-                        const planId = upgradeBtn.dataset.plan;
-                        if (planId) {
-                            this.handleUpgradeClick(planId);
+                        navigator.clipboard.writeText(link);
+                        window.showToast?.('Link copiado', 'success');
+
+                        const icon = copyBtn.querySelector('i');
+                        if (icon) {
+                            const original = icon.getAttribute('data-lucide');
+                            icon.setAttribute('data-lucide', 'check');
+                            lucide.createIcons({ nodes: [icon] });
+                            setTimeout(() => {
+                                icon.setAttribute('data-lucide', original);
+                                lucide.createIcons({ nodes: [icon] });
+                            }, 2000);
+                        }
+                    };
+                }
+            }
+        } catch (e) {
+            console.error('Error rendering dashboard booking link', e);
+        }
+    }
+
+    setupEventListeners() {
+        // NO VERIFICAR AUTOMÁTICAMENTE - Solo mostrar placeholder inicial
+        document.addEventListener('auth:ready', () => {
+            console.log('[WhatsApp] window.auth disponible, mostrando placeholder inicial');
+            this.renderWhatsappConnection('initial');
+            // this.checkConnectionStatus(); // DESHABILITADO - Solo verificar manualmente
+        });
+
+        // Verificar estado cuando el usuario regresa al tab (solo si cache expiró)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && this.user) {
+                const CACHE_KEY = 'whatsapp_connection_status';
+                const CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 horas
+
+                try {
+                    const cachedData = localStorage.getItem(CACHE_KEY);
+                    if (cachedData) {
+                        const { timestamp } = JSON.parse(cachedData);
+                        const cacheAge = Date.now() - timestamp;
+
+                        // Solo verificar si el cache expiró
+                        if (cacheAge >= CACHE_DURATION) {
+                            console.log('[WhatsApp] 👁️ Usuario regresó al tab y cache expiró, verificando estado...');
+                            this.checkConnectionStatus();
                         }
                     }
-                });
+                } catch (e) {
+                    console.warn('[WhatsApp] Error checking cache on visibility change:', e);
+                }
             }
-            // --- FIN: Listeners para el modal de pricing ---
+        });
 
-            // --- Listeners para Configuración Rápida de Citas (Nuevo) ---
-            document.getElementById('close-appointments-config-modal-btn')?.addEventListener('click', () => {
-                document.getElementById('appointments-quick-config-modal')?.classList.add('hidden');
+        // Navegación principal
+        document.querySelectorAll('.nav-link[data-target]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.switchPanel(link.dataset.target);
             });
-            document.getElementById('cancel-appointments-config-btn')?.addEventListener('click', () => {
-                document.getElementById('appointments-quick-config-modal')?.classList.add('hidden');
-            });
-            document.getElementById('save-appointments-config-btn')?.addEventListener('click', () => this.handleSaveAppointmentsConfig());
+        });
 
-            document.getElementById('open-full-settings-btn')?.addEventListener('click', () => {
-                document.getElementById('appointments-quick-config-modal')?.classList.add('hidden');
-                // Si existe un panel de configuración, cambiar a él
-                if (document.getElementById('settings')) {
-                    this.switchPanel('settings');
-                } else {
-                    // Fallback si no hay panel settings explícito
-                    window.showToast('Abriendo configuración completa...', 'info');
+        // Event listeners para grupos (cuando se hace clic en el título del grupo)
+        document.querySelectorAll('.nav-link[data-group]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const groupId = link.dataset.group;
+                const defaultTab = link.dataset.groupDefault || this.getDefaultTabForGroup(groupId);
+                if (defaultTab) {
+                    this.switchPanel(defaultTab, { groupId, tabId: defaultTab });
+                }
+            });
+        });
+
+        // Event listeners para pestañas de grupos
+        document.querySelectorAll('.group-tab[data-target]').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = tab.dataset.target;
+                const groupId = tab.closest('[data-group-container]')?.dataset.groupContainer;
+                if (targetId && groupId) {
+                    this.switchPanel(targetId, { groupId, tabId: tab.dataset.tab });
+                }
+            });
+        });
+
+        // Botón de logout
+        document.getElementById('logout-btn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            auth.handleLogout();
+        });
+
+        // Formulario de Prompt
+        document.getElementById('prompt-form')?.addEventListener('submit', this.handlePromptSave);
+
+        // Botón de mejora de IA en el prompt principal
+        document.getElementById('main-prompt-ai-enhance-btn')?.addEventListener('click', () => {
+            const textarea = document.getElementById('ai-master-prompt');
+            if (textarea.value) {
+                // Usar contexto 'behavior_prompt' para prompts de comportamiento del asistente
+                this.openAiEnhanceModal(textarea.value, (newText) => {
+                    textarea.value = newText;
+                }, 'behavior_prompt');
+            }
+        });
+        document.getElementById('remake-prompt-btn')?.addEventListener('click', () => {
+            this.wizard.start(true); // true para saltar al paso de Q&A
+        });
+
+        // Botón de historial de versiones
+        document.getElementById('view-history-btn')?.addEventListener('click', this.openPromptHistory);
+        document.getElementById('close-history-modal-btn')?.addEventListener('click', this.closePromptHistory);
+
+        // Botón de QR de WhatsApp
+        document.getElementById('request-qr-btn')?.addEventListener('click', this.checkWhatsappConnection);
+
+        // Botones de método de conexión
+        document.getElementById('method-qr-btn')?.addEventListener('click', () => this.selectConnectionMethod('qr'));
+        document.getElementById('method-pairing-btn')?.addEventListener('click', () => this.selectConnectionMethod('pairing'));
+
+        // Botón de desconectar WhatsApp
+        document.getElementById('disconnect-whatsapp-btn')?.addEventListener('click', this.disconnectWhatsApp.bind(this));
+
+        // Inicializar intl-tel-input para el campo de WhatsApp
+        const whatsappPhoneInput = document.getElementById('whatsapp-phone-input');
+        if (whatsappPhoneInput && typeof window.intlTelInput !== 'undefined') {
+            this.whatsappIti = window.intlTelInput(whatsappPhoneInput, {
+                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+                initialCountry: "mx",
+                separateDialCode: true,
+                preferredCountries: ["mx", "co", "ar", "cl", "pe", "es", "us"],
+                autoPlaceholder: "aggressive"
+            });
+            console.log('[WhatsApp] intl-tel-input inicializado');
+
+            // Pre-llenar el número de WhatsApp guardado
+            this.loadSavedWhatsAppNumber();
+
+            // Ocultar mensaje de error cuando el usuario empieza a escribir
+            whatsappPhoneInput.addEventListener('input', () => {
+                const phoneErrorMessage = document.getElementById('phone-error-message');
+                if (phoneErrorMessage) {
+                    phoneErrorMessage.classList.add('hidden');
+                    whatsappPhoneInput.classList.remove('border-red-500', 'border-2');
                 }
             });
 
-            document.getElementById('open-products-btn')?.addEventListener('click', () => {
-                document.getElementById('appointments-quick-config-modal')?.classList.add('hidden');
-                this.switchPanel('products');
+            // También ocultar error cuando cambia el país
+            whatsappPhoneInput.addEventListener('countrychange', () => {
+                const phoneErrorMessage = document.getElementById('phone-error-message');
+                if (phoneErrorMessage) {
+                    phoneErrorMessage.classList.add('hidden');
+                    whatsappPhoneInput.classList.remove('border-red-500', 'border-2');
+                }
             });
-
-            document.getElementById('refresh-hours-btn')?.addEventListener('click', () => {
-                // Aquí iría la lógica para recargar horas si fuera dinámico
-                window.showToast('Horarios actualizados', 'success');
-            });
-
         }
 
-        checkImpersonation() {
-            const impersonatedUserInfo = JSON.parse(localStorage.getItem('impersonated_user_info') || 'null');
-            const superadminSessionData = localStorage.getItem('superadmin_session_tokens');
+        // Enlace a Chatwoot
+        document.getElementById('chatwoot-link')?.addEventListener('click', this.openChatwoot);
 
-            if (!impersonatedUserInfo) {
-                document.body.style.paddingTop = '0';
-                return;
-            }
-            if (!superadminSessionData) {
-                localStorage.removeItem('impersonated_user_info');
-                document.body.style.paddingTop = '0';
-                return;
-            }
+        // Botón de menú móvil
+        document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+            const sidebar = document.getElementById('main-sidebar');
+            sidebar?.classList.add('open'); // CORRECCIÓN: Siempre abre, no alterna
+        });
 
-            if (document.getElementById('impersonation-bar')) {
-                return; // Evita duplicados
-            }
+        // --- INICIO: Listener para el modal de ayuda del prompt ---
+        document.getElementById('prompt-help-btn')?.addEventListener('click', () => document.getElementById('prompt-help-modal')?.classList.remove('hidden'));
+        document.getElementById('close-prompt-help-btn')?.addEventListener('click', () => document.getElementById('prompt-help-modal')?.classList.add('hidden'));
 
-            if (impersonatedUserInfo) {
-                const impersonationBar = document.createElement('div');
-                impersonationBar.id = 'impersonation-bar';
-                impersonationBar.className = 'fixed top-0 left-0 w-full bg-amber-500 text-black font-bold text-xs p-1 text-center z-[200] flex justify-center items-center gap-2';
-                impersonationBar.innerHTML = `
+        // --- INICIO: Listeners para el nuevo Wizard ---
+        document.getElementById('dashboard-wizard-btn')?.addEventListener('click', () => this.wizard.start());
+
+        // --- CORRECCIÓN: Añadir listener para el nuevo botón de cerrar ---
+        document.getElementById('close-sidebar-btn')?.addEventListener('click', () => {
+            const sidebar = document.getElementById('main-sidebar');
+            sidebar?.classList.remove('open');
+        });
+
+        document.getElementById('open-tutorials-btn')?.addEventListener('click', () => this.openTutorialsModal());
+        // Carrusel de YouTube
+        this.setupYoutubeCarousel();
+
+        // --- CORRECCIÓN: Centralizar todos los listeners del modal de IA aquí ---
+        document.getElementById('cancel-ai-btn')?.addEventListener('click', () => this.closeAiModal());
+        document.getElementById('generate-ai-btn')?.addEventListener('click', () => this.handleGenerateAi());
+        // --- INICIO: CORRECCIÓN para que el botón de regenerar funcione ---
+        // El botón de regenerar debe llamar a la misma función que el de generar.
+        const regenerateBtn = document.getElementById('regenerate-ai-btn');
+        if (regenerateBtn) {
+            regenerateBtn.addEventListener('click', () => this.handleGenerateAi(true)); // true para indicar que es una regeneración
+        }
+        // --- FIN: CORRECCIÓN ---
+        document.getElementById('regenerate-ai-btn')?.addEventListener('click', () => this.handleGenerateAi());
+        document.getElementById('apply-ai-btn')?.addEventListener('click', () => this.handleApplyAi());
+        document.getElementById('toggle-sidebar-collapse-btn')?.addEventListener('click', () => this.toggleSidebarCollapsed());
+
+        // --- INICIO: Listeners para el modal de pricing ---
+        document.getElementById('cancel-pricing-modal-btn')?.addEventListener('click', () => this.closePricingModal());
+
+        // Listener für die Pricing-Modal-Buttons (usando delegación de eventos)
+        const pricingModal = document.getElementById('pricing-modal');
+        if (pricingModal) {
+            pricingModal.addEventListener('click', (e) => {
+                const upgradeBtn = e.target.closest('.upgrade-btn');
+                if (upgradeBtn) {
+                    e.preventDefault();
+                    const planId = upgradeBtn.dataset.plan;
+                    if (planId) {
+                        this.handleUpgradeClick(planId);
+                    }
+                }
+            });
+        }
+        // --- FIN: Listeners para el modal de pricing ---
+
+        // --- Listeners para Configuración Rápida de Citas (Nuevo) ---
+        document.getElementById('close-appointments-config-modal-btn')?.addEventListener('click', () => {
+            document.getElementById('appointments-quick-config-modal')?.classList.add('hidden');
+        });
+        document.getElementById('cancel-appointments-config-btn')?.addEventListener('click', () => {
+            document.getElementById('appointments-quick-config-modal')?.classList.add('hidden');
+        });
+        document.getElementById('save-appointments-config-btn')?.addEventListener('click', () => this.handleSaveAppointmentsConfig());
+
+        document.getElementById('open-full-settings-btn')?.addEventListener('click', () => {
+            document.getElementById('appointments-quick-config-modal')?.classList.add('hidden');
+            // Si existe un panel de configuración, cambiar a él
+            if (document.getElementById('settings')) {
+                this.switchPanel('settings');
+            } else {
+                // Fallback si no hay panel settings explícito
+                window.showToast('Abriendo configuración completa...', 'info');
+            }
+        });
+
+        document.getElementById('open-products-btn')?.addEventListener('click', () => {
+            document.getElementById('appointments-quick-config-modal')?.classList.add('hidden');
+            this.switchPanel('products');
+        });
+
+        document.getElementById('refresh-hours-btn')?.addEventListener('click', () => {
+            // Aquí iría la lógica para recargar horas si fuera dinámico
+            window.showToast('Horarios actualizados', 'success');
+        });
+
+    }
+
+    checkImpersonation() {
+        const impersonatedUserInfo = JSON.parse(localStorage.getItem('impersonated_user_info') || 'null');
+        const superadminSessionData = localStorage.getItem('superadmin_session_tokens');
+
+        if (!impersonatedUserInfo) {
+            document.body.style.paddingTop = '0';
+            return;
+        }
+        if (!superadminSessionData) {
+            localStorage.removeItem('impersonated_user_info');
+            document.body.style.paddingTop = '0';
+            return;
+        }
+
+        if (document.getElementById('impersonation-bar')) {
+            return; // Evita duplicados
+        }
+
+        if (impersonatedUserInfo) {
+            const impersonationBar = document.createElement('div');
+            impersonationBar.id = 'impersonation-bar';
+            impersonationBar.className = 'fixed top-0 left-0 w-full bg-amber-500 text-black font-bold text-xs p-1 text-center z-[200] flex justify-center items-center gap-2';
+            impersonationBar.innerHTML = `
                 <span>Estás viendo como <strong>${impersonatedUserInfo.email}</strong>.</span>
                 <button id="stop-impersonating-btn" class="bg-slate-800 text-white py-0.5 px-2 rounded hover:bg-slate-700 text-xs">Volver a Super Admin</button>
             `;
-                document.body.prepend(impersonationBar);
-                document.body.style.paddingTop = '0'; // No empujar el contenido
+            document.body.prepend(impersonationBar);
+            document.body.style.paddingTop = '0'; // No empujar el contenido
 
-                document.getElementById('stop-impersonating-btn').addEventListener('click', async () => {
-                    try {
-                        // Restaurar la sesión original del superadmin
-                        const originalSession = JSON.parse(localStorage.getItem('superadmin_session_tokens') || 'null');
-                        if (!originalSession?.access_token || !originalSession?.refresh_token) {
-                            throw new Error('Sesión original inválida. Por favor, inicia sesión nuevamente.');
-                        }
-                        await window.auth.sb.auth.setSession(originalSession);
-
-                        // Limpiar la información de suplantación y recargar
-                        localStorage.removeItem('impersonated_user_info');
-                        localStorage.removeItem('superadmin_session_tokens');
-
-                        document.body.style.paddingTop = '0'; // Resetear el padding
-                        window.location.reload(); // Recargar para limpiar el estado de suplantación
-                    } catch (e) {
-                        console.error("Error al detener la suplantación:", e);
-                        alert("No se pudo volver a la sesión de superadmin. Por favor, cierra sesión y vuelve a entrar.");
+            document.getElementById('stop-impersonating-btn').addEventListener('click', async () => {
+                try {
+                    // Restaurar la sesión original del superadmin
+                    const originalSession = JSON.parse(localStorage.getItem('superadmin_session_tokens') || 'null');
+                    if (!originalSession?.access_token || !originalSession?.refresh_token) {
+                        throw new Error('Sesión original inválida. Por favor, inicia sesión nuevamente.');
                     }
-                });
-            }
-        }
+                    await window.auth.sb.auth.setSession(originalSession);
 
-        loadInitialData() {
-            this.fetchUserProfile();
-            this.fetchMasterPrompt();
-            this.loadDashboardMetrics(); // Cargar y renderizar métricas del dashboard
-            this.loadFunnelMetrics();
+                    // Limpiar la información de suplantación y recargar
+                    localStorage.removeItem('impersonated_user_info');
+                    localStorage.removeItem('superadmin_session_tokens');
 
-            // Cargar datos de suscripción y equipo en paralelo
-            Promise.all([
-                this.loadUserSubscription(),
-                this.loadTeamInfo()
-            ]).then(([userPlan, teamInfo]) => {
-                this.renderUserPlanBadge(userPlan);
-                this.renderUpgradeButtons(userPlan);
-                // --- INICIO: CORRECCIÓN - Desacoplar applyFeatureRestrictions ---
-                // Ahora, en lugar de llamar a la función directamente, escuchamos el evento
-                // 'panel:activated' para aplicar las restricciones solo cuando un panel se muestra.
-                document.addEventListener('panel:activated', () => this.applyFeatureRestrictions(userPlan, teamInfo));
-                // --- FIN: CORRECCIÓN ---
+                    document.body.style.paddingTop = '0'; // Resetear el padding
+                    window.location.reload(); // Recargar para limpiar el estado de suplantación
+                } catch (e) {
+                    console.error("Error al detener la suplantación:", e);
+                    alert("No se pudo volver a la sesión de superadmin. Por favor, cierra sesión y vuelve a entrar.");
+                }
             });
-
-            // NO VERIFICAR AUTOMÁTICAMENTE - Solo mostrar placeholder
-            // this.checkConnectionStatus(); // DESHABILITADO
         }
+    }
 
-        openTutorialsModal() { // CORRECCIÓN: Mover la función dentro de la clase
-            // Esta función podría abrir un modal más grande con la playlist de YouTube.
-            // Por ahora, simplemente simula un clic en el enlace del dashboard anterior.
-            const videoUrl = "https://www.youtube.com/embed/videoseries?list=PLDs44uukbe3FIDa9CttQLh8N-Nfdpo_hG&autoplay=1";
-            const viewer = document.getElementById('image-viewer-modal');
-            const content = document.getElementById('image-viewer-content');
-            // CORRECCIÓN: Usar innerHTML para no reemplazar el contenedor y su botón de cierre.
-            content.innerHTML = `<iframe class="w-full h-full" src="${videoUrl}" title="Tutoriales ELINA IA" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
-            viewer.classList.remove('hidden');
+    loadInitialData() {
+        this.fetchUserProfile();
+        this.fetchMasterPrompt();
+        this.loadDashboardMetrics(); // Cargar y renderizar métricas del dashboard
+        this.loadFunnelMetrics();
+
+        // Cargar datos de suscripción y equipo en paralelo
+        Promise.all([
+            this.loadUserSubscription(),
+            this.loadTeamInfo()
+        ]).then(([userPlan, teamInfo]) => {
+            this.renderUserPlanBadge(userPlan);
+            this.renderUpgradeButtons(userPlan);
+            // --- INICIO: CORRECCIÓN - Desacoplar applyFeatureRestrictions ---
+            // Ahora, en lugar de llamar a la función directamente, escuchamos el evento
+            // 'panel:activated' para aplicar las restricciones solo cuando un panel se muestra.
+            document.addEventListener('panel:activated', () => this.applyFeatureRestrictions(userPlan, teamInfo));
+            // --- FIN: CORRECCIÓN ---
+        });
+
+        // NO VERIFICAR AUTOMÁTICAMENTE - Solo mostrar placeholder
+        // this.checkConnectionStatus(); // DESHABILITADO
+    }
+
+    openTutorialsModal() { // CORRECCIÓN: Mover la función dentro de la clase
+        // Esta función podría abrir un modal más grande con la playlist de YouTube.
+        // Por ahora, simplemente simula un clic en el enlace del dashboard anterior.
+        const videoUrl = "https://www.youtube.com/embed/videoseries?list=PLDs44uukbe3FIDa9CttQLh8N-Nfdpo_hG&autoplay=1";
+        const viewer = document.getElementById('image-viewer-modal');
+        const content = document.getElementById('image-viewer-content');
+        // CORRECCIÓN: Usar innerHTML para no reemplazar el contenedor y su botón de cierre.
+        content.innerHTML = `<iframe class="w-full h-full" src="${videoUrl}" title="Tutoriales ELINA IA" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+        viewer.classList.remove('hidden');
+    }
+
+    // --- Lógica para colapsar/expandir el sidebar ---
+    toggleSidebarCollapsed() {
+        const sidebar = document.getElementById('main-sidebar');
+        if (!sidebar) return;
+
+        const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
+        this.setSidebarCollapsed(isCollapsed);
+        localStorage.setItem('sidebarCollapsed', isCollapsed); // Guardar preferencia
+    }
+
+    setSidebarCollapsed(collapsed) {
+        const sidebar = document.getElementById('main-sidebar');
+        const mainContent = document.getElementById('main-content-area');
+        const toggleBtn = document.getElementById('toggle-sidebar-collapse-btn');
+        if (!sidebar || !mainContent || !toggleBtn) return;
+
+        if (collapsed) {
+            sidebar.classList.add('sidebar-collapsed');
+            toggleBtn.classList.add('collapsed');
+        } else {
+            sidebar.classList.remove('sidebar-collapsed');
+            toggleBtn.classList.remove('collapsed');
         }
-
-        // --- Lógica para colapsar/expandir el sidebar ---
-        toggleSidebarCollapsed() {
-            const sidebar = document.getElementById('main-sidebar');
-            if (!sidebar) return;
-
-            const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
-            this.setSidebarCollapsed(isCollapsed);
-            localStorage.setItem('sidebarCollapsed', isCollapsed); // Guardar preferencia
-        }
-
-        setSidebarCollapsed(collapsed) {
-            const sidebar = document.getElementById('main-sidebar');
-            const mainContent = document.getElementById('main-content-area');
-            const toggleBtn = document.getElementById('toggle-sidebar-collapse-btn');
-            if (!sidebar || !mainContent || !toggleBtn) return;
-
-            if (collapsed) {
-                sidebar.classList.add('sidebar-collapsed');
-                toggleBtn.classList.add('collapsed');
-            } else {
-                sidebar.classList.remove('sidebar-collapsed');
-                toggleBtn.classList.remove('collapsed');
-            }
-            const icon = toggleBtn.querySelector('i');
-            if (icon) icon.setAttribute('data-lucide', collapsed ? 'chevron-right' : 'chevron-left');
-            lucide.createIcons({ nodes: [icon] });
-        }
+        const icon = toggleBtn.querySelector('i');
+        if (icon) icon.setAttribute('data-lucide', collapsed ? 'chevron-right' : 'chevron-left');
+        lucide.createIcons({ nodes: [icon] });
+    }
 
     async switchPanel(targetId, options = {}) { // CORRECCIÓN: Lógica para modo pantalla completa de Kanban
-            const sidebar = document.getElementById('main-sidebar');
-            const mainContent = document.getElementById('main-content-area');
-            const toggleBtn = document.getElementById('toggle-sidebar-collapse-btn');
+        const sidebar = document.getElementById('main-sidebar');
+        const mainContent = document.getElementById('main-content-area');
+        const toggleBtn = document.getElementById('toggle-sidebar-collapse-btn');
 
-            // Cargar contenido dinámico si es necesario antes de activar el panel
-            await this.loadPanelContent(targetId);
+        // Cargar contenido dinámico si es necesario antes de activar el panel
+        await this.loadPanelContent(targetId);
 
-            const panel = document.getElementById(targetId);
-            if (!panel) {
-                console.error(`[Dashboard] Panel con ID '${targetId}' no encontrado en el DOM.`);
-                return;
+        const panel = document.getElementById(targetId);
+        if (!panel) {
+            console.error(`[Dashboard] Panel con ID '${targetId}' no encontrado en el DOM.`);
+            return;
+        }
+
+        // console.log(`[Dashboard] Cambiando a panel: ${targetId}`);
+
+        // Ocultar todos los paneles
+        document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+
+        // Obtener información del grupo y pestaña si existe
+        const activeLink = document.querySelector(`.nav-link[data-target="${targetId}"]`);
+        const groupId = options.groupId || activeLink?.dataset.group;
+        const tabId = options.tabId || activeLink?.dataset.tab;
+
+        // --- INICIO: Integración del Panel de Afiliados ---
+        if (targetId === 'affiliate-panel') {
+            await initAffiliatePanel();
+        }
+        // --- FIN: Integración del Panel de Afiliados ---
+
+        // Configuración de grupos
+        const groupConfig = {
+            'campaigns': {
+                tabs: [
+                    { id: 'bulk-sending', label: 'Envío Masivo', default: true },
+                    { id: 'follow-ups', label: 'Seguimientos' },
+                    { id: 'auto-responses', label: 'Respuestas Programadas' },
+                    { id: 'templates', label: 'Plantillas' }
+                ]
+            },
+            'clients': {
+                tabs: [
+                    { id: 'contacts', label: 'Contactos', default: true },
+                    { id: 'kanban', label: 'Kanban' },
+                    { id: 'quotes', label: 'Cotizaciones' }
+                ]
+            },
+            'ai-behavior': {
+                tabs: [
+                    { id: 'prompt-training', label: 'Entrenamiento Prompt', default: true },
+                    { id: 'ai-memory', label: 'Asistente IA' },
+                    { id: 'ai-flows', label: 'Flujos Personalizados' },
+                    { id: 'smart-promotions', label: 'Promos Inteligentes' },
+                    { id: 'sales-context', label: 'Contexto de Ventas' }
+                ]
+            },
+            'marketing': {
+                tabs: [
+                    { id: 'designer-ai', label: 'Diseñador Gráfico IA', default: true },
+                    { id: 'video-ai', label: 'Video IA' },
+                    { id: 'community-manager', label: 'Community Manager' }
+                ]
+            }
+        };
+
+        // Si pertenece a un grupo, crear pestañas dinámicamente
+        if (groupId && groupConfig[groupId] && panel) {
+            this.createGroupTabs(groupId, groupConfig[groupId], tabId || targetId, panel);
+        }
+
+        if (panel) {
+            if (targetId === 'kanban') {
+                // MODO PANTALLA COMPLETA PARA KANBAN
+                sidebar.classList.add('hidden');
+                toggleBtn.style.display = 'none';
+            } else {
+                // MODO NORMAL PARA OTROS PANELES
+                sidebar.classList.remove('hidden');
+                toggleBtn.style.display = '';
             }
 
-            // console.log(`[Dashboard] Cambiando a panel: ${targetId}`);
+            // El layout flex se encarga del posicionamiento automáticamente
+            panel.classList.add('active');
 
-            // Ocultar todos los paneles
-            document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+            // Guarda el panel activo en localStorage
+            localStorage.setItem('activePanelId', targetId);
+            if (groupId) localStorage.setItem(`activeGroup_${groupId}`, tabId || targetId);
 
-            // Obtener información del grupo y pestaña si existe
-            const activeLink = document.querySelector(`.nav-link[data-target="${targetId}"]`);
-            const groupId = options.groupId || activeLink?.dataset.group;
-            const tabId = options.tabId || activeLink?.dataset.tab;
+            // Disparar evento de activación
+            document.dispatchEvent(new CustomEvent('panel:activated', { detail: { panelId: targetId, options, groupId, tabId } }));
 
-            // --- INICIO: Integración del Panel de Afiliados ---
-            if (targetId === 'affiliate-panel') {
-                await initAffiliatePanel();
-            }
-            // --- FIN: Integración del Panel de Afiliados ---
-
-            // Configuración de grupos
-            const groupConfig = {
-                'campaigns': {
-                    tabs: [
-                        { id: 'bulk-sending', label: 'Envío Masivo', default: true },
-                        { id: 'follow-ups', label: 'Seguimientos' },
-                        { id: 'auto-responses', label: 'Respuestas Programadas' },
-                        { id: 'templates', label: 'Plantillas' }
-                    ]
-                },
-                'clients': {
-                    tabs: [
-                        { id: 'contacts', label: 'Contactos', default: true },
-                        { id: 'kanban', label: 'Kanban' },
-                        { id: 'quotes', label: 'Cotizaciones' }
-                    ]
-                },
-                'ai-behavior': {
-                    tabs: [
-                        { id: 'prompt-training', label: 'Entrenamiento Prompt', default: true },
-                        { id: 'ai-memory', label: 'Asistente IA' },
-                        { id: 'ai-flows', label: 'Flujos Personalizados' },
-                        { id: 'smart-promotions', label: 'Promos Inteligentes' },
-                        { id: 'sales-context', label: 'Contexto de Ventas' }
-                    ]
-                },
-                'marketing': {
-                    tabs: [
-                        { id: 'designer-ai', label: 'Diseñador Gráfico IA', default: true },
-                        { id: 'video-ai', label: 'Video IA' },
-                        { id: 'community-manager', label: 'Community Manager' }
-                    ]
-                }
-            };
-
-            // Si pertenece a un grupo, crear pestañas dinámicamente
-            if (groupId && groupConfig[groupId] && panel) {
-                this.createGroupTabs(groupId, groupConfig[groupId], tabId || targetId, panel);
-            }
-
-            if (panel) {
-                if (targetId === 'kanban') {
-                    // MODO PANTALLA COMPLETA PARA KANBAN
-                    sidebar.classList.add('hidden');
-                    toggleBtn.style.display = 'none';
-                } else {
-                    // MODO NORMAL PARA OTROS PANELES
-                    sidebar.classList.remove('hidden');
-                    toggleBtn.style.display = '';
-                }
-
-                // El layout flex se encarga del posicionamiento automáticamente
-                panel.classList.add('active');
-
-                // Guarda el panel activo en localStorage
-                localStorage.setItem('activePanelId', targetId);
-                if (groupId) localStorage.setItem(`activeGroup_${groupId}`, tabId || targetId);
-
-                // Disparar evento de activación
-                document.dispatchEvent(new CustomEvent('panel:activated', { detail: { panelId: targetId, options, groupId, tabId } }));
-
-                // Cerrar el menú lateral en móvil
-                if (sidebar && sidebar.classList.contains('open')) {
-                    sidebar.classList.remove('open');
-                }
-            }
-
-            // Actualizar estilos de navegación
-            const activeClasses = ['bg-green-500', 'text-white'];
-            document.querySelectorAll('.nav-link[data-target]').forEach(l => l.classList.remove(...activeClasses));
-            document.querySelectorAll('.nav-link[data-group]').forEach(l => l.classList.remove(...activeClasses));
-
-            // Si es un grupo, destacar el link del grupo en el menú
-            if (groupId) {
-                const groupLink = document.querySelector(`.nav-link[data-group="${groupId}"]`);
-                if (groupLink) {
-                    groupLink.classList.add(...activeClasses);
-                }
-            } else if (activeLink) {
-                activeLink.classList.add(...activeClasses);
-            }
-
-            // Actualizar pestañas activas si hay grupo
-            if (groupId && panel) {
-                const tabsContainer = panel.querySelector('.group-tabs-container');
-                if (tabsContainer) {
-                    tabsContainer.querySelectorAll('.group-tab').forEach(tab => {
-                        tab.classList.remove('active');
-                        if (tab.dataset.tab === (tabId || targetId)) {
-                            tab.classList.add('active');
-                        }
-                    });
-                }
+            // Cerrar el menú lateral en móvil
+            if (sidebar && sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
             }
         }
 
-        getDefaultTabForGroup(groupId) {
-            const defaults = {
-                'campaigns': 'bulk-sending',
-                'clients': 'contacts',
-                'ai-behavior': 'prompt-training',
-                'marketing': 'designer-ai'
-            };
-            return defaults[groupId] || null;
+        // Actualizar estilos de navegación
+        const activeClasses = ['bg-green-500', 'text-white'];
+        document.querySelectorAll('.nav-link[data-target]').forEach(l => l.classList.remove(...activeClasses));
+        document.querySelectorAll('.nav-link[data-group]').forEach(l => l.classList.remove(...activeClasses));
+
+        // Si es un grupo, destacar el link del grupo en el menú
+        if (groupId) {
+            const groupLink = document.querySelector(`.nav-link[data-group="${groupId}"]`);
+            if (groupLink) {
+                groupLink.classList.add(...activeClasses);
+            }
+        } else if (activeLink) {
+            activeLink.classList.add(...activeClasses);
         }
 
-        createGroupTabs(groupId, config, activeTabId, panel) {
-            // Eliminar pestañas anteriores si existen
-            const existingTabs = panel.querySelector('.group-tabs-container');
-            if (existingTabs) existingTabs.remove();
-
-            // Crear contenedor de pestañas
-            const tabsContainer = document.createElement('div');
-            tabsContainer.className = 'group-tabs-container mb-6';
-
-            const tabsDiv = document.createElement('div');
-            tabsDiv.className = 'group-tabs';
-
-            // Crear botones de pestañas
-            config.tabs.forEach(tab => {
-                const tabBtn = document.createElement('button');
-                tabBtn.className = `group-tab ${tab.id === activeTabId ? 'active' : ''}`;
-                tabBtn.textContent = tab.label;
-                tabBtn.dataset.tab = tab.id;
-                tabBtn.dataset.target = tab.id;
-                tabBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    this.switchPanel(tab.id, { groupId, tabId: tab.id });
+        // Actualizar pestañas activas si hay grupo
+        if (groupId && panel) {
+            const tabsContainer = panel.querySelector('.group-tabs-container');
+            if (tabsContainer) {
+                tabsContainer.querySelectorAll('.group-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                    if (tab.dataset.tab === (tabId || targetId)) {
+                        tab.classList.add('active');
+                    }
                 });
-                tabsDiv.appendChild(tabBtn);
-            });
-
-            tabsContainer.appendChild(tabsDiv);
-
-            // Insertar pestañas al inicio del panel
-            panel.insertBefore(tabsContainer, panel.firstChild);
+            }
         }
+    }
+
+    getDefaultTabForGroup(groupId) {
+        const defaults = {
+            'campaigns': 'bulk-sending',
+            'clients': 'contacts',
+            'ai-behavior': 'prompt-training',
+            'marketing': 'designer-ai'
+        };
+        return defaults[groupId] || null;
+    }
+
+    createGroupTabs(groupId, config, activeTabId, panel) {
+        // Eliminar pestañas anteriores si existen
+        const existingTabs = panel.querySelector('.group-tabs-container');
+        if (existingTabs) existingTabs.remove();
+
+        // Crear contenedor de pestañas
+        const tabsContainer = document.createElement('div');
+        tabsContainer.className = 'group-tabs-container mb-6';
+
+        const tabsDiv = document.createElement('div');
+        tabsDiv.className = 'group-tabs';
+
+        // Crear botones de pestañas
+        config.tabs.forEach(tab => {
+            const tabBtn = document.createElement('button');
+            tabBtn.className = `group-tab ${tab.id === activeTabId ? 'active' : ''}`;
+            tabBtn.textContent = tab.label;
+            tabBtn.dataset.tab = tab.id;
+            tabBtn.dataset.target = tab.id;
+            tabBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.switchPanel(tab.id, { groupId, tabId: tab.id });
+            });
+            tabsDiv.appendChild(tabBtn);
+        });
+
+        tabsContainer.appendChild(tabsDiv);
+
+        // Insertar pestañas al inicio del panel
+        panel.insertBefore(tabsContainer, panel.firstChild);
+    }
 
     async loadPanelContent(panelId) {
-            const panel = document.getElementById(panelId);
-            if (!panel) return;
+        const panel = document.getElementById(panelId);
+        if (!panel) return;
 
-            // Si el panel ya tiene contenido (no está vacío) y no tiene data-force-load, no cargamos nada
-            const isActuallyEmpty = panel.innerHTML.trim().length === 0 || panel.dataset.placeholder === 'true';
+        // Si el panel ya tiene contenido (no está vacío) y no tiene data-force-load, no cargamos nada
+        const isActuallyEmpty = panel.innerHTML.trim().length === 0 || panel.dataset.placeholder === 'true';
 
-            const panelFiles = {
-                'settings': 'settings.html',
-                // 'appointments': 'appointments.html', // Ya integrado en dashboard.html
-                'designer-ai': 'designer-ai.html',
-                'video-ai': 'video-ai.html',
-                'products': 'products.html',
-                'chats': 'chats.html',
-                'kanban': 'kanban.html',
-                'bulk-sending': 'bulk-sending.html',
-                'templates': 'templates.html',
-                'smart-labels': 'smart-labels.html'
-            };
+        const panelFiles = {
+            'settings': 'settings.html',
+            // 'appointments': 'appointments.html', // Ya integrado en dashboard.html
+            'designer-ai': 'designer-ai.html',
+            'video-ai': 'video-ai.html',
+            'products': 'products.html',
+            'chats': 'chats.html',
+            'kanban': 'kanban.html',
+            'bulk-sending': 'bulk-sending.html',
+            'templates': 'templates.html',
+            'smart-labels': 'smart-labels.html'
+        };
 
-            const fileName = panelFiles[panelId];
-            if (!fileName) return;
+        const fileName = panelFiles[panelId];
+        if (!fileName) return;
 
-            if (isActuallyEmpty || panel.dataset.forceLoad === 'true') {
-                try {
-                    // console.log(`[Dashboard] Cargando contenido para ${panelId} desde ${fileName}...`);
-                    const response = await fetch(fileName);
-                    if (response.ok) {
-                        const html = await response.text();
-                        panel.innerHTML = html;
-                        panel.dataset.placeholder = 'false';
-                        panel.dataset.forceLoad = 'false';
+        if (isActuallyEmpty || panel.dataset.forceLoad === 'true') {
+            try {
+                // console.log(`[Dashboard] Cargando contenido para ${panelId} desde ${fileName}...`);
+                const response = await fetch(fileName);
+                if (response.ok) {
+                    const html = await response.text();
+                    panel.innerHTML = html;
+                    panel.dataset.placeholder = 'false';
+                    panel.dataset.forceLoad = 'false';
 
-                        if (window.lucide) {
-                            window.lucide.createIcons({
-                                attrs: { class: 'lucide-icon' },
-                                nameAttr: 'data-lucide'
-                            });
-                        }
-                        document.dispatchEvent(new CustomEvent('panel:loaded', { detail: { panelId } }));
+                    if (window.lucide) {
+                        window.lucide.createIcons({
+                            attrs: { class: 'lucide-icon' },
+                            nameAttr: 'data-lucide'
+                        });
                     }
-                } catch (error) {
-                    console.error(`[Dashboard] Error al cargar ${fileName}:`, error);
+                    document.dispatchEvent(new CustomEvent('panel:loaded', { detail: { panelId } }));
                 }
+            } catch (error) {
+                console.error(`[Dashboard] Error al cargar ${fileName}:`, error);
             }
         }
+    }
 
 
-        listenForProfileChanges() {
-            const channel = auth.sb.channel(`profile-changes:${this.user.id}`)
-                .on(
-                    'postgres_changes',
-                    { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${this.user.id}` },
-                    (payload) => {
-                        const { whatsapp_connected, sync_status } = payload.new;
-                        document.dispatchEvent(new CustomEvent('profile:updated', { detail: { whatsapp_connected, sync_status } }));
-                    }
-                )
-                .subscribe();
-        }
+    listenForProfileChanges() {
+        const channel = auth.sb.channel(`profile-changes:${this.user.id}`)
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${this.user.id}` },
+                (payload) => {
+                    const { whatsapp_connected, sync_status } = payload.new;
+                    document.dispatchEvent(new CustomEvent('profile:updated', { detail: { whatsapp_connected, sync_status } }));
+                }
+            )
+            .subscribe();
+    }
 
     async loadUserSubscription() {
+        try {
+            // Verificar acceso de cuenta primero (si la función existe)
+            let accessCheck = null;
             try {
-                // Verificar acceso de cuenta primero (si la función existe)
-                let accessCheck = null;
-                try {
-                    const { data, error: accessError } = await auth.sb.rpc('check_account_access', {
-                        p_user_id: this.user.id
-                    });
-                    if (accessError && accessError.code !== 'PGRST202') {
-                        // Solo loguear errores que no sean "función no encontrada"
-                        console.error("Error al verificar acceso de cuenta:", accessError);
-                    } else if (!accessError) {
-                        accessCheck = data;
-                    }
-                } catch (e) {
-                    // Si la función no existe, continuar sin verificación
-                    if (e.code !== 'PGRST202') {
-                        console.error("Error al verificar acceso de cuenta:", e);
-                    }
+                const { data, error: accessError } = await auth.sb.rpc('check_account_access', {
+                    p_user_id: this.user.id
+                });
+                if (accessError && accessError.code !== 'PGRST202') {
+                    // Solo loguear errores que no sean "función no encontrada"
+                    console.error("Error al verificar acceso de cuenta:", accessError);
+                } else if (!accessError) {
+                    accessCheck = data;
                 }
-
-                if (accessCheck && accessCheck.blocked) {
-                    // Mostrar mensaje de bloqueo
-                    window.showToast(accessCheck.reason || 'Tu cuenta está bloqueada. Por favor, contacta con soporte.', 'error');
-                    // Retornar información de bloqueo
-                    return {
-                        blocked: true,
-                        reason: accessCheck.reason,
-                        status: accessCheck.status,
-                        plan_id: accessCheck.plan_id
-                    };
-                }
-
-                const { data: subscription, error: subError } = await auth.sb
-                    .from('subscriptions')
-                    .select('status, plan_id, plans:plan_id(*)')
-                    .eq('user_id', this.user.id)
-                    .limit(1)
-                    .single();
-
-                if (subError && subError.code !== 'PGRST116') throw subError;
-
-                if (subscription && subscription.plan_id === 'free_trial' && subscription.status === 'trialing') {
-                    const { data: profile } = await auth.sb.from('profiles').select('stripe_customer_id').eq('id', this.user.id).single();
-                    if (profile && profile.stripe_customer_id) {
-                        const { data: stripeSub, error: functionError } = await window.auth.invokeFunction('get-stripe-subscription', { body: { customerId: profile.stripe_customer_id } });
-                        if (functionError) throw functionError;
-                        if (stripeSub && stripeSub.planId) {
-                            subscription.plan_id = stripeSub.planId;
-                            subscription.plans.name = stripeSub.planName;
-                            subscription.plans.features = stripeSub.features;
-                        }
-                    }
-                }
-
-                // Verificar bloqueo de cuenta
-                try {
-                    const { data: accessCheck, error: accessError } = await auth.sb.rpc('check_account_access', { p_user_id: this.user.id });
-                    if (!accessError && accessCheck && accessCheck.blocked) {
-                        subscription.blocked = true;
-                        subscription.blockedReason = accessCheck.reason;
-                        // Mostrar notificación de bloqueo
-                        window.showToast(accessCheck.reason || 'Tu cuenta está bloqueada. Por favor, contacta con soporte.', 'error');
-                    }
-                } catch (e) {
-                    // Si la función no existe aún, no hacer nada
-                    if (e.code !== 'PGRST202') {
-                        console.warn('Error al verificar acceso de cuenta:', e);
-                    }
-                }
-
-                return subscription;
             } catch (e) {
-                console.error("Error al cargar la suscripción del usuario:", e);
-                return null;
+                // Si la función no existe, continuar sin verificación
+                if (e.code !== 'PGRST202') {
+                    console.error("Error al verificar acceso de cuenta:", e);
+                }
             }
+
+            if (accessCheck && accessCheck.blocked) {
+                // Mostrar mensaje de bloqueo
+                window.showToast(accessCheck.reason || 'Tu cuenta está bloqueada. Por favor, contacta con soporte.', 'error');
+                // Retornar información de bloqueo
+                return {
+                    blocked: true,
+                    reason: accessCheck.reason,
+                    status: accessCheck.status,
+                    plan_id: accessCheck.plan_id
+                };
+            }
+
+            const { data: subscription, error: subError } = await auth.sb
+                .from('subscriptions')
+                .select('status, plan_id, plans:plan_id(*)')
+                .eq('user_id', this.user.id)
+                .limit(1)
+                .single();
+
+            if (subError && subError.code !== 'PGRST116') throw subError;
+
+            if (subscription && subscription.plan_id === 'free_trial' && subscription.status === 'trialing') {
+                const { data: profile } = await auth.sb.from('profiles').select('stripe_customer_id').eq('id', this.user.id).single();
+                if (profile && profile.stripe_customer_id) {
+                    const { data: stripeSub, error: functionError } = await window.auth.invokeFunction('get-stripe-subscription', { body: { customerId: profile.stripe_customer_id } });
+                    if (functionError) throw functionError;
+                    if (stripeSub && stripeSub.planId) {
+                        subscription.plan_id = stripeSub.planId;
+                        subscription.plans.name = stripeSub.planName;
+                        subscription.plans.features = stripeSub.features;
+                    }
+                }
+            }
+
+            // Verificar bloqueo de cuenta
+            try {
+                const { data: accessCheck, error: accessError } = await auth.sb.rpc('check_account_access', { p_user_id: this.user.id });
+                if (!accessError && accessCheck && accessCheck.blocked) {
+                    subscription.blocked = true;
+                    subscription.blockedReason = accessCheck.reason;
+                    // Mostrar notificación de bloqueo
+                    window.showToast(accessCheck.reason || 'Tu cuenta está bloqueada. Por favor, contacta con soporte.', 'error');
+                }
+            } catch (e) {
+                // Si la función no existe aún, no hacer nada
+                if (e.code !== 'PGRST202') {
+                    console.warn('Error al verificar acceso de cuenta:', e);
+                }
+            }
+
+            return subscription;
+        } catch (e) {
+            console.error("Error al cargar la suscripción del usuario:", e);
+            return null;
         }
+    }
 
     async loadTeamInfo() {
-            try {
-                const { data, error } = await auth.sb.rpc('get_user_team_info_with_permissions', { p_user_id: this.user.id });
-                if (error) throw error;
+        try {
+            const { data, error } = await auth.sb.rpc('get_user_team_info_with_permissions', { p_user_id: this.user.id });
+            if (error) throw error;
 
-                if (data && data.length > 0) {
-                    this.teamInfo = data[0];
-                }
-                return this.teamInfo;
-            } catch (e) {
-                console.error("Error al cargar la información del equipo:", e);
-                return null;
+            if (data && data.length > 0) {
+                this.teamInfo = data[0];
             }
+            return this.teamInfo;
+        } catch (e) {
+            console.error("Error al cargar la información del equipo:", e);
+            return null;
         }
+    }
 
     async processInvitationFromURL() {
-            try {
-                // Obtener parámetro invitation de la URL
-                const urlParams = new URLSearchParams(window.location.search);
-                const invitationId = urlParams.get('invitation');
+        try {
+            // Obtener parámetro invitation de la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const invitationId = urlParams.get('invitation');
 
-                if (!invitationId) {
-                    return; // No hay invitación en la URL
-                }
+            if (!invitationId) {
+                return; // No hay invitación en la URL
+            }
 
-                console.log('[App] Procesando invitación desde URL:', invitationId);
+            console.log('[App] Procesando invitación desde URL:', invitationId);
 
-                // Verificar que la invitación existe y está pendiente
-                const { data: invitation, error: inviteError } = await auth.sb
-                    .from('team_invitations')
-                    .select('id, team_id, email, role, status, expires_at')
-                    .eq('id', invitationId)
-                    .eq('status', 'pending')
-                    .single();
+            // Verificar que la invitación existe y está pendiente
+            const { data: invitation, error: inviteError } = await auth.sb
+                .from('team_invitations')
+                .select('id, team_id, email, role, status, expires_at')
+                .eq('id', invitationId)
+                .eq('status', 'pending')
+                .single();
 
-                if (inviteError || !invitation) {
-                    console.warn('[App] Invitación no encontrada o ya procesada:', inviteError);
-                    // Limpiar parámetro de la URL
-                    urlParams.delete('invitation');
-                    window.history.replaceState({}, '', `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`);
-                    return;
-                }
-
-                // Verificar que no haya expirado
-                if (new Date(invitation.expires_at) < new Date()) {
-                    console.warn('[App] Invitación expirada');
-                    window.showToast?.('Esta invitación ha expirado. Contacta al administrador para una nueva invitación.', 'error');
-                    urlParams.delete('invitation');
-                    window.history.replaceState({}, '', `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`);
-                    return;
-                }
-
-                // Verificar que el email del usuario coincida con el de la invitación
-                const userEmail = this.user.email;
-                if (userEmail.toLowerCase() !== invitation.email.toLowerCase()) {
-                    console.warn('[App] Email del usuario no coincide con la invitación');
-                    window.showToast?.('El correo de esta invitación no coincide con tu cuenta. Por favor, inicia sesión con el correo correcto.', 'error');
-                    urlParams.delete('invitation');
-                    window.history.replaceState({}, '', `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`);
-                    return;
-                }
-
-                // Verificar si el usuario ya es miembro del equipo
-                const { data: existingMember } = await auth.sb
-                    .from('team_members')
-                    .select('*')
-                    .eq('team_id', invitation.team_id)
-                    .eq('user_id', this.user.id)
-                    .single();
-
-                if (existingMember) {
-                    // Ya es miembro, solo marcar invitación como aceptada
-                    console.log('[App] Usuario ya es miembro del equipo, marcando invitación como aceptada');
-                    await auth.sb
-                        .from('team_invitations')
-                        .update({
-                            status: 'accepted',
-                            accepted_at: new Date().toISOString()
-                        })
-                        .eq('id', invitationId);
-
-                    window.showToast?.('¡Bienvenido al equipo! Ya eres miembro.', 'success');
-                } else {
-                    // Agregar usuario al equipo
-                    console.log('[App] Agregando usuario al equipo');
-                    const { error: addError } = await auth.sb
-                        .from('team_members')
-                        .insert({
-                            team_id: invitation.team_id,
-                            user_id: this.user.id,
-                            role: invitation.role,
-                            permissions: invitation.role === 'advisor' ? {
-                                'chats': true,
-                                'follow-ups': true,
-                                'kanban': true,
-                                'contacts': false,
-                                'label_filters': {}
-                            } : {}
-                        });
-
-                    if (addError) {
-                        console.error('[App] Error al agregar usuario al equipo:', addError);
-                        window.showToast?.('Error al procesar la invitación. Por favor, contacta al administrador.', 'error');
-                        return;
-                    }
-
-                    // Marcar invitación como aceptada
-                    await auth.sb
-                        .from('team_invitations')
-                        .update({
-                            status: 'accepted',
-                            accepted_at: new Date().toISOString()
-                        })
-                        .eq('id', invitationId);
-
-                    // Recargar información del equipo
-                    await this.loadTeamInfo();
-
-                    window.showToast?.('¡Bienvenido al equipo! Has sido agregado exitosamente.', 'success');
-                }
-
+            if (inviteError || !invitation) {
+                console.warn('[App] Invitación no encontrada o ya procesada:', inviteError);
                 // Limpiar parámetro de la URL
                 urlParams.delete('invitation');
                 window.history.replaceState({}, '', `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`);
-
-            } catch (e) {
-                console.error('[App] Error al procesar invitación:', e);
-                window.showToast?.('Error al procesar la invitación. Por favor, contacta al administrador.', 'error');
+                return;
             }
+
+            // Verificar que no haya expirado
+            if (new Date(invitation.expires_at) < new Date()) {
+                console.warn('[App] Invitación expirada');
+                window.showToast?.('Esta invitación ha expirado. Contacta al administrador para una nueva invitación.', 'error');
+                urlParams.delete('invitation');
+                window.history.replaceState({}, '', `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`);
+                return;
+            }
+
+            // Verificar que el email del usuario coincida con el de la invitación
+            const userEmail = this.user.email;
+            if (userEmail.toLowerCase() !== invitation.email.toLowerCase()) {
+                console.warn('[App] Email del usuario no coincide con la invitación');
+                window.showToast?.('El correo de esta invitación no coincide con tu cuenta. Por favor, inicia sesión con el correo correcto.', 'error');
+                urlParams.delete('invitation');
+                window.history.replaceState({}, '', `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`);
+                return;
+            }
+
+            // Verificar si el usuario ya es miembro del equipo
+            const { data: existingMember } = await auth.sb
+                .from('team_members')
+                .select('*')
+                .eq('team_id', invitation.team_id)
+                .eq('user_id', this.user.id)
+                .single();
+
+            if (existingMember) {
+                // Ya es miembro, solo marcar invitación como aceptada
+                console.log('[App] Usuario ya es miembro del equipo, marcando invitación como aceptada');
+                await auth.sb
+                    .from('team_invitations')
+                    .update({
+                        status: 'accepted',
+                        accepted_at: new Date().toISOString()
+                    })
+                    .eq('id', invitationId);
+
+                window.showToast?.('¡Bienvenido al equipo! Ya eres miembro.', 'success');
+            } else {
+                // Agregar usuario al equipo
+                console.log('[App] Agregando usuario al equipo');
+                const { error: addError } = await auth.sb
+                    .from('team_members')
+                    .insert({
+                        team_id: invitation.team_id,
+                        user_id: this.user.id,
+                        role: invitation.role,
+                        permissions: invitation.role === 'advisor' ? {
+                            'chats': true,
+                            'follow-ups': true,
+                            'kanban': true,
+                            'contacts': false,
+                            'label_filters': {}
+                        } : {}
+                    });
+
+                if (addError) {
+                    console.error('[App] Error al agregar usuario al equipo:', addError);
+                    window.showToast?.('Error al procesar la invitación. Por favor, contacta al administrador.', 'error');
+                    return;
+                }
+
+                // Marcar invitación como aceptada
+                await auth.sb
+                    .from('team_invitations')
+                    .update({
+                        status: 'accepted',
+                        accepted_at: new Date().toISOString()
+                    })
+                    .eq('id', invitationId);
+
+                // Recargar información del equipo
+                await this.loadTeamInfo();
+
+                window.showToast?.('¡Bienvenido al equipo! Has sido agregado exitosamente.', 'success');
+            }
+
+            // Limpiar parámetro de la URL
+            urlParams.delete('invitation');
+            window.history.replaceState({}, '', `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`);
+
+        } catch (e) {
+            console.error('[App] Error al procesar invitación:', e);
+            window.showToast?.('Error al procesar la invitación. Por favor, contacta al administrador.', 'error');
         }
+    }
 
     async loadUserUsage() {
-            // --- CORRECCIÓN: La función ahora devuelve el uso en lugar de asignarlo a window ---
-            try { // CORRECCIÓN: La función ahora devuelve el uso en lugar de asignarlo a window
-                const { data, error } = await window.auth.sb
-                    .from('profiles')
-                    .select('ai_enhancements_used, image_generations_used, bulk_sends_used')
-                    .eq('id', this.user.id)
-                    .single();
-                if (error) throw error;
-                return data;
-            } catch (e) {
-                console.error("Error al cargar el uso del usuario:", e);
-                return { ai_enhancements_used: 0, image_generations_used: 0, bulk_sends_used: 0 };
-            }
+        // --- CORRECCIÓN: La función ahora devuelve el uso en lugar de asignarlo a window ---
+        try { // CORRECCIÓN: La función ahora devuelve el uso en lugar de asignarlo a window
+            const { data, error } = await window.auth.sb
+                .from('profiles')
+                .select('ai_enhancements_used, image_generations_used, bulk_sends_used')
+                .eq('id', this.user.id)
+                .single();
+            if (error) throw error;
+            return data;
+        } catch (e) {
+            console.error("Error al cargar el uso del usuario:", e);
+            return { ai_enhancements_used: 0, image_generations_used: 0, bulk_sends_used: 0 };
         }
+    }
 
     async renderUsageAndLimits() {
-            // CORRECCIÓN: Reescribir la función para ser robusta y no depender de variables globales
-            const [userPlan, userUsage] = await Promise.all([this.loadUserSubscription(), this.loadUserUsage()]);
+        // CORRECCIÓN: Reescribir la función para ser robusta y no depender de variables globales
+        const [userPlan, userUsage] = await Promise.all([this.loadUserSubscription(), this.loadUserUsage()]);
 
-            if (userPlan) { // teamInfo ya está cargado en this.teamInfo
-                this.renderUserPlanBadge(userPlan);
-                this.renderUpgradeButtons(userPlan);
-                this.applyFeatureRestrictions(userPlan, this.teamInfo);
+        if (userPlan) { // teamInfo ya está cargado en this.teamInfo
+            this.renderUserPlanBadge(userPlan);
+            this.renderUpgradeButtons(userPlan);
+            this.applyFeatureRestrictions(userPlan, this.teamInfo);
+        } else {
+            // CORRECCIÓN: Si no hay suscripción, asignar plan gratuito por defecto
+            console.warn('El usuario no tiene una suscripción registrada.');
+        }
+
+        const imageGenLimit = userPlan?.plans?.image_generations_limit || 0;
+        const imageGenUsed = userUsage?.image_generations_used || 0;
+        // --- CORRECCIÓN: Usar un evento para desacoplar la actualización ---
+        // --- INICIO: Log para verificar datos de uso ---
+        console.log('[Uso Verificado]', { imageGenerations: { used: imageGenUsed, limit: imageGenLimit } });
+        // --- FIN: Log para verificar datos de uso ---
+
+        // En lugar de buscar el elemento, disparamos un evento con los datos.
+        // Otros módulos (como designer-ai.js) escucharán este evento y se actualizarán.
+        document.dispatchEvent(new CustomEvent('usage:updated', {
+            detail: {
+                imageGenerations: {
+                    remaining: imageGenLimit - imageGenUsed, // <-- CORRECCIÓN: Enviar los usos restantes
+                    limit: imageGenLimit
+                }
+            }
+        }));
+    }
+
+    renderUserPlanBadge(userPlan) {
+        const badgeEl = document.getElementById('user-plan-badge');
+        if (!badgeEl || !userPlan) return;
+
+        const planId = userPlan.plan_id || 'unknown';
+        // Usamos el nombre del plan desde la DB si existe, si no, formateamos el ID.
+        const planName = userPlan.plans?.name || planId.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+        let bgColor = 'bg-slate-200';
+        let textColor = 'text-slate-700';
+
+        switch (planId) {
+            case 'free_trial': bgColor = 'bg-blue-100'; textColor = 'text-blue-800'; break;
+            case 'starter': bgColor = 'bg-green-100'; textColor = 'text-green-800'; break;
+            case 'grow': bgColor = 'bg-purple-100'; textColor = 'text-purple-800'; break;
+            case 'business': bgColor = 'bg-slate-200'; textColor = 'text-slate-800'; break;
+        }
+        badgeEl.textContent = planName;
+        badgeEl.className = `inline-block text-xs font-bold px-2 py-0.5 rounded-md mt-1.5 ${bgColor} ${textColor}`;
+    }
+
+    applyFeatureRestrictions(userPlan, teamInfo) {
+        if (!userPlan || !userPlan.plans) return;
+
+        const features = userPlan.plans.features || {};
+        const userRole = teamInfo?.user_role;
+
+        // Restricción de Seguimientos (solo si el panel está activo)
+        const followUpsPanel = document.getElementById('follow-ups');
+        // La lógica se ejecuta solo si el panel está activo y tiene contenido.
+        if (followUpsPanel?.classList.contains('active') && followUpsPanel.querySelector('#follow-ups-container')) {
+            const followUpsContainer = followUpsPanel.querySelector('#follow-ups-container');
+            const followUpsAccessDenied = followUpsPanel.querySelector('#follow-ups-access-denied');
+            if (features.follow_ups) {
+                if (followUpsContainer) followUpsContainer.classList.remove('hidden');
+                if (followUpsAccessDenied) followUpsAccessDenied.classList.add('hidden');
             } else {
-                // CORRECCIÓN: Si no hay suscripción, asignar plan gratuito por defecto
-                console.warn('El usuario no tiene una suscripción registrada.');
+                if (followUpsContainer) followUpsContainer.classList.add('hidden');
+                if (followUpsAccessDenied) followUpsAccessDenied.classList.remove('hidden');
+                document.getElementById('upgrade-to-grow-from-followups').onclick = () => this.handleUpgradeClick('grow');
             }
+        }
 
-            const imageGenLimit = userPlan?.plans?.image_generations_limit || 0;
-            const imageGenUsed = userUsage?.image_generations_used || 0;
-            // --- CORRECCIÓN: Usar un evento para desacoplar la actualización ---
-            // --- INICIO: Log para verificar datos de uso ---
-            console.log('[Uso Verificado]', { imageGenerations: { used: imageGenUsed, limit: imageGenLimit } });
-            // --- FIN: Log para verificar datos de uso ---
+        // Restricción de Diseñador Gráfico IA (solo si el panel está activo)
+        const designerPanel = document.getElementById('designer-ai');
+        // La lógica se ejecuta solo si el panel está activo y tiene contenido.
+        if (designerPanel?.classList.contains('active') && designerPanel.querySelector('#designer-ai-access-denied')) {
+            const designerContainer = designerPanel.querySelector('.grid');
+            const designerAccessDenied = designerPanel.querySelector('#designer-ai-access-denied');
+            const isAllowed = features.designer_ai;
+            if (designerContainer) designerContainer.classList.toggle('hidden', !isAllowed);
+            if (designerAccessDenied) designerAccessDenied.classList.toggle('hidden', isAllowed);
+            if (!isAllowed) document.getElementById('upgrade-to-grow-from-designer').onclick = () => this.handleUpgradeClick('grow');
+        }
 
-            // En lugar de buscar el elemento, disparamos un evento con los datos.
-            // Otros módulos (como designer-ai.js) escucharán este evento y se actualizarán.
-            document.dispatchEvent(new CustomEvent('usage:updated', {
-                detail: {
-                    imageGenerations: {
-                        remaining: imageGenLimit - imageGenUsed, // <-- CORRECCIÓN: Enviar los usos restantes
-                        limit: imageGenLimit
-                    }
+        // --- INICIO: Lógica de permisos por rol ---
+        // Si el usuario es un 'advisor', ocultamos los paneles que no tiene permitidos.
+        if (userRole === 'advisor') {
+            const userPermissions = teamInfo?.permissions || {};
+
+            document.querySelectorAll('.nav-link[data-target]').forEach(link => {
+                const panelId = link.dataset.target;
+                if (panelId !== 'dashboard' && !userPermissions[panelId]) {
+                    link.parentElement.style.display = 'none';
                 }
-            }));
+            });
+        }
+    }
+
+    renderUpgradeButtons(userPlan) {
+        const upgradeSection = document.getElementById('upgrade-plan-section');
+        if (!upgradeSection || !userPlan) return; // CORRECCIÓN: Asegurarse de que el plan exista
+        const starterToGrowBtn = document.getElementById('upgrade-grow-btn');
+        const collapsedBtn = document.getElementById('upgrade-collapsed-btn');
+        const trialBtn = document.getElementById('upgrade-trial-btn');
+        // Ocultar todo por defecto
+        if (starterToGrowBtn) starterToGrowBtn.classList.add('hidden');
+        if (trialBtn) trialBtn.classList.add('hidden');
+        if (upgradeSection) upgradeSection.classList.add('hidden');
+        if (collapsedBtn) {
+            collapsedBtn.classList.add('hidden');
         }
 
-        renderUserPlanBadge(userPlan) {
-            const badgeEl = document.getElementById('user-plan-badge');
-            if (!badgeEl || !userPlan) return;
+        const currentPlanId = userPlan.plan_id;
 
-            const planId = userPlan.plan_id || 'unknown';
-            // Usamos el nombre del plan desde la DB si existe, si no, formateamos el ID.
-            const planName = userPlan.plans?.name || planId.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-
-            let bgColor = 'bg-slate-200';
-            let textColor = 'text-slate-700';
-
-            switch (planId) {
-                case 'free_trial': bgColor = 'bg-blue-100'; textColor = 'text-blue-800'; break;
-                case 'starter': bgColor = 'bg-green-100'; textColor = 'text-green-800'; break;
-                case 'grow': bgColor = 'bg-purple-100'; textColor = 'text-purple-800'; break;
-                case 'business': bgColor = 'bg-slate-200'; textColor = 'text-slate-800'; break;
-            }
-            badgeEl.textContent = planName;
-            badgeEl.className = `inline-block text-xs font-bold px-2 py-0.5 rounded-md mt-1.5 ${bgColor} ${textColor}`;
+        if (currentPlanId === 'free_trial') {
+            trialBtn.classList.remove('hidden');
+            upgradeSection.classList.remove('hidden');
+            trialBtn.onclick = () => this.openPricingModal();
+            collapsedBtn.onclick = () => this.openPricingModal();
+        } else if (currentPlanId === 'starter') {
+            starterToGrowBtn.classList.remove('hidden');
+            upgradeSection.classList.remove('hidden');
+            starterToGrowBtn.onclick = () => this.handleUpgradeClick('grow');
+            collapsedBtn.onclick = () => this.handleUpgradeClick('grow');
         }
+        // Si es 'grow' o superior, la sección permanecerá oculta.
+    }
 
-        applyFeatureRestrictions(userPlan, teamInfo) {
-            if (!userPlan || !userPlan.plans) return;
-
-            const features = userPlan.plans.features || {};
-            const userRole = teamInfo?.user_role;
-
-            // Restricción de Seguimientos (solo si el panel está activo)
-            const followUpsPanel = document.getElementById('follow-ups');
-            // La lógica se ejecuta solo si el panel está activo y tiene contenido.
-            if (followUpsPanel?.classList.contains('active') && followUpsPanel.querySelector('#follow-ups-container')) {
-                const followUpsContainer = followUpsPanel.querySelector('#follow-ups-container');
-                const followUpsAccessDenied = followUpsPanel.querySelector('#follow-ups-access-denied');
-                if (features.follow_ups) {
-                    if (followUpsContainer) followUpsContainer.classList.remove('hidden');
-                    if (followUpsAccessDenied) followUpsAccessDenied.classList.add('hidden');
-                } else {
-                    if (followUpsContainer) followUpsContainer.classList.add('hidden');
-                    if (followUpsAccessDenied) followUpsAccessDenied.classList.remove('hidden');
-                    document.getElementById('upgrade-to-grow-from-followups').onclick = () => this.handleUpgradeClick('grow');
-                }
-            }
-
-            // Restricción de Diseñador Gráfico IA (solo si el panel está activo)
-            const designerPanel = document.getElementById('designer-ai');
-            // La lógica se ejecuta solo si el panel está activo y tiene contenido.
-            if (designerPanel?.classList.contains('active') && designerPanel.querySelector('#designer-ai-access-denied')) {
-                const designerContainer = designerPanel.querySelector('.grid');
-                const designerAccessDenied = designerPanel.querySelector('#designer-ai-access-denied');
-                const isAllowed = features.designer_ai;
-                if (designerContainer) designerContainer.classList.toggle('hidden', !isAllowed);
-                if (designerAccessDenied) designerAccessDenied.classList.toggle('hidden', isAllowed);
-                if (!isAllowed) document.getElementById('upgrade-to-grow-from-designer').onclick = () => this.handleUpgradeClick('grow');
-            }
-
-            // --- INICIO: Lógica de permisos por rol ---
-            // Si el usuario es un 'advisor', ocultamos los paneles que no tiene permitidos.
-            if (userRole === 'advisor') {
-                const userPermissions = teamInfo?.permissions || {};
-
-                document.querySelectorAll('.nav-link[data-target]').forEach(link => {
-                    const panelId = link.dataset.target;
-                    if (panelId !== 'dashboard' && !userPermissions[panelId]) {
-                        link.parentElement.style.display = 'none';
-                    }
-                });
-            }
+    openPricingModal() {
+        const pricingModal = document.getElementById('pricing-modal');
+        if (pricingModal) {
+            pricingModal.classList.remove('hidden');
         }
+    }
 
-        renderUpgradeButtons(userPlan) {
-            const upgradeSection = document.getElementById('upgrade-plan-section');
-            if (!upgradeSection || !userPlan) return; // CORRECCIÓN: Asegurarse de que el plan exista
-            const starterToGrowBtn = document.getElementById('upgrade-grow-btn');
-            const collapsedBtn = document.getElementById('upgrade-collapsed-btn');
-            const trialBtn = document.getElementById('upgrade-trial-btn');
-            // Ocultar todo por defecto
-            if (starterToGrowBtn) starterToGrowBtn.classList.add('hidden');
-            if (trialBtn) trialBtn.classList.add('hidden');
-            if (upgradeSection) upgradeSection.classList.add('hidden');
-            if (collapsedBtn) {
-                collapsedBtn.classList.add('hidden');
-            }
-
-            const currentPlanId = userPlan.plan_id;
-
-            if (currentPlanId === 'free_trial') {
-                trialBtn.classList.remove('hidden');
-                upgradeSection.classList.remove('hidden');
-                trialBtn.onclick = () => this.openPricingModal();
-                collapsedBtn.onclick = () => this.openPricingModal();
-            } else if (currentPlanId === 'starter') {
-                starterToGrowBtn.classList.remove('hidden');
-                upgradeSection.classList.remove('hidden');
-                starterToGrowBtn.onclick = () => this.handleUpgradeClick('grow');
-                collapsedBtn.onclick = () => this.handleUpgradeClick('grow');
-            }
-            // Si es 'grow' o superior, la sección permanecerá oculta.
+    closePricingModal() {
+        const pricingModal = document.getElementById('pricing-modal');
+        if (pricingModal) {
+            pricingModal.classList.add('hidden');
         }
-
-        openPricingModal() {
-            const pricingModal = document.getElementById('pricing-modal');
-            if (pricingModal) {
-                pricingModal.classList.remove('hidden');
-            }
-        }
-
-        closePricingModal() {
-            const pricingModal = document.getElementById('pricing-modal');
-            if (pricingModal) {
-                pricingModal.classList.add('hidden');
-            }
-        }
+    }
 
     async handleUpgradeClick(targetPlanId) {
-            const button = document.querySelector(`.upgrade-btn[data-plan="${targetPlanId}"]`) || document.getElementById(`upgrade-${targetPlanId}-btn`);
-            if (!button) return; // Si no encuentra el botón, no hace nada
-            // CORRECCIÓN: Asegurarse de que el modal de precios se cierre
-            // --- CORRECCIÓN: Asegurarse de que el modal de precios se cierre ---
-            const pricingModal = document.getElementById('pricing-modal');
-            if (pricingModal) {
-                pricingModal.classList.add('hidden');
-            }
-            // --- FIN CORRECCIÓN ---
-
-            const originalText = button.textContent;
-            button.disabled = true;
-            button.textContent = 'Redirigiendo a pago...';
-
-            try {
-                const { data, error } = await window.auth.invokeFunction('create-checkout-session', {
-                    body: {
-                        planId: targetPlanId,
-                        userId: this.user.id
-                    }
-                });
-
-                if (error) throw new Error(error.message);
-                window.location.href = data.url; // Redirige al usuario a la página de pago de Stripe
-
-            } catch (e) { // <-- CORRECCIÓN: Añadido el bloque catch que faltaba
-                console.error('Error al iniciar el proceso de pago:', e);
-                window.showToast('No se pudo iniciar el proceso de pago. Por favor, intenta de nuevo.', 'error');
-                button.disabled = false;
-                button.textContent = originalText;
-            } // <-- CORRECCIÓN: Cierre del bloque catch
+        const button = document.querySelector(`.upgrade-btn[data-plan="${targetPlanId}"]`) || document.getElementById(`upgrade-${targetPlanId}-btn`);
+        if (!button) return; // Si no encuentra el botón, no hace nada
+        // CORRECCIÓN: Asegurarse de que el modal de precios se cierre
+        // --- CORRECCIÓN: Asegurarse de que el modal de precios se cierre ---
+        const pricingModal = document.getElementById('pricing-modal');
+        if (pricingModal) {
+            pricingModal.classList.add('hidden');
         }
+        // --- FIN CORRECCIÓN ---
+
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Redirigiendo a pago...';
+
+        try {
+            const { data, error } = await window.auth.invokeFunction('create-checkout-session', {
+                body: {
+                    planId: targetPlanId,
+                    userId: this.user.id
+                }
+            });
+
+            if (error) throw new Error(error.message);
+            window.location.href = data.url; // Redirige al usuario a la página de pago de Stripe
+
+        } catch (e) { // <-- CORRECCIÓN: Añadido el bloque catch que faltaba
+            console.error('Error al iniciar el proceso de pago:', e);
+            window.showToast('No se pudo iniciar el proceso de pago. Por favor, intenta de nuevo.', 'error');
+            button.disabled = false;
+            button.textContent = originalText;
+        } // <-- CORRECCIÓN: Cierre del bloque catch
+    }
 
     // --- Métodos de API y Lógica de Componentes ---
 
     async fetchUserProfile() {
-            const nameEl = document.getElementById('user-business-name');
-            const avatarEl = document.getElementById('user-avatar');
-            try {
-                const { data, error } = await window.auth.sb
-                    .from('profiles')
-                    .select('full_name, role, urlfoto')
-                    .eq('id', this.user.id)
-                    .single();
-                if (error) throw error;
+        const nameEl = document.getElementById('user-business-name');
+        const avatarEl = document.getElementById('user-avatar');
+        try {
+            const { data, error } = await window.auth.sb
+                .from('profiles')
+                .select('full_name, role, urlfoto')
+                .eq('id', this.user.id)
+                .single();
+            if (error) throw error;
 
-                const fallbackName = this.teamInfo?.team_name || data.full_name || 'Mi negocio';
-                const displayName = fallbackName;
-                if (nameEl) nameEl.textContent = displayName;
+            const fallbackName = this.teamInfo?.team_name || data.full_name || 'Mi negocio';
+            const displayName = fallbackName;
+            if (nameEl) nameEl.textContent = displayName;
 
-                if (avatarEl) {
-                    const photoUrl = (data.urlfoto || '').trim();
-                    avatarEl.src = photoUrl ? photoUrl : `https://ui-avatars.com/api/?background=0A3B66&color=fff&name=${encodeURIComponent(displayName)}`;
-                    avatarEl.alt = `Logo de ${displayName}`;
-                }
-
-                if (data.role === 'superadmin') {
-                    document.getElementById('superadmin-link')?.classList.remove('hidden');
-                    document.getElementById('mobile-superadmin-link')?.classList.remove('hidden');
-                }
-            } catch (error) {
-                console.error('Error al cargar el perfil del usuario:', error);
-                if (nameEl) nameEl.textContent = 'Mi negocio';
-                if (avatarEl) avatarEl.src = 'https://ui-avatars.com/api/?background=0A3B66&color=fff&name=Elina';
+            if (avatarEl) {
+                const photoUrl = (data.urlfoto || '').trim();
+                avatarEl.src = photoUrl ? photoUrl : `https://ui-avatars.com/api/?background=0A3B66&color=fff&name=${encodeURIComponent(displayName)}`;
+                avatarEl.alt = `Logo de ${displayName}`;
             }
+
+            if (data.role === 'superadmin') {
+                document.getElementById('superadmin-link')?.classList.remove('hidden');
+                document.getElementById('mobile-superadmin-link')?.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Error al cargar el perfil del usuario:', error);
+            if (nameEl) nameEl.textContent = 'Mi negocio';
+            if (avatarEl) avatarEl.src = 'https://ui-avatars.com/api/?background=0A3B66&color=fff&name=Elina';
         }
+    }
 
     async fetchMasterPrompt() { // Este método ya existe, solo nos aseguramos de que esté bien
-            try { // Este método ya existe, solo nos aseguramos de que esté bien
-                const { data, error } = await auth.sb
-                    .from('prompts')
-                    .select('prompt_content')
-                    .eq('user_id', this.user.id)
-                    .single();
+        try { // Este método ya existe, solo nos aseguramos de que esté bien
+            const { data, error } = await auth.sb
+                .from('prompts')
+                .select('prompt_content')
+                .eq('user_id', this.user.id)
+                .single();
 
-                if (error && error.code !== 'PGRST116') throw error; // Ignora el error "no rows found"
+            if (error && error.code !== 'PGRST116') throw error; // Ignora el error "no rows found"
 
-                document.getElementById('ai-master-prompt').value = data?.prompt_content || '';
+            document.getElementById('ai-master-prompt').value = data?.prompt_content || '';
 
-                // Actualizar indicador de versión
-                await this.updatePromptVersionIndicator();
-            } catch (error) {
-                console.error('Error al cargar el prompt:', error);
-                document.getElementById('ai-master-prompt').value = 'No se pudo cargar el prompt.';
-            }
+            // Actualizar indicador de versión
+            await this.updatePromptVersionIndicator();
+        } catch (error) {
+            console.error('Error al cargar el prompt:', error);
+            document.getElementById('ai-master-prompt').value = 'No se pudo cargar el prompt.';
         }
+    }
 
     async handlePromptSave(e) {
-            e.preventDefault(); // Este método ya existe, solo nos aseguramos de que esté bien // CORRECCIÓN: El evento puede no venir de un formulario, buscar el botón de forma más robusta.
-            // CORRECCIÓN: El evento puede no venir de un formulario, buscar el botón de forma más robusta.
-            const form = document.getElementById('prompt-form');
-            if (!form) return;
-            const button = form.querySelector('button[type="submit"]');
-            const promptText = document.getElementById('ai-master-prompt').value;
-            if (!button) return;
+        e.preventDefault(); // Este método ya existe, solo nos aseguramos de que esté bien // CORRECCIÓN: El evento puede no venir de un formulario, buscar el botón de forma más robusta.
+        // CORRECCIÓN: El evento puede no venir de un formulario, buscar el botón de forma más robusta.
+        const form = document.getElementById('prompt-form');
+        if (!form) return;
+        const button = form.querySelector('button[type="submit"]');
+        const promptText = document.getElementById('ai-master-prompt').value;
+        if (!button) return;
 
-            button.disabled = true;
-            button.textContent = 'Guardando...';
+        button.disabled = true;
+        button.textContent = 'Guardando...';
 
-            try {
-                // Obtener prompt anterior para comparar
-                const { data: oldPrompt } = await auth.sb
-                    .from('prompts')
-                    .select('prompt_content')
-                    .eq('user_id', this.user.id)
-                    .single();
+        try {
+            // Obtener prompt anterior para comparar
+            const { data: oldPrompt } = await auth.sb
+                .from('prompts')
+                .select('prompt_content')
+                .eq('user_id', this.user.id)
+                .single();
 
-                const hasChanged = !oldPrompt || oldPrompt.prompt_content !== promptText;
+            const hasChanged = !oldPrompt || oldPrompt.prompt_content !== promptText;
 
-                // Guardar en tabla prompts (comportamiento original)
-                const { error: promptError } = await auth.sb
-                    .from('prompts')
-                    .upsert({ user_id: this.user.id, prompt_content: promptText }, { onConflict: 'user_id' });
+            // Guardar en tabla prompts (comportamiento original)
+            const { error: promptError } = await auth.sb
+                .from('prompts')
+                .upsert({ user_id: this.user.id, prompt_content: promptText }, { onConflict: 'user_id' });
 
-                if (promptError) throw promptError;
+            if (promptError) throw promptError;
 
-                // Si el prompt cambió O si no hay versiones aún, crear nueva versión
-                let shouldCreateVersion = hasChanged;
-                if (!shouldCreateVersion) {
-                    const { count, error: countErr } = await auth.sb
-                        .from('prompt_versions')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('user_id', this.user.id);
+            // Si el prompt cambió O si no hay versiones aún, crear nueva versión
+            let shouldCreateVersion = hasChanged;
+            if (!shouldCreateVersion) {
+                const { count, error: countErr } = await auth.sb
+                    .from('prompt_versions')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', this.user.id);
 
-                    if (count === 0 && !countErr) shouldCreateVersion = true;
-                }
-
-                if (shouldCreateVersion) {
-                    try {
-                        const changeReason = document.getElementById('prompt-change-reason')?.value?.trim() || (hasChanged ? 'Cambio manual' : 'Versión inicial');
-
-                        const { error: rpcErr } = await auth.sb.rpc('create_prompt_version', {
-                            p_user_id: this.user.id,
-                            p_prompt_content: promptText,
-                            p_change_reason: changeReason
-                        });
-
-                        if (rpcErr) console.warn('Error RPC al crear versión:', rpcErr);
-                    } catch (versionErr) {
-                        console.warn('Error al crear versión del prompt:', versionErr);
-                    }
-                }
-
-
-
-                window.showToast('Prompt guardado con éxito.', 'success');
-
-                // Actualizar indicador de versión si existe
-                this.updatePromptVersionIndicator();
-            } catch (error) {
-                console.error('Error al guardar el prompt:', error);
-                window.showToast('Error al guardar el prompt. Revisa la consola.', 'error');
-            } finally {
-                button.disabled = false;
-                button.textContent = 'Guardar';
+                if (count === 0 && !countErr) shouldCreateVersion = true;
             }
+
+            if (shouldCreateVersion) {
+                try {
+                    const changeReason = document.getElementById('prompt-change-reason')?.value?.trim() || (hasChanged ? 'Cambio manual' : 'Versión inicial');
+
+                    const { error: rpcErr } = await auth.sb.rpc('create_prompt_version', {
+                        p_user_id: this.user.id,
+                        p_prompt_content: promptText,
+                        p_change_reason: changeReason
+                    });
+
+                    if (rpcErr) console.warn('Error RPC al crear versión:', rpcErr);
+                } catch (versionErr) {
+                    console.warn('Error al crear versión del prompt:', versionErr);
+                }
+            }
+
+
+
+            window.showToast('Prompt guardado con éxito.', 'success');
+
+            // Actualizar indicador de versión si existe
+            this.updatePromptVersionIndicator();
+        } catch (error) {
+            console.error('Error al guardar el prompt:', error);
+            window.showToast('Error al guardar el prompt. Revisa la consola.', 'error');
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Guardar';
         }
+    }
 
     async updatePromptVersionIndicator() {
-            try {
-                // Obtener versión actual del prompt
-                const { data: versionData, error } = await auth.sb
-                    .rpc('get_current_prompt_version', { p_user_id: this.user.id });
+        try {
+            // Obtener versión actual del prompt
+            const { data: versionData, error } = await auth.sb
+                .rpc('get_current_prompt_version', { p_user_id: this.user.id });
 
-                if (error) {
-                    // Si la función no existe aún, no mostrar error
-                    if (error.code !== '42883') { // 42883 = function does not exist
-                        console.warn('No se pudo obtener versión del prompt:', error);
-                    }
-                    return;
+            if (error) {
+                // Si la función no existe aún, no mostrar error
+                if (error.code !== '42883') { // 42883 = function does not exist
+                    console.warn('No se pudo obtener versión del prompt:', error);
                 }
-
-                // Actualizar indicador en dashboard si existe
-                const versionIndicator = document.getElementById('prompt-version-indicator');
-                if (versionIndicator && versionData && versionData.length > 0) {
-                    const version = versionData[0];
-                    versionIndicator.textContent = `v${version.version_number}`;
-                    versionIndicator.title = `Versión ${version.version_number} - ${new Date(version.created_at).toLocaleDateString()}`;
-                }
-            } catch (err) {
-                console.warn('Error al actualizar indicador de versión:', err);
+                return;
             }
+
+            // Actualizar indicador en dashboard si existe
+            const versionIndicator = document.getElementById('prompt-version-indicator');
+            if (versionIndicator && versionData && versionData.length > 0) {
+                const version = versionData[0];
+                versionIndicator.textContent = `v${version.version_number}`;
+                versionIndicator.title = `Versión ${version.version_number} - ${new Date(version.created_at).toLocaleDateString()}`;
+            }
+        } catch (err) {
+            console.warn('Error al actualizar indicador de versión:', err);
         }
+    }
 
     async handleSaveAppointmentsConfig() {
-            // Implementación básica para guardar la configuración rápida
-            const modal = document.getElementById('appointments-quick-config-modal');
-            const bufferTime = document.getElementById('quick-config-buffer-time')?.value;
-            const maxPerDay = document.getElementById('quick-config-max-per-day')?.value;
-            const defaultDuration = document.getElementById('quick-config-default-duration')?.value;
-            const timezone = document.getElementById('quick-config-timezone')?.value;
+        // Implementación básica para guardar la configuración rápida
+        const modal = document.getElementById('appointments-quick-config-modal');
+        const bufferTime = document.getElementById('quick-config-buffer-time')?.value;
+        const maxPerDay = document.getElementById('quick-config-max-per-day')?.value;
+        const defaultDuration = document.getElementById('quick-config-default-duration')?.value;
+        const timezone = document.getElementById('quick-config-timezone')?.value;
 
-            try {
-                const updates = {
-                    user_id: this.user.id,
-                    buffer_time_minutes: bufferTime ? parseInt(bufferTime) : 0,
-                    default_duration_minutes: defaultDuration ? parseInt(defaultDuration) : 60,
-                    timezone: timezone || 'America/Mexico_City',
-                    // max_per_day podría requerir una columna específica o configuración JSON
-                };
+        try {
+            const updates = {
+                user_id: this.user.id,
+                buffer_time_minutes: bufferTime ? parseInt(bufferTime) : 0,
+                default_duration_minutes: defaultDuration ? parseInt(defaultDuration) : 60,
+                timezone: timezone || 'America/Mexico_City',
+                // max_per_day podría requerir una columna específica o configuración JSON
+            };
 
-                const { error } = await window.auth.sb
-                    .from('appointment_settings')
-                    .upsert(updates, { onConflict: 'user_id' });
+            const { error } = await window.auth.sb
+                .from('appointment_settings')
+                .upsert(updates, { onConflict: 'user_id' });
 
-                if (error) throw error;
+            if (error) throw error;
 
-                window.showToast('Configuración de citas guardada.', 'success');
-                modal.classList.add('hidden');
+            window.showToast('Configuración de citas guardada.', 'success');
+            modal.classList.add('hidden');
 
-                // Recargar configuración local si es necesario
-                // this.loadAppointmentSettings(); 
+            // Recargar configuración local si es necesario
+            // this.loadAppointmentSettings(); 
 
-            } catch (e) {
-                console.error('Error guardando configuración de citas:', e);
-                window.showToast('Error al guardar configuración.', 'error');
-            }
+        } catch (e) {
+            console.error('Error guardando configuración de citas:', e);
+            window.showToast('Error al guardar configuración.', 'error');
         }
+    }
 
     /**
      * Sube un archivo a un almacenamiento temporal, lo transfiere a la CDN (Bunny.net)
@@ -1445,365 +1446,449 @@ class DashboardApp {
      * @returns {Promise<string|null>} La URL pública de la CDN o null si falla.
      */
     async uploadAsset(file, folder, onProgress) { // CORRECCIÓN: Usar window.auth.sb para la instancia de Supabase
-            if (!file) return null;
+        if (!file) return null;
 
-            // --- OPTIMIZACIÓN DE IMÁGENES ---
-            // Si es una imagen, la comprimimos antes de subirla para ahorrar ancho de banda y almacenamiento
-            if (file.type.startsWith('image/')) {
-                try {
-                    if (onProgress) onProgress(5); // Indicar inicio de proceso
-                    console.log('[Upload] Optimizando imagen...', file.name);
-                    file = await this.compressImage(file);
-                    console.log('[Upload] Imagen optimizada.', { size: file.size, type: file.type });
-                } catch (e) {
-                    console.warn('[Upload] Falló la compresión de imagen, se usará el original:', e);
-                }
-            }
-
-            const userId = await window.getUserId();
-            const userEmail = await window.getUserEmail();
-
-            // Preservar la extensión original del archivo (o usar .webp si fue optimizado)
-            const originalName = file.name;
-            const lastDotIndex = originalName.lastIndexOf('.');
-            let extension = lastDotIndex > 0 ? originalName.substring(lastDotIndex) : '';
-            const nameWithoutExt = lastDotIndex > 0 ? originalName.substring(0, lastDotIndex) : originalName;
-
-            // Si el archivo ahora es image/webp (por la compresión), aseguramos la extensión correcta
-            if (file.type === 'image/webp' && extension !== '.webp') {
-                extension = '.webp';
-            }
-
-            // Crear nombre seguro pero preservando la extensión
-            const safeName = nameWithoutExt.replace(/[^a-zA-Z0-9._-]/g, '_') + extension;
-            const tempPath = `temp-uploads/${userId}/${folder}/${Date.now()}-${safeName}`;
-
+        // --- OPTIMIZACIÓN DE IMÁGENES ---
+        // Si es una imagen, la comprimimos antes de subirla para ahorrar ancho de banda y almacenamiento
+        if (file.type.startsWith('image/')) {
             try {
-                // Reportar progreso inicial
-                if (onProgress) onProgress(10);
-
-                // 1. Subir a una carpeta temporal en Supabase Storage
-                const { error: uploadError } = await window.auth.sb.storage.from('campaign_files').upload(tempPath, file, {
-                    onUploadProgress: (progress) => {
-                        // El progreso de Supabase va de 0 a 100, lo mapeamos a 10-60% del total
-                        if (onProgress) {
-                            const mappedProgress = 10 + (progress.loaded / progress.total) * 50;
-                            onProgress(Math.min(mappedProgress, 60));
-                        }
-                    }
-                }); // CORRECCIÓN: Usar window.auth.sb
-                if (uploadError) throw new Error(`Error en subida temporal: ${uploadError.message}`);
-
-                if (onProgress) onProgress(60);
-
-                // 2. Obtener la URL pública del archivo temporal
-                const { data: urlData } = window.auth.sb.storage.from('campaign_files').getPublicUrl(tempPath); // CORRECCIÓN: Usar window.auth.sb
-
-                if (onProgress) onProgress(70);
-
-                // 3. Llamar a la Edge Function 'smart-worker' para mover el archivo a Bunny.net
-                // Pasamos el nombre del archivo para preservar la extensión
-                const { data: bunnyData, error: functionError } = await window.auth.invokeFunction('smart-worker', { // CORRECCIÓN: Usar el helper window.auth.invokeFunction
-                    body: {
-                        sourceUrl: urlData.publicUrl,
-                        userId,
-                        userEmail, // Pasar el email para usarlo en la ruta de Bunny
-                        fileName: safeName, // Pasar el nombre del archivo con extensión correcta
-                        folder: folder
-                    }
-                });
-                if (functionError) throw new Error(`Error al mover a CDN: ${functionError.message}`);
-
-                if (onProgress) onProgress(90);
-
-                // 4. (Opcional pero recomendado) Borrar el archivo temporal de Supabase (CORRECCIÓN: Usar window.auth.sb)
-                const { error: removeError } = await window.auth.sb.storage.from('campaign_files').remove([tempPath]); // CORRECCIÓN: Usar window.auth.sb
-                if (removeError) {
-                    // No detenemos el flujo, pero sí es bueno saber si falló la limpieza.
-                    console.warn(`[Limpieza] No se pudo borrar el archivo temporal ${tempPath}:`, removeError.message);
-                }
-
-                if (onProgress) onProgress(100);
-
-                return bunnyData.cdnUrl; // Devuelve la URL final de Bunny.net
-            } catch (error) {
-                console.error('Falló el proceso completo de subida de asset:', error);
-                // Si algo falla, no se borra el archivo temporal para poder investigarlo.
-                throw error; // Relanzar el error para que el llamador lo maneje
+                if (onProgress) onProgress(5); // Indicar inicio de proceso
+                console.log('[Upload] Optimizando imagen...', file.name);
+                file = await this.compressImage(file);
+                console.log('[Upload] Imagen optimizada.', { size: file.size, type: file.type });
+            } catch (e) {
+                console.warn('[Upload] Falló la compresión de imagen, se usará el original:', e);
             }
         }
+
+        const userId = await window.getUserId();
+        const userEmail = await window.getUserEmail();
+
+        // Preservar la extensión original del archivo (o usar .webp si fue optimizado)
+        const originalName = file.name;
+        const lastDotIndex = originalName.lastIndexOf('.');
+        let extension = lastDotIndex > 0 ? originalName.substring(lastDotIndex) : '';
+        const nameWithoutExt = lastDotIndex > 0 ? originalName.substring(0, lastDotIndex) : originalName;
+
+        // Si el archivo ahora es image/webp (por la compresión), aseguramos la extensión correcta
+        if (file.type === 'image/webp' && extension !== '.webp') {
+            extension = '.webp';
+        }
+
+        // Crear nombre seguro pero preservando la extensión
+        const safeName = nameWithoutExt.replace(/[^a-zA-Z0-9._-]/g, '_') + extension;
+        const tempPath = `temp-uploads/${userId}/${folder}/${Date.now()}-${safeName}`;
+
+        try {
+            // Reportar progreso inicial
+            if (onProgress) onProgress(10);
+
+            // 1. Subir a una carpeta temporal en Supabase Storage
+            const { error: uploadError } = await window.auth.sb.storage.from('campaign_files').upload(tempPath, file, {
+                onUploadProgress: (progress) => {
+                    // El progreso de Supabase va de 0 a 100, lo mapeamos a 10-60% del total
+                    if (onProgress) {
+                        const mappedProgress = 10 + (progress.loaded / progress.total) * 50;
+                        onProgress(Math.min(mappedProgress, 60));
+                    }
+                }
+            }); // CORRECCIÓN: Usar window.auth.sb
+            if (uploadError) throw new Error(`Error en subida temporal: ${uploadError.message}`);
+
+            if (onProgress) onProgress(60);
+
+            // 2. Obtener la URL pública del archivo temporal
+            const { data: urlData } = window.auth.sb.storage.from('campaign_files').getPublicUrl(tempPath); // CORRECCIÓN: Usar window.auth.sb
+
+            if (onProgress) onProgress(70);
+
+            // 3. Llamar a la Edge Function 'smart-worker' para mover el archivo a Bunny.net
+            // Pasamos el nombre del archivo para preservar la extensión
+            const { data: bunnyData, error: functionError } = await window.auth.invokeFunction('smart-worker', { // CORRECCIÓN: Usar el helper window.auth.invokeFunction
+                body: {
+                    sourceUrl: urlData.publicUrl,
+                    userId,
+                    userEmail, // Pasar el email para usarlo en la ruta de Bunny
+                    fileName: safeName, // Pasar el nombre del archivo con extensión correcta
+                    folder: folder
+                }
+            });
+            if (functionError) throw new Error(`Error al mover a CDN: ${functionError.message}`);
+
+            if (onProgress) onProgress(90);
+
+            // 4. (Opcional pero recomendado) Borrar el archivo temporal de Supabase (CORRECCIÓN: Usar window.auth.sb)
+            const { error: removeError } = await window.auth.sb.storage.from('campaign_files').remove([tempPath]); // CORRECCIÓN: Usar window.auth.sb
+            if (removeError) {
+                // No detenemos el flujo, pero sí es bueno saber si falló la limpieza.
+                console.warn(`[Limpieza] No se pudo borrar el archivo temporal ${tempPath}:`, removeError.message);
+            }
+
+            if (onProgress) onProgress(100);
+
+            return bunnyData.cdnUrl; // Devuelve la URL final de Bunny.net
+        } catch (error) {
+            console.error('Falló el proceso completo de subida de asset:', error);
+            // Si algo falla, no se borra el archivo temporal para poder investigarlo.
+            throw error; // Relanzar el error para que el llamador lo maneje
+        }
+    }
 
     // Helper para comprimir imágenes (Método de clase)
     async compressImage(file, { quality = 0.8, maxWidth = 1920, maxHeight = 1920 } = {}) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                const objectUrl = URL.createObjectURL(file);
-                img.src = objectUrl;
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(file);
+            img.src = objectUrl;
 
-                img.onload = () => {
-                    URL.revokeObjectURL(objectUrl);
-                    let width = img.width;
-                    let height = img.height;
+            img.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+                let width = img.width;
+                let height = img.height;
 
-                    // Calcular nuevas dimensiones manteniendo aspect ratio
-                    if (width > height) {
-                        if (width > maxWidth) {
-                            height = Math.round((height * maxWidth) / width);
-                            width = maxWidth;
-                        }
-                    } else {
-                        if (height > maxHeight) {
-                            width = Math.round((width * maxHeight) / height);
-                            height = maxHeight;
-                        }
+                // Calcular nuevas dimensiones manteniendo aspect ratio
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
                     }
+                } else {
+                    if (height > maxHeight) {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
 
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
 
-                    canvas.toBlob((blob) => {
-                        if (!blob) {
-                            reject(new Error('Canvas to Blob conversion failed'));
-                            return;
-                        }
-                        // Crear un nuevo File con la imagen comprimida
-                        const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
-                            type: 'image/webp',
-                            lastModified: Date.now(),
-                        });
-                        console.log(`[Compress] Original: ${(file.size / 1024).toFixed(2)}KB, Optimizado: ${(newFile.size / 1024).toFixed(2)}KB`);
-                        resolve(newFile);
-                    }, 'image/webp', quality);
-                };
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        reject(new Error('Canvas to Blob conversion failed'));
+                        return;
+                    }
+                    // Crear un nuevo File con la imagen comprimida
+                    const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
+                        type: 'image/webp',
+                        lastModified: Date.now(),
+                    });
+                    console.log(`[Compress] Original: ${(file.size / 1024).toFixed(2)}KB, Optimizado: ${(newFile.size / 1024).toFixed(2)}KB`);
+                    resolve(newFile);
+                }, 'image/webp', quality);
+            };
 
-                img.onerror = (err) => {
-                    URL.revokeObjectURL(objectUrl);
-                    reject(err);
-                };
+            img.onerror = (err) => {
+                URL.revokeObjectURL(objectUrl);
+                reject(err);
+            };
+        });
+    }
+
+    async loadDashboardMetrics() {
+        try {
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+
+            const { data, error } = await auth.sb
+                .from('daily_stats')
+                .select('stat_date, ai_responses_count, time_saved_seconds')
+                .eq('user_id', this.user.id)
+                .gte('stat_date', thirtyDaysAgo.toISOString().split('T')[0])
+                .order('stat_date', { ascending: true });
+
+            if (error) throw error; // Lanzar error si la consulta falla
+
+            this.renderMetricsCharts(data);
+            // this.renderMoneySaved(); // Función desactivada en petición anterior.
+
+        } catch (e) {
+            console.error("Error al cargar métricas del dashboard:", e);
+        }
+    }
+
+    renderMetricsCharts(stats) {
+        const labels = stats.map(s => new Date(s.stat_date + 'T00:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }));
+        const responsesData = stats.map(s => s.ai_responses_count);
+        const timeData = stats.map(s => Math.round(s.time_saved_seconds / 60)); // en minutos
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } },
+            plugins: { legend: { display: false } },
+        };
+
+        // Gráfico de Respuestas (CORRECCIÓN: 'datasets' debe ser un array)
+        const responsesCtx = document.getElementById('responses-chart')?.getContext('2d');
+        if (responsesCtx) {
+            new Chart(responsesCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{ // <-- CORRECCIÓN: 'datasets' debe ser un array
+                        label: 'Mensajes Respondidos',
+                        data: responsesData,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: chartOptions
             });
         }
 
-    async loadDashboardMetrics() {
-            try {
-                const today = new Date();
-                const thirtyDaysAgo = new Date(today);
-                thirtyDaysAgo.setDate(today.getDate() - 30);
-
-                const { data, error } = await auth.sb
-                    .from('daily_stats')
-                    .select('stat_date, ai_responses_count, time_saved_seconds')
-                    .eq('user_id', this.user.id)
-                    .gte('stat_date', thirtyDaysAgo.toISOString().split('T')[0])
-                    .order('stat_date', { ascending: true });
-
-                if (error) throw error; // Lanzar error si la consulta falla
-
-                this.renderMetricsCharts(data);
-                // this.renderMoneySaved(); // Función desactivada en petición anterior.
-
-            } catch (e) {
-                console.error("Error al cargar métricas del dashboard:", e);
-            }
+        // Gráfico de Tiempo Ahorrado (CORRECCIÓN: 'datasets' debe ser un array)
+        const timeCtx = document.getElementById('time-saved-chart')?.getContext('2d');
+        if (timeCtx) {
+            new Chart(timeCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{ // <-- CORRECCIÓN: 'datasets' debe ser un array
+                        label: 'Minutos Ahorrados',
+                        data: timeData,
+                        borderColor: 'rgb(139, 92, 246)',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: chartOptions
+            });
         }
-
-        renderMetricsCharts(stats) {
-            const labels = stats.map(s => new Date(s.stat_date + 'T00:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }));
-            const responsesData = stats.map(s => s.ai_responses_count);
-            const timeData = stats.map(s => Math.round(s.time_saved_seconds / 60)); // en minutos
-
-            const chartOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } },
-                plugins: { legend: { display: false } },
-            };
-
-            // Gráfico de Respuestas (CORRECCIÓN: 'datasets' debe ser un array)
-            const responsesCtx = document.getElementById('responses-chart')?.getContext('2d');
-            if (responsesCtx) {
-                new Chart(responsesCtx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{ // <-- CORRECCIÓN: 'datasets' debe ser un array
-                            label: 'Mensajes Respondidos',
-                            data: responsesData,
-                            borderColor: 'rgb(59, 130, 246)',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            fill: true,
-                            tension: 0.3
-                        }]
-                    },
-                    options: chartOptions
-                });
-            }
-
-            // Gráfico de Tiempo Ahorrado (CORRECCIÓN: 'datasets' debe ser un array)
-            const timeCtx = document.getElementById('time-saved-chart')?.getContext('2d');
-            if (timeCtx) {
-                new Chart(timeCtx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{ // <-- CORRECCIÓN: 'datasets' debe ser un array
-                            label: 'Minutos Ahorrados',
-                            data: timeData,
-                            borderColor: 'rgb(139, 92, 246)',
-                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                            fill: true,
-                            tension: 0.3
-                        }]
-                    },
-                    options: chartOptions
-                });
-            }
-        }
+    }
 
     async loadFunnelMetrics() {
-            try {
-                const thirtyDaysAgo = new Date();
-                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        try {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-                // 1. Conversaciones Atendidas (contactos únicos con mensajes de IA)
-                const { data: conversations, error: convError } = await auth.sb
-                    .from('chat_history')
-                    .select('contact_id')
-                    .eq('user_id', this.user.id)
-                    .eq('message_type', 'assistant')
-                    .gte('created_at', thirtyDaysAgo.toISOString());
+            // 1. Conversaciones Atendidas (contactos únicos con mensajes de IA)
+            const { data: conversations, error: convError } = await auth.sb
+                .from('chat_history')
+                .select('contact_id')
+                .eq('user_id', this.user.id)
+                .eq('message_type', 'assistant')
+                .gte('created_at', thirtyDaysAgo.toISOString());
 
-                if (convError) throw convError;
+            if (convError) throw convError;
 
-                const uniqueContacts = new Set(conversations.map(c => c.contact_id));
-                const conversationsCount = uniqueContacts.size;
+            const uniqueContacts = new Set(conversations.map(c => c.contact_id));
+            const conversationsCount = uniqueContacts.size;
 
-                // 2. Cotizaciones Generadas
-                const { data: quotes, error: quotesError } = await auth.sb
-                    .from('quotes')
-                    .select('id')
-                    .eq('user_id', this.user.id)
-                    .gte('created_at', thirtyDaysAgo.toISOString());
+            // 2. Cotizaciones Generadas
+            const { data: quotes, error: quotesError } = await auth.sb
+                .from('quotes')
+                .select('id')
+                .eq('user_id', this.user.id)
+                .gte('created_at', thirtyDaysAgo.toISOString());
 
-                if (quotesError) throw quotesError;
-                const quotesCount = quotes?.length || 0;
+            if (quotesError) throw quotesError;
+            const quotesCount = quotes?.length || 0;
 
-                // 3. Tiempo Ahorrado Total (en minutos)
-                const { data: stats, error: statsError } = await auth.sb
-                    .from('daily_stats')
-                    .select('time_saved_seconds')
-                    .eq('user_id', this.user.id)
-                    .gte('stat_date', thirtyDaysAgo.toISOString().split('T')[0]);
+            // 3. Tiempo Ahorrado Total (en minutos)
+            const { data: stats, error: statsError } = await auth.sb
+                .from('daily_stats')
+                .select('time_saved_seconds')
+                .eq('user_id', this.user.id)
+                .gte('stat_date', thirtyDaysAgo.toISOString().split('T')[0]);
 
-                if (statsError) throw statsError;
+            if (statsError) throw statsError;
 
-                const totalTimeSaved = stats.reduce((acc, s) => acc + (s.time_saved_seconds || 0), 0);
-                const timeSavedMinutes = Math.round(totalTimeSaved / 60);
+            const totalTimeSaved = stats.reduce((acc, s) => acc + (s.time_saved_seconds || 0), 0);
+            const timeSavedMinutes = Math.round(totalTimeSaved / 60);
 
-                // 4. Tasa de Automatización (% de mensajes respondidos por IA)
-                const { data: allMessages, error: msgError } = await auth.sb
-                    .from('chat_history')
-                    .select('message_type')
-                    .eq('user_id', this.user.id)
-                    .gte('created_at', thirtyDaysAgo.toISOString());
+            // 4. Tasa de Automatización (% de mensajes respondidos por IA)
+            const { data: allMessages, error: msgError } = await auth.sb
+                .from('chat_history')
+                .select('message_type')
+                .eq('user_id', this.user.id)
+                .gte('created_at', thirtyDaysAgo.toISOString());
 
-                if (msgError) throw msgError;
+            if (msgError) throw msgError;
 
-                const totalMessages = allMessages.length;
-                const aiMessages = allMessages.filter(m => m.message_type === 'assistant').length;
-                const automationRate = totalMessages > 0 ? ((aiMessages / totalMessages) * 100).toFixed(0) : 0;
+            const totalMessages = allMessages.length;
+            const aiMessages = allMessages.filter(m => m.message_type === 'assistant').length;
+            const automationRate = totalMessages > 0 ? ((aiMessages / totalMessages) * 100).toFixed(0) : 0;
 
-                // Actualizar UI con verificaciones de seguridad
-                const conversationsStat = document.getElementById('funnel-conversations-stat');
-                const quotesStat = document.getElementById('funnel-quotes-stat');
-                const timeSavedStat = document.getElementById('funnel-time-saved-stat');
-                const automationStat = document.getElementById('funnel-automation-stat');
+            // Actualizar UI con verificaciones de seguridad
+            const conversationsStat = document.getElementById('funnel-conversations-stat');
+            const quotesStat = document.getElementById('funnel-quotes-stat');
+            const timeSavedStat = document.getElementById('funnel-time-saved-stat');
+            const automationStat = document.getElementById('funnel-automation-stat');
 
-                if (conversationsStat) conversationsStat.textContent = conversationsCount;
-                if (quotesStat) quotesStat.textContent = quotesCount;
-                if (timeSavedStat) timeSavedStat.innerHTML = `${timeSavedMinutes}<span class="text-sm">min</span>`;
-                if (automationStat) automationStat.textContent = `${automationRate}%`;
+            if (conversationsStat) conversationsStat.textContent = conversationsCount;
+            if (quotesStat) quotesStat.textContent = quotesCount;
+            if (timeSavedStat) timeSavedStat.innerHTML = `${timeSavedMinutes}<span class="text-sm">min</span>`;
+            if (automationStat) automationStat.textContent = `${automationRate}%`;
 
-            } catch (e) {
-                console.error("Error al cargar métricas del embudo:", e);
-            }
+        } catch (e) {
+            console.error("Error al cargar métricas del embudo:", e);
         }
+    }
 
     async loadSavedWhatsAppNumber() {
-            try {
-                if (!this.user?.id || !this.whatsappIti) return;
+        try {
+            if (!this.user?.id || !this.whatsappIti) return;
 
-                console.log('[WhatsApp] 📱 Cargando número guardado...');
+            console.log('[WhatsApp] 📱 Cargando número guardado...');
 
-                const { data, error } = await window.auth.sb
-                    .from('profiles')
-                    .select('contact_phone')
-                    .eq('id', this.user.id)
-                    .single();
+            const { data, error } = await window.auth.sb
+                .from('profiles')
+                .select('contact_phone')
+                .eq('id', this.user.id)
+                .single();
 
-                if (error) {
-                    console.warn('[WhatsApp] Error al cargar número guardado:', error);
+            if (error) {
+                console.warn('[WhatsApp] Error al cargar número guardado:', error);
+                return;
+            }
+
+            if (data?.contact_phone) {
+                console.log('[WhatsApp] ✅ Pre-llenando número:', data.contact_phone);
+                this.whatsappIti.setNumber('+' + data.contact_phone);
+            }
+        } catch (error) {
+            console.error('[WhatsApp] Error al cargar número guardado:', error);
+        }
+    }
+
+    async checkConnectionStatus() {
+        console.log('[WhatsApp] 🔍 Verificando estado de conexión...');
+
+        // Verificar que window.auth esté disponible
+        if (!window.auth) {
+            console.log('[WhatsApp] ⚠️ window.auth no disponible aún, mostrando estado inicial');
+            this.renderWhatsappConnection('initial');
+            return;
+        }
+
+        // Verificar cache en localStorage (2 horas de duración)
+        const CACHE_KEY = 'whatsapp_connection_status';
+        const CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 horas en milisegundos
+
+        try {
+            const cachedData = localStorage.getItem(CACHE_KEY);
+            console.log(`[WhatsApp] 💾 Cache localStorage:`, cachedData ? 'Existe' : 'No existe');
+
+            if (cachedData) {
+                const { status, timestamp } = JSON.parse(cachedData);
+                const now = Date.now();
+                const cacheAge = now - timestamp;
+
+                const ageMinutes = Math.round(cacheAge / 1000 / 60);
+                const ageHours = (ageMinutes / 60).toFixed(1);
+
+                console.log(`[WhatsApp] 📅 Cache: status="${status}", edad=${ageMinutes}min (${ageHours}h)`);
+
+                // Si el cache tiene menos de 2 horas, usarlo
+                if (cacheAge < CACHE_DURATION) {
+                    console.log(`[WhatsApp] ✅ USANDO CACHE (< 2h): ${status}`);
+                    this.renderWhatsappConnection(status === 'connected' ? 'connected' : 'initial');
                     return;
                 }
 
-                if (data?.contact_phone) {
-                    console.log('[WhatsApp] ✅ Pre-llenando número:', data.contact_phone);
-                    this.whatsappIti.setNumber('+' + data.contact_phone);
-                }
-            } catch (error) {
-                console.error('[WhatsApp] Error al cargar número guardado:', error);
+                console.log('[WhatsApp] ⏰ Cache expirado (>2h), consultando estado actual...');
+            } else {
+                console.log('[WhatsApp] ℹ️ No hay cache, consultando estado actual...');
             }
+        } catch (e) {
+            console.warn('[WhatsApp] ⚠️ Error al leer cache:', e);
         }
 
-    async checkConnectionStatus() {
-            console.log('[WhatsApp] 🔍 Verificando estado de conexión...');
+        // Si no hay cache válido, consultar el estado actual
+        try {
+            console.log(`[WhatsApp] 📞 Llamando a manage-whatsapp-instance con user_id: ${this.user.id}`);
 
-            // Verificar que window.auth esté disponible
-            if (!window.auth) {
-                console.log('[WhatsApp] ⚠️ window.auth no disponible aún, mostrando estado inicial');
+            const { data, error } = await window.auth.invokeFunction('manage-whatsapp-instance', {
+                body: {
+                    action: 'status',
+                    user_id: this.user.id
+                }
+            });
+
+            console.log(`[WhatsApp] 📦 Respuesta completa:`, { data, error });
+
+            if (error) {
+                console.warn('[WhatsApp] ❌ Error al consultar estado:', error);
                 this.renderWhatsappConnection('initial');
                 return;
             }
 
-            // Verificar cache en localStorage (2 horas de duración)
-            const CACHE_KEY = 'whatsapp_connection_status';
-            const CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 horas en milisegundos
+            const status = data?.status || 'disconnected';
+            console.log(`[WhatsApp] ✅ Estado recibido: ${status}`);
+            console.log(`[WhatsApp] 📋 Datos de instancia:`, data?.instance);
 
-            try {
-                const cachedData = localStorage.getItem(CACHE_KEY);
-                console.log(`[WhatsApp] 💾 Cache localStorage:`, cachedData ? 'Existe' : 'No existe');
+            // Guardar en cache
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                status: status,
+                timestamp: Date.now()
+            }));
 
-                if (cachedData) {
-                    const { status, timestamp } = JSON.parse(cachedData);
-                    const now = Date.now();
-                    const cacheAge = now - timestamp;
-
-                    const ageMinutes = Math.round(cacheAge / 1000 / 60);
-                    const ageHours = (ageMinutes / 60).toFixed(1);
-
-                    console.log(`[WhatsApp] 📅 Cache: status="${status}", edad=${ageMinutes}min (${ageHours}h)`);
-
-                    // Si el cache tiene menos de 2 horas, usarlo
-                    if (cacheAge < CACHE_DURATION) {
-                        console.log(`[WhatsApp] ✅ USANDO CACHE (< 2h): ${status}`);
-                        this.renderWhatsappConnection(status === 'connected' ? 'connected' : 'initial');
-                        return;
-                    }
-
-                    console.log('[WhatsApp] ⏰ Cache expirado (>2h), consultando estado actual...');
-                } else {
-                    console.log('[WhatsApp] ℹ️ No hay cache, consultando estado actual...');
-                }
-            } catch (e) {
-                console.warn('[WhatsApp] ⚠️ Error al leer cache:', e);
+            // Renderizar basado en el estado
+            if (status === 'connected') {
+                this.renderWhatsappConnection('connected', data.instance);
+            } else if (status === 'connecting') {
+                this.renderWhatsappConnection('loading');
+            } else {
+                this.renderWhatsappConnection('initial');
             }
 
-            // Si no hay cache válido, consultar el estado actual
-            try {
-                console.log(`[WhatsApp] 📞 Llamando a manage-whatsapp-instance con user_id: ${this.user.id}`);
+        } catch (error) {
+            console.error('[WhatsApp] Error fatal al verificar estado:', error);
+            this.renderWhatsappConnection('initial');
+        }
+    }
 
+    selectConnectionMethod(method) {
+        this.connectionMethod = method;
+
+        // Actualizar UI de botones (solo si los elementos existen)
+        const qrBtn = document.getElementById('method-qr-btn');
+        const pairingBtn = document.getElementById('method-pairing-btn');
+        const phoneContainer = document.getElementById('phone-input-container');
+        const hintText = document.getElementById('connection-hint');
+
+        // Verificar que los elementos existan antes de modificarlos
+        if (!qrBtn || !pairingBtn || !phoneContainer || !hintText) {
+            console.log('[WhatsApp Connection] Elementos no encontrados, esperando a que se cargue el panel');
+            return;
+        }
+
+        // Siempre mostrar el input de teléfono (ambos métodos lo necesitan)
+        phoneContainer.classList.remove('hidden');
+
+        if (method === 'qr') {
+            qrBtn.className = 'flex-1 py-2 px-3 bg-purple-50 text-purple-700 border-2 border-purple-300 font-semibold rounded-lg hover:bg-purple-100 transition';
+            pairingBtn.className = 'flex-1 py-2 px-3 bg-slate-50 text-slate-700 border-2 border-slate-300 font-semibold rounded-lg hover:bg-slate-100 transition';
+            hintText.textContent = 'Ingresa tu número y escanea el QR desde WhatsApp > Dispositivos Vinculados';
+        } else {
+            qrBtn.className = 'flex-1 py-2 px-3 bg-slate-50 text-slate-700 border-2 border-slate-300 font-semibold rounded-lg hover:bg-slate-100 transition';
+            pairingBtn.className = 'flex-1 py-2 px-3 bg-purple-50 text-purple-700 border-2 border-purple-300 font-semibold rounded-lg hover:bg-purple-100 transition';
+            hintText.textContent = 'Ingresa tu número y el código en WhatsApp > Dispositivos Vinculados > Vincular con número';
+        }
+    }
+
+    // === POLLING PARA DETECTAR CONEXIÓN ===
+    startConnectionPolling() {
+        // Detener polling previo si existe
+        this.stopConnectionPolling();
+
+        console.log('[WhatsApp Polling] 🔄 Iniciando polling de conexión...');
+
+        let attempts = 0;
+        const MAX_ATTEMPTS = 40; // 40 intentos x 3 segundos = 2 minutos
+
+        this.connectionPollingInterval = setInterval(async () => {
+            attempts++;
+            console.log(`[WhatsApp Polling] Intento ${attempts}/${MAX_ATTEMPTS}`);
+
+            try {
                 const { data, error } = await window.auth.invokeFunction('manage-whatsapp-instance', {
                     body: {
                         action: 'status',
@@ -1811,282 +1896,198 @@ class DashboardApp {
                     }
                 });
 
-                console.log(`[WhatsApp] 📦 Respuesta completa:`, { data, error });
-
                 if (error) {
-                    console.warn('[WhatsApp] ❌ Error al consultar estado:', error);
-                    this.renderWhatsappConnection('initial');
+                    console.warn('[WhatsApp Polling] Error al verificar estado:', error);
                     return;
                 }
 
                 const status = data?.status || 'disconnected';
-                console.log(`[WhatsApp] ✅ Estado recibido: ${status}`);
-                console.log(`[WhatsApp] 📋 Datos de instancia:`, data?.instance);
+                console.log(`[WhatsApp Polling] Estado: ${status}`);
 
-                // Guardar en cache
-                localStorage.setItem(CACHE_KEY, JSON.stringify({
-                    status: status,
-                    timestamp: Date.now()
-                }));
-
-                // Renderizar basado en el estado
+                // Si se conectó, detener polling y actualizar UI
                 if (status === 'connected') {
+                    console.log('[WhatsApp Polling] 🎉 ¡CONECTADO! Deteniendo polling...');
+                    this.stopConnectionPolling();
+
+                    // Actualizar UI
                     this.renderWhatsappConnection('connected', data.instance);
-                } else if (status === 'connecting') {
-                    this.renderWhatsappConnection('loading');
-                } else {
-                    this.renderWhatsappConnection('initial');
+
+                    // Limpiar cache para forzar próxima verificación
+                    localStorage.removeItem('whatsapp_connection_status');
+
+                    // Guardar nuevo estado en cache
+                    localStorage.setItem('whatsapp_connection_status', JSON.stringify({
+                        status: 'connected',
+                        timestamp: Date.now()
+                    }));
+
+                    // Mostrar toast de éxito
+                    window.showToast('¡WhatsApp conectado exitosamente!', 'success');
+                }
+
+                // Si se alcanzó el máximo de intentos, detener polling
+                if (attempts >= MAX_ATTEMPTS) {
+                    console.log('[WhatsApp Polling] ⏱️ Timeout alcanzado. Deteniendo polling...');
+                    this.stopConnectionPolling();
+                    window.showToast('El código ha expirado. Por favor genera uno nuevo.', 'info');
                 }
 
             } catch (error) {
-                console.error('[WhatsApp] Error fatal al verificar estado:', error);
-                this.renderWhatsappConnection('initial');
+                console.error('[WhatsApp Polling] Error:', error);
             }
+        }, 3000); // Verificar cada 3 segundos
+    }
+
+    stopConnectionPolling() {
+        if (this.connectionPollingInterval) {
+            console.log('[WhatsApp Polling] 🛑 Deteniendo polling');
+            clearInterval(this.connectionPollingInterval);
+            this.connectionPollingInterval = null;
         }
+    }
 
-        selectConnectionMethod(method) {
-            this.connectionMethod = method;
+    async checkWhatsappConnection() {
+        this.renderWhatsappConnection('loading');
 
-            // Actualizar UI de botones (solo si los elementos existen)
-            const qrBtn = document.getElementById('method-qr-btn');
-            const pairingBtn = document.getElementById('method-pairing-btn');
-            const phoneContainer = document.getElementById('phone-input-container');
-            const hintText = document.getElementById('connection-hint');
+        // Determinar método de conexión (default QR si no está establecido)
+        const method = this.connectionMethod || 'qr';
+        const action = method === 'qr' ? 'get-qr' : 'pairing-code';
 
-            // Verificar que los elementos existan antes de modificarlos
-            if (!qrBtn || !pairingBtn || !phoneContainer || !hintText) {
-                console.log('[WhatsApp Connection] Elementos no encontrados, esperando a que se cargue el panel');
+        // Obtener número de teléfono con código de país (AMBOS métodos lo necesitan)
+        let phone = null;
+
+        // Obtener referencias al error message
+        const phoneErrorMessage = document.getElementById('phone-error-message');
+        const phoneInput = document.getElementById('whatsapp-phone-input');
+
+        // Ocultar error previo
+        if (phoneErrorMessage) phoneErrorMessage.classList.add('hidden');
+        if (phoneInput) phoneInput.classList.remove('border-red-500', 'border-2');
+
+        // Usar intl-tel-input para obtener el número completo
+        if (this.whatsappIti) {
+            // Validar que el número sea válido
+            if (!this.whatsappIti.isValidNumber()) {
+                // Mostrar error visual
+                if (phoneErrorMessage) phoneErrorMessage.classList.remove('hidden');
+                if (phoneInput) {
+                    phoneInput.classList.add('border-red-500', 'border-2');
+                    phoneInput.focus();
+                }
+                this.renderWhatsappConnection('error', null, '⚠️ Ingresa un número válido con tu código de país');
+
+                // Inicializar iconos de lucide
+                if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                    lucide.createIcons();
+                }
                 return;
             }
 
-            // Siempre mostrar el input de teléfono (ambos métodos lo necesitan)
-            phoneContainer.classList.remove('hidden');
+            // Obtener número en formato E.164 (ej: +5219995169313) y quitar el +
+            phone = this.whatsappIti.getNumber().replace('+', '');
 
-            if (method === 'qr') {
-                qrBtn.className = 'flex-1 py-2 px-3 bg-purple-50 text-purple-700 border-2 border-purple-300 font-semibold rounded-lg hover:bg-purple-100 transition';
-                pairingBtn.className = 'flex-1 py-2 px-3 bg-slate-50 text-slate-700 border-2 border-slate-300 font-semibold rounded-lg hover:bg-slate-100 transition';
-                hintText.textContent = 'Ingresa tu número y escanea el QR desde WhatsApp > Dispositivos Vinculados';
+            // CORRECCIÓN: Para México (52), números celulares necesitan el "1" después del código de país
+            // Formato: 52 + 1 + 10 dígitos = 13 dígitos total
+            if (phone.startsWith('52') && phone.length === 12) {
+                // Es México (52) + 10 dígitos → Agregar el "1" para celulares
+                phone = '521' + phone.substring(2);
+                console.log('[WhatsApp] Número mexicano corregido (agregado "1" para celular):', phone);
             } else {
-                qrBtn.className = 'flex-1 py-2 px-3 bg-slate-50 text-slate-700 border-2 border-slate-300 font-semibold rounded-lg hover:bg-slate-100 transition';
-                pairingBtn.className = 'flex-1 py-2 px-3 bg-purple-50 text-purple-700 border-2 border-purple-300 font-semibold rounded-lg hover:bg-purple-100 transition';
-                hintText.textContent = 'Ingresa tu número y el código en WhatsApp > Dispositivos Vinculados > Vincular con número';
+                console.log('[WhatsApp] Número extraído:', phone);
             }
-        }
+        } else {
+            // Fallback si intl-tel-input no está disponible
+            const phoneNumber = phoneInput?.value.trim();
 
-        // === POLLING PARA DETECTAR CONEXIÓN ===
-        startConnectionPolling() {
-            // Detener polling previo si existe
-            this.stopConnectionPolling();
-
-            console.log('[WhatsApp Polling] 🔄 Iniciando polling de conexión...');
-
-            let attempts = 0;
-            const MAX_ATTEMPTS = 40; // 40 intentos x 3 segundos = 2 minutos
-
-            this.connectionPollingInterval = setInterval(async () => {
-                attempts++;
-                console.log(`[WhatsApp Polling] Intento ${attempts}/${MAX_ATTEMPTS}`);
-
-                try {
-                    const { data, error } = await window.auth.invokeFunction('manage-whatsapp-instance', {
-                        body: {
-                            action: 'status',
-                            user_id: this.user.id
-                        }
-                    });
-
-                    if (error) {
-                        console.warn('[WhatsApp Polling] Error al verificar estado:', error);
-                        return;
-                    }
-
-                    const status = data?.status || 'disconnected';
-                    console.log(`[WhatsApp Polling] Estado: ${status}`);
-
-                    // Si se conectó, detener polling y actualizar UI
-                    if (status === 'connected') {
-                        console.log('[WhatsApp Polling] 🎉 ¡CONECTADO! Deteniendo polling...');
-                        this.stopConnectionPolling();
-
-                        // Actualizar UI
-                        this.renderWhatsappConnection('connected', data.instance);
-
-                        // Limpiar cache para forzar próxima verificación
-                        localStorage.removeItem('whatsapp_connection_status');
-
-                        // Guardar nuevo estado en cache
-                        localStorage.setItem('whatsapp_connection_status', JSON.stringify({
-                            status: 'connected',
-                            timestamp: Date.now()
-                        }));
-
-                        // Mostrar toast de éxito
-                        window.showToast('¡WhatsApp conectado exitosamente!', 'success');
-                    }
-
-                    // Si se alcanzó el máximo de intentos, detener polling
-                    if (attempts >= MAX_ATTEMPTS) {
-                        console.log('[WhatsApp Polling] ⏱️ Timeout alcanzado. Deteniendo polling...');
-                        this.stopConnectionPolling();
-                        window.showToast('El código ha expirado. Por favor genera uno nuevo.', 'info');
-                    }
-
-                } catch (error) {
-                    console.error('[WhatsApp Polling] Error:', error);
+            if (!phoneNumber) {
+                // Mostrar error visual
+                if (phoneErrorMessage) phoneErrorMessage.classList.remove('hidden');
+                if (phoneInput) {
+                    phoneInput.classList.add('border-red-500', 'border-2');
+                    phoneInput.focus();
                 }
-            }, 3000); // Verificar cada 3 segundos
-        }
+                this.renderWhatsappConnection('error', null, '⚠️ Por favor ingresa tu número de WhatsApp');
 
-        stopConnectionPolling() {
-            if (this.connectionPollingInterval) {
-                console.log('[WhatsApp Polling] 🛑 Deteniendo polling');
-                clearInterval(this.connectionPollingInterval);
-                this.connectionPollingInterval = null;
-            }
-        }
-
-    async checkWhatsappConnection() {
-            this.renderWhatsappConnection('loading');
-
-            // Determinar método de conexión (default QR si no está establecido)
-            const method = this.connectionMethod || 'qr';
-            const action = method === 'qr' ? 'get-qr' : 'pairing-code';
-
-            // Obtener número de teléfono con código de país (AMBOS métodos lo necesitan)
-            let phone = null;
-
-            // Obtener referencias al error message
-            const phoneErrorMessage = document.getElementById('phone-error-message');
-            const phoneInput = document.getElementById('whatsapp-phone-input');
-
-            // Ocultar error previo
-            if (phoneErrorMessage) phoneErrorMessage.classList.add('hidden');
-            if (phoneInput) phoneInput.classList.remove('border-red-500', 'border-2');
-
-            // Usar intl-tel-input para obtener el número completo
-            if (this.whatsappIti) {
-                // Validar que el número sea válido
-                if (!this.whatsappIti.isValidNumber()) {
-                    // Mostrar error visual
-                    if (phoneErrorMessage) phoneErrorMessage.classList.remove('hidden');
-                    if (phoneInput) {
-                        phoneInput.classList.add('border-red-500', 'border-2');
-                        phoneInput.focus();
-                    }
-                    this.renderWhatsappConnection('error', null, '⚠️ Ingresa un número válido con tu código de país');
-
-                    // Inicializar iconos de lucide
-                    if (typeof lucide !== 'undefined' && lucide.createIcons) {
-                        lucide.createIcons();
-                    }
-                    return;
+                // Inicializar iconos de lucide
+                if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                    lucide.createIcons();
                 }
-
-                // Obtener número en formato E.164 (ej: +5219995169313) y quitar el +
-                phone = this.whatsappIti.getNumber().replace('+', '');
-
-                // CORRECCIÓN: Para México (52), números celulares necesitan el "1" después del código de país
-                // Formato: 52 + 1 + 10 dígitos = 13 dígitos total
-                if (phone.startsWith('52') && phone.length === 12) {
-                    // Es México (52) + 10 dígitos → Agregar el "1" para celulares
-                    phone = '521' + phone.substring(2);
-                    console.log('[WhatsApp] Número mexicano corregido (agregado "1" para celular):', phone);
-                } else {
-                    console.log('[WhatsApp] Número extraído:', phone);
-                }
-            } else {
-                // Fallback si intl-tel-input no está disponible
-                const phoneNumber = phoneInput?.value.trim();
-
-                if (!phoneNumber) {
-                    // Mostrar error visual
-                    if (phoneErrorMessage) phoneErrorMessage.classList.remove('hidden');
-                    if (phoneInput) {
-                        phoneInput.classList.add('border-red-500', 'border-2');
-                        phoneInput.focus();
-                    }
-                    this.renderWhatsappConnection('error', null, '⚠️ Por favor ingresa tu número de WhatsApp');
-
-                    // Inicializar iconos de lucide
-                    if (typeof lucide !== 'undefined' && lucide.createIcons) {
-                        lucide.createIcons();
-                    }
-                    return;
-                }
-
-                // Asumir México si no hay intl-tel-input (formato: 521 + 10 dígitos)
-                const cleanNumber = phoneNumber.replace(/\D/g, '');
-                phone = '521' + cleanNumber;
-                console.log('[WhatsApp] Número extraído (fallback México):', phone);
+                return;
             }
 
-            try {
-                // Llamar a nuestra edge function en lugar de n8n
-                const { data, error } = await window.auth.invokeFunction('manage-whatsapp-instance', {
-                    body: {
-                        action: action,
-                        user_id: this.user.id,
-                        phone: phone
-                    }
-                });
+            // Asumir México si no hay intl-tel-input (formato: 521 + 10 dígitos)
+            const cleanNumber = phoneNumber.replace(/\D/g, '');
+            phone = '521' + cleanNumber;
+            console.log('[WhatsApp] Número extraído (fallback México):', phone);
+        }
 
-                // Limpiar cache para que el próximo check obtenga el estado actualizado
+        try {
+            // Llamar a nuestra edge function en lugar de n8n
+            const { data, error } = await window.auth.invokeFunction('manage-whatsapp-instance', {
+                body: {
+                    action: action,
+                    user_id: this.user.id,
+                    phone: phone
+                }
+            });
+
+            // Limpiar cache para que el próximo check obtenga el estado actualizado
+            localStorage.removeItem('whatsapp_connection_status');
+
+            // Verificar si hay error en la respuesta
+            if (error || data?.error || data?.status === 404) {
+                console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                console.error('❌ ERROR AL CONECTAR WHATSAPP');
+                console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                console.error('Error:', error || data);
+                console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                throw new Error(error?.message || data?.error || 'Error al generar código');
+            }
+
+            console.log('✅ Respuesta exitosa:', data);
+            console.log('🔍 MÉTODO DETECTADO:', method, '| this.connectionMethod:', this.connectionMethod);
+            console.log('📋 data.pairingCode:', data.pairingCode);
+            console.log('📋 data.code:', data.code);
+
+            // VERIFICAR SI YA ESTÁ CONECTADO
+            if (data?.instance?.state === 'open') {
+                console.log('🎉 WhatsApp ya está conectado!');
                 localStorage.removeItem('whatsapp_connection_status');
+                this.renderWhatsappConnection('connected');
+                return;
+            }
 
-                // Verificar si hay error en la respuesta
-                if (error || data?.error || data?.status === 404) {
-                    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                    console.error('❌ ERROR AL CONECTAR WHATSAPP');
-                    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                    console.error('Error:', error || data);
-                    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                    throw new Error(error?.message || data?.error || 'Error al generar código');
-                }
-
-                console.log('✅ Respuesta exitosa:', data);
-                console.log('🔍 MÉTODO DETECTADO:', method, '| this.connectionMethod:', this.connectionMethod);
-                console.log('📋 data.pairingCode:', data.pairingCode);
-                console.log('📋 data.code:', data.code);
-
-                // VERIFICAR SI YA ESTÁ CONECTADO
-                if (data?.instance?.state === 'open') {
-                    console.log('🎉 WhatsApp ya está conectado!');
-                    localStorage.removeItem('whatsapp_connection_status');
-                    this.renderWhatsappConnection('connected');
-                    return;
-                }
-
-                // Manejar respuesta según el método
-                console.log('⚡ Entrando a if, method === "qr"?', method === 'qr');
-                if (method === 'qr') {
-                    // Para QR, mostrar la imagen
-                    if (data.qrcode) {
-                        this.renderWhatsappConnection('qr', data.qrcode.base64);
-                        // POLLING DESHABILITADO - Solo verificar manualmente con botón
-                        // this.startConnectionPolling();
-                    } else if (data.base64) {
-                        this.renderWhatsappConnection('qr', data.base64);
-                        // POLLING DESHABILITADO - Solo verificar manualmente con botón
-                        // this.startConnectionPolling();
-                    } else {
-                        this.renderWhatsappConnection('error', null, 'No se pudo generar el código QR');
-                    }
+            // Manejar respuesta según el método
+            console.log('⚡ Entrando a if, method === "qr"?', method === 'qr');
+            if (method === 'qr') {
+                // Para QR, mostrar la imagen
+                if (data.qrcode) {
+                    this.renderWhatsappConnection('qr', data.qrcode.base64);
+                    // POLLING DESHABILITADO - Solo verificar manualmente con botón
+                    // this.startConnectionPolling();
+                } else if (data.base64) {
+                    this.renderWhatsappConnection('qr', data.base64);
+                    // POLLING DESHABILITADO - Solo verificar manualmente con botón
+                    // this.startConnectionPolling();
                 } else {
-                    // Para Pairing Code, mostrar el código
-                    const pairingCode = data.pairingCode || data.code;
+                    this.renderWhatsappConnection('error', null, 'No se pudo generar el código QR');
+                }
+            } else {
+                // Para Pairing Code, mostrar el código
+                const pairingCode = data.pairingCode || data.code;
 
-                    // Validar que sea un código válido (8 caracteres alfanuméricos, NO base64 largo)
-                    const isValidCode = pairingCode && pairingCode.length === 8 && /^[A-Z0-9]{8}$/i.test(pairingCode);
+                // Validar que sea un código válido (8 caracteres alfanuméricos, NO base64 largo)
+                const isValidCode = pairingCode && pairingCode.length === 8 && /^[A-Z0-9]{8}$/i.test(pairingCode);
 
-                    if (isValidCode) {
-                        console.log('🎯 [PAIRING] Código válido detectado:', pairingCode);
+                if (isValidCode) {
+                    console.log('🎯 [PAIRING] Código válido detectado:', pairingCode);
 
-                        // FORZAR ACTUALIZACIÓN DIRECTA DEL DOM (bypass de cualquier cache)
-                        const container = document.getElementById('whatsapp-connection-container');
-                        if (container) {
-                            const formattedCode = `${pairingCode.substring(0, 4)}-${pairingCode.substring(4)}`;
+                    // FORZAR ACTUALIZACIÓN DIRECTA DEL DOM (bypass de cualquier cache)
+                    const container = document.getElementById('whatsapp-connection-container');
+                    if (container) {
+                        const formattedCode = `${pairingCode.substring(0, 4)}-${pairingCode.substring(4)}`;
 
-                            container.innerHTML = `
+                        container.innerHTML = `
                             <div class="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200">
                                 <div class="text-5xl font-black text-purple-700 tracking-wider mb-3 font-mono whitespace-nowrap">
                                     ${formattedCode}
@@ -2095,131 +2096,131 @@ class DashboardApp {
                                 <p class="text-sm text-slate-600 mt-2">Ingresa este código en WhatsApp</p>
                             </div>
                         `;
-                            console.log('✅ DOM ACTUALIZADO DIRECTAMENTE con código:', formattedCode);
-                        } else {
-                            console.error('❌ Container no encontrado: whatsapp-connection-container');
-                        }
-                        // POLLING DESHABILITADO - Solo verificar manualmente con botón
-                        // this.startConnectionPolling();
+                        console.log('✅ DOM ACTUALIZADO DIRECTAMENTE con código:', formattedCode);
                     } else {
-                        console.error('❌ Código inválido o no encontrado. Recibido:', pairingCode?.substring(0, 50));
-                        this.renderWhatsappConnection('error', null, 'No se pudo generar el código de emparejamiento');
+                        console.error('❌ Container no encontrado: whatsapp-connection-container');
                     }
+                    // POLLING DESHABILITADO - Solo verificar manualmente con botón
+                    // this.startConnectionPolling();
+                } else {
+                    console.error('❌ Código inválido o no encontrado. Recibido:', pairingCode?.substring(0, 50));
+                    this.renderWhatsappConnection('error', null, 'No se pudo generar el código de emparejamiento');
                 }
-            } catch (error) {
-                console.error("[WhatsApp Connection] Error:", error);
-                this.renderWhatsappConnection('error', null, error.message || 'Error al conectar');
             }
+        } catch (error) {
+            console.error("[WhatsApp Connection] Error:", error);
+            this.renderWhatsappConnection('error', null, error.message || 'Error al conectar');
         }
+    }
 
     async disconnectWhatsApp() {
-            console.log('[WhatsApp] 🔴 Iniciando desconexión...');
+        console.log('[WhatsApp] 🔴 Iniciando desconexión...');
 
-            if (!confirm('¿Estás seguro de que deseas desconectar WhatsApp? Tendrás que volver a escanear el código QR o ingresar el código PIN.')) {
-                console.log('[WhatsApp] ❌ Desconexión cancelada por el usuario');
-                return;
-            }
+        if (!confirm('¿Estás seguro de que deseas desconectar WhatsApp? Tendrás que volver a escanear el código QR o ingresar el código PIN.')) {
+            console.log('[WhatsApp] ❌ Desconexión cancelada por el usuario');
+            return;
+        }
 
-            // Detener polling si está activo
-            this.stopConnectionPolling();
+        // Detener polling si está activo
+        this.stopConnectionPolling();
 
-            this.renderWhatsappConnection('loading');
+        this.renderWhatsappConnection('loading');
 
-            try {
-                console.log('[WhatsApp] 📞 Llamando a logout...');
-                const { data, error } = await window.auth.invokeFunction('manage-whatsapp-instance', {
-                    body: {
-                        action: 'logout',
-                        user_id: this.user.id
-                    }
-                });
-
-                console.log('[WhatsApp] 📦 Respuesta de logout:', { data, error });
-
-                if (error || data?.error) {
-                    throw new Error(error?.message || data?.error || 'Error al desconectar');
+        try {
+            console.log('[WhatsApp] 📞 Llamando a logout...');
+            const { data, error } = await window.auth.invokeFunction('manage-whatsapp-instance', {
+                body: {
+                    action: 'logout',
+                    user_id: this.user.id
                 }
-
-                // Limpiar cache de conexión
-                localStorage.removeItem('whatsapp_connection_status');
-                console.log('[WhatsApp] ✅ Desconectado exitosamente');
-                this.renderWhatsappConnection('initial');
-                window.showToast('WhatsApp desconectado correctamente', 'success');
-            } catch (error) {
-                console.error("[WhatsApp] ❌ Error al desconectar:", error);
-                this.renderWhatsappConnection('error', null, error.message || 'Error al desconectar');
-                window.showToast('Error al desconectar WhatsApp', 'error');
-            }
-        }
-
-        openChatwoot(e) {
-            e.preventDefault(); // Prevenir la navegación por defecto del enlace
-            // Por ahora, abre la URL base. La lógica de SSO se puede añadir aquí después.
-            window.open(`${this.config.CHATWOOT_BASE_URL}/app/login`, '_blank');
-        }
-
-        setupYoutubeCarousel() {
-            const player = document.getElementById('yt-player');
-            const items = document.querySelectorAll('#yt-carousel [data-vid]');
-            const playlistId = this.config.YOUTUBE_PLAYLIST_ID;
-
-            items.forEach(el => {
-                el.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const videoId = el.dataset.vid;
-                    if (videoId && player) {
-                        player.src = `https://www.youtube.com/embed/${videoId}?list=${playlistId}&rel=0&autoplay=1`;
-                    }
-                });
             });
+
+            console.log('[WhatsApp] 📦 Respuesta de logout:', { data, error });
+
+            if (error || data?.error) {
+                throw new Error(error?.message || data?.error || 'Error al desconectar');
+            }
+
+            // Limpiar cache de conexión
+            localStorage.removeItem('whatsapp_connection_status');
+            console.log('[WhatsApp] ✅ Desconectado exitosamente');
+            this.renderWhatsappConnection('initial');
+            window.showToast('WhatsApp desconectado correctamente', 'success');
+        } catch (error) {
+            console.error("[WhatsApp] ❌ Error al desconectar:", error);
+            this.renderWhatsappConnection('error', null, error.message || 'Error al desconectar');
+            window.showToast('Error al desconectar WhatsApp', 'error');
         }
+    }
 
-        // --- Métodos de Renderizado (CORRECCIÓN: Se restaura la lógica de renderizado) ---
+    openChatwoot(e) {
+        e.preventDefault(); // Prevenir la navegación por defecto del enlace
+        // Por ahora, abre la URL base. La lógica de SSO se puede añadir aquí después.
+        window.open(`${this.config.CHATWOOT_BASE_URL}/app/login`, '_blank');
+    }
 
-        renderWhatsappConnection(status, qrCodeBase64 = null, extraData = null) {
-            const container = document.getElementById('whatsapp-connection-container');
-            const connectButton = document.getElementById('request-qr-btn');
-            const disconnectButton = document.getElementById('disconnect-whatsapp-btn');
-            const methodSelector = document.getElementById('connection-method-selector');
-            const phoneContainer = document.getElementById('phone-input-container');
-            let html = '';
+    setupYoutubeCarousel() {
+        const player = document.getElementById('yt-player');
+        const items = document.querySelectorAll('#yt-carousel [data-vid]');
+        const playlistId = this.config.YOUTUBE_PLAYLIST_ID;
 
-            switch (status) {
-                case 'connected':
-                    html = `
+        items.forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                const videoId = el.dataset.vid;
+                if (videoId && player) {
+                    player.src = `https://www.youtube.com/embed/${videoId}?list=${playlistId}&rel=0&autoplay=1`;
+                }
+            });
+        });
+    }
+
+    // --- Métodos de Renderizado (CORRECCIÓN: Se restaura la lógica de renderizado) ---
+
+    renderWhatsappConnection(status, qrCodeBase64 = null, extraData = null) {
+        const container = document.getElementById('whatsapp-connection-container');
+        const connectButton = document.getElementById('request-qr-btn');
+        const disconnectButton = document.getElementById('disconnect-whatsapp-btn');
+        const methodSelector = document.getElementById('connection-method-selector');
+        const phoneContainer = document.getElementById('phone-input-container');
+        let html = '';
+
+        switch (status) {
+            case 'connected':
+                html = `
                     <div class="flex flex-col items-center justify-center h-48 text-green-600">
                         <i data-lucide="check-circle" class="w-16 h-16"></i>
                         <p class="font-bold mt-2">¡Conectado!</p>
                         <p class="text-sm text-slate-500">Tu sesión de WhatsApp está activa.</p>
                     </div>`;
-                    if (connectButton) connectButton.style.display = 'none';
-                    if (disconnectButton) disconnectButton.style.display = 'block';
-                    if (methodSelector) methodSelector.style.display = 'none';
-                    if (phoneContainer) phoneContainer.style.display = 'none';
-                    break;
-                case 'loading':
-                    html = `
+                if (connectButton) connectButton.style.display = 'none';
+                if (disconnectButton) disconnectButton.style.display = 'block';
+                if (methodSelector) methodSelector.style.display = 'none';
+                if (phoneContainer) phoneContainer.style.display = 'none';
+                break;
+            case 'loading':
+                html = `
                     <div class="flex justify-center items-center h-48">
                         <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-slate-900"></div>
                     </div>`;
-                    if (connectButton) connectButton.style.display = 'block';
-                    if (disconnectButton) disconnectButton.style.display = 'none';
-                    break;
-                case 'qr':
-                    // Si el QR ya incluye el prefijo data:image, no agregarlo de nuevo
-                    const qrSrc = qrCodeBase64.startsWith('data:image') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`;
-                    html = `<img src="${qrSrc}" alt="Escanea para conectar WhatsApp" class="mx-auto max-w-xs rounded-lg shadow-lg">`;
-                    if (connectButton) connectButton.style.display = 'block';
-                    if (disconnectButton) disconnectButton.style.display = 'none';
-                    break;
-                case 'pairing':
-                    // Formatear código como XXXX-XXXX
-                    const formattedCode = extraData && extraData.length === 8
-                        ? `${extraData.substring(0, 4)}-${extraData.substring(4)}`
-                        : extraData;
-                    console.log('[PAIRING RENDER] Código original:', extraData, 'Formateado:', formattedCode);
+                if (connectButton) connectButton.style.display = 'block';
+                if (disconnectButton) disconnectButton.style.display = 'none';
+                break;
+            case 'qr':
+                // Si el QR ya incluye el prefijo data:image, no agregarlo de nuevo
+                const qrSrc = qrCodeBase64.startsWith('data:image') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`;
+                html = `<img src="${qrSrc}" alt="Escanea para conectar WhatsApp" class="mx-auto max-w-xs rounded-lg shadow-lg">`;
+                if (connectButton) connectButton.style.display = 'block';
+                if (disconnectButton) disconnectButton.style.display = 'none';
+                break;
+            case 'pairing':
+                // Formatear código como XXXX-XXXX
+                const formattedCode = extraData && extraData.length === 8
+                    ? `${extraData.substring(0, 4)}-${extraData.substring(4)}`
+                    : extraData;
+                console.log('[PAIRING RENDER] Código original:', extraData, 'Formateado:', formattedCode);
 
-                    html = `
+                html = `
                     <div class="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200">
                         <div class="text-6xl font-black text-purple-700 tracking-widest mb-4 font-mono">
                             ${formattedCode}
@@ -2229,105 +2230,105 @@ class DashboardApp {
                             Ingresa este código en WhatsApp > Dispositivos Vinculados > Vincular con número de teléfono
                         </p>
                     </div>`;
-                    if (connectButton) connectButton.style.display = 'block';
-                    if (disconnectButton) disconnectButton.style.display = 'none';
-                    break;
-                case 'error':
-                    html = `
+                if (connectButton) connectButton.style.display = 'block';
+                if (disconnectButton) disconnectButton.style.display = 'none';
+                break;
+            case 'error':
+                html = `
                     <div class="flex flex-col items-center justify-center h-48 text-red-500">
                          <i data-lucide="alert-triangle" class="w-16 h-16"></i>
                          <p class="font-bold mt-2">Error</p>
                          <p class="text-sm text-slate-500">${extraData || 'No se pudo conectar. Intenta de nuevo.'}</p>
                     </div>`;
-                    if (connectButton) connectButton.style.display = 'block';
-                    if (disconnectButton) disconnectButton.style.display = 'none';
-                    if (methodSelector) methodSelector.style.display = 'block';
-                    break;
-                case 'initial':
-                default:
-                    html = `
+                if (connectButton) connectButton.style.display = 'block';
+                if (disconnectButton) disconnectButton.style.display = 'none';
+                if (methodSelector) methodSelector.style.display = 'block';
+                break;
+            case 'initial':
+            default:
+                html = `
                     <div class="flex flex-col items-center justify-center h-48 text-slate-400">
                          <i data-lucide="qr-code" class="w-16 h-16"></i>
                          <p class="font-bold mt-2">Elige un método para conectar</p>
                     </div>`;
-                    if (connectButton) connectButton.style.display = 'block';
-                    if (disconnectButton) disconnectButton.style.display = 'none';
-                    if (methodSelector) methodSelector.style.display = 'block';
-                    break;
-            }
-            container.innerHTML = html;
-            lucide.createIcons();
+                if (connectButton) connectButton.style.display = 'block';
+                if (disconnectButton) disconnectButton.style.display = 'none';
+                if (methodSelector) methodSelector.style.display = 'block';
+                break;
         }
+        container.innerHTML = html;
+        lucide.createIcons();
+    }
 
     // --- LÓGICA GLOBAL DEL MODAL DE IA ---
     async openAiEnhanceModal(originalText, onApplyCallback, context = 'default') {
-            const modal = document.getElementById('ai-enhance-modal');
-            if (!modal) return;
-            const generateBtn = document.getElementById('generate-ai-btn');
+        const modal = document.getElementById('ai-enhance-modal');
+        if (!modal) return;
+        const generateBtn = document.getElementById('generate-ai-btn');
+        // CORRECCIÓN: Cargar plan y uso directamente, sin depender de variables globales
+        try {
+            this.aiModalContext = context;
+
+            // --- CORRECCIÓN: Cargar plan y uso directamente, sin depender de variables globales ---
+            const [userPlan, userUsage] = await Promise.all([
+                this.loadUserSubscription(),
+                this.loadUserUsage()
+            ]);
             // CORRECCIÓN: Cargar plan y uso directamente, sin depender de variables globales
-            try {
-                this.aiModalContext = context;
+            if (!userPlan) throw new Error("No se pudo cargar la información del plan.");
 
-                // --- CORRECCIÓN: Cargar plan y uso directamente, sin depender de variables globales ---
-                const [userPlan, userUsage] = await Promise.all([
-                    this.loadUserSubscription(),
-                    this.loadUserUsage()
-                ]);
-                // CORRECCIÓN: Cargar plan y uso directamente, sin depender de variables globales
-                if (!userPlan) throw new Error("No se pudo cargar la información del plan.");
+            const aiLimit = userPlan.plans?.ai_enhancements_limit || 0;
+            const aiUsed = userUsage?.ai_enhancements_used || 0;
+            const usesLeft = aiLimit - aiUsed;
 
-                const aiLimit = userPlan.plans?.ai_enhancements_limit || 0;
-                const aiUsed = userUsage?.ai_enhancements_used || 0;
-                const usesLeft = aiLimit - aiUsed;
+            document.getElementById('ai-uses-left').textContent = `${usesLeft}/${aiLimit}`;
+            generateBtn.disabled = usesLeft <= 0;
 
-                document.getElementById('ai-uses-left').textContent = `${usesLeft}/${aiLimit}`;
-                generateBtn.disabled = usesLeft <= 0;
-
-                if (usesLeft <= 0) {
-                    window.showToast('Has alcanzado tu límite de mejoras con IA este mes.', 'info');
-                }
-
-                this.aiModalCallback = onApplyCallback;
-                document.getElementById('ai-original-text').value = originalText;
-                document.getElementById('ai-prompt-input').value = '';
-                document.getElementById('ai-result-container').innerHTML = '';
-                document.getElementById('ai-result-container').classList.add('hidden');
-                generateBtn.classList.remove('hidden');
-                document.getElementById('apply-ai-btn').classList.add('hidden');
-                document.getElementById('regenerate-ai-btn').classList.add('hidden');
-
-                modal.classList.remove('hidden');
-
-            } catch (error) {
-                window.showToast(error.message, 'error');
-                return;
+            if (usesLeft <= 0) {
+                window.showToast('Has alcanzado tu límite de mejoras con IA este mes.', 'info');
             }
-        }
 
-        closeAiModal() {
-            document.getElementById('ai-enhance-modal').classList.add('hidden');
-            this.aiModalCallback = null;
+            this.aiModalCallback = onApplyCallback;
+            document.getElementById('ai-original-text').value = originalText;
+            document.getElementById('ai-prompt-input').value = '';
+            document.getElementById('ai-result-container').innerHTML = '';
+            document.getElementById('ai-result-container').classList.add('hidden');
+            generateBtn.classList.remove('hidden');
+            document.getElementById('apply-ai-btn').classList.add('hidden');
+            document.getElementById('regenerate-ai-btn').classList.add('hidden');
+
+            modal.classList.remove('hidden');
+
+        } catch (error) {
+            window.showToast(error.message, 'error');
+            return;
         }
+    }
+
+    closeAiModal() {
+        document.getElementById('ai-enhance-modal').classList.add('hidden');
+        this.aiModalCallback = null;
+    }
 
     async handleGenerateAi(isRegenerating = false) {
-            const button = isRegenerating ? document.getElementById('regenerate-ai-btn') : document.getElementById('generate-ai-btn');
-            const mainGenerateBtn = document.getElementById('generate-ai-btn');
-            button.disabled = true;
-            button.textContent = 'Generando...';
-            // CORRECCIÓN: Usar la Edge Function
-            const originalText = document.getElementById('ai-original-text').value;
+        const button = isRegenerating ? document.getElementById('regenerate-ai-btn') : document.getElementById('generate-ai-btn');
+        const mainGenerateBtn = document.getElementById('generate-ai-btn');
+        button.disabled = true;
+        button.textContent = 'Generando...';
+        // CORRECCIÓN: Usar la Edge Function
+        const originalText = document.getElementById('ai-original-text').value;
 
-            const userPrompt = document.getElementById('ai-prompt-input').value;
-            let systemPrompt;
+        const userPrompt = document.getElementById('ai-prompt-input').value;
+        let systemPrompt;
 
-            if (this.aiModalContext === 'designer') {
-                systemPrompt = `Eres un asistente de diseño experto. Mejora la siguiente descripción para un prompt de generación de imágenes. Sé creativo y visual.
+        if (this.aiModalContext === 'designer') {
+            systemPrompt = `Eres un asistente de diseño experto. Mejora la siguiente descripción para un prompt de generación de imágenes. Sé creativo y visual.
             - NO uses placeholders como '%nombre%'.
             - Devuelve ÚNICAMENTE la descripción mejorada.
             ${userPrompt ? `Considera esta instrucción adicional del usuario: '${userPrompt}'.` : ''}`;
-            } else if (this.aiModalContext === 'behavior_prompt') {
-                // Contexto específico para prompts de comportamiento del asistente
-                systemPrompt = `Eres un experto en optimización de prompts de comportamiento para asistentes de IA conversacionales.
+        } else if (this.aiModalContext === 'behavior_prompt') {
+            // Contexto específico para prompts de comportamiento del asistente
+            systemPrompt = `Eres un experto en optimización de prompts de comportamiento para asistentes de IA conversacionales.
 
 Tu tarea es MEJORAR el prompt de comportamiento proporcionado, NO reemplazarlo completamente.
 
@@ -2355,72 +2356,72 @@ ${userPrompt ? `El usuario quiere: "${userPrompt}"` : 'Mejora general del prompt
 - Si el usuario solo pide un cambio pequeño, haz ese cambio específico pero mantén TODO lo demás intacto
 - NUNCA devuelvas solo un resumen o versión corta del prompt original
 - El resultado debe ser un prompt completo y funcional, no un resumen`;
-            } else { // Contexto por defecto para marketing, plantillas, etc.
-                systemPrompt = `Eres un asistente de marketing experto en WhatsApp. Reescribe el siguiente texto para que sea más efectivo y profesional, manteniendo el tono y la intención original.
+        } else { // Contexto por defecto para marketing, plantillas, etc.
+            systemPrompt = `Eres un asistente de marketing experto en WhatsApp. Reescribe el siguiente texto para que sea más efectivo y profesional, manteniendo el tono y la intención original.
             - El único placeholder permitido es '%nombre%'. Mantenlo exactamente como está. NO inventes otros placeholders como '%empresa%'.
             - NO añadas saludos, despedidas, ni firmes con "[Tu Nombre]", etc. Devuelve ÚNICamente el texto mejorado.
             ${userPrompt ? `Considera esta instrucción adicional del usuario: '${userPrompt}'.` : ''}`;
-            }
-
-            try { // CORRECCIÓN: Usar la Edge Function
-                // Verificar acceso de cuenta primero (si la función existe)
-                let accessCheck = null;
-                try {
-                    const { data, error: accessError } = await window.auth.sb.rpc('check_account_access', { p_user_id: this.user.id });
-                    if (accessError && accessError.code !== 'PGRST202') {
-                        throw new Error('Error al verificar el acceso de tu cuenta.');
-                    } else if (!accessError) {
-                        accessCheck = data;
-                    }
-                } catch (e) {
-                    if (e.code !== 'PGRST202') {
-                        throw new Error('Error al verificar el acceso de tu cuenta.');
-                    }
-                }
-                if (accessCheck && accessCheck.blocked) {
-                    throw new Error(accessCheck.reason || 'Tu cuenta está bloqueada. Por favor, contacta con soporte.');
-                }
-
-                // --- CORRECCIÓN: Usar la Edge Function ---
-                const { data, error } = await window.auth.invokeFunction('openai-proxy', {
-                    body: {
-                        type: 'text',
-                        prompt: systemPrompt,
-                        text: originalText,
-                        userId: this.user.id // Enviamos el ID para registrar el uso
-                    }
-                });
-                if (error) throw error; // Actualizar el contador de usos en la UI
-
-                // Actualizar el contador de usos en la UI
-                // Recargamos el uso desde la DB para tener el dato más fresco y lo mostramos.
-                const updatedUsage = await this.loadUserUsage();
-                const aiLimit = (await this.loadUserSubscription()).plans?.ai_enhancements_limit || 0;
-                const aiUsed = updatedUsage?.ai_enhancements_used || 0;
-                document.getElementById('ai-uses-left').textContent = `${aiLimit - aiUsed}/${aiLimit}`;
-
-                const resultContainer = document.getElementById('ai-result-container');
-                resultContainer.textContent = data.result || "La IA no devolvió un resultado válido.";
-                resultContainer.classList.remove('hidden');
-
-                mainGenerateBtn.classList.add('hidden');
-                document.getElementById('apply-ai-btn').classList.remove('hidden');
-                document.getElementById('regenerate-ai-btn').classList.remove('hidden');
-            } catch (e) {
-                // Si el error es por límite de uso, la función ya muestra un mensaje claro.
-                if (!/limit/i.test(e.message)) window.showToast('No se pudo generar la mejora. Revisa la consola.', 'error');
-            } finally {
-                button.disabled = false; // Habilitar el botón que se usó
-                button.textContent = isRegenerating ? 'Reintentar' : 'Mejorar Texto';
-            }
         }
 
-        handleApplyAi() {
-            const newText = document.getElementById('ai-result-container').textContent;
-            if (this.aiModalCallback) this.aiModalCallback(newText);
-            this.closeAiModal();
+        try { // CORRECCIÓN: Usar la Edge Function
+            // Verificar acceso de cuenta primero (si la función existe)
+            let accessCheck = null;
+            try {
+                const { data, error: accessError } = await window.auth.sb.rpc('check_account_access', { p_user_id: this.user.id });
+                if (accessError && accessError.code !== 'PGRST202') {
+                    throw new Error('Error al verificar el acceso de tu cuenta.');
+                } else if (!accessError) {
+                    accessCheck = data;
+                }
+            } catch (e) {
+                if (e.code !== 'PGRST202') {
+                    throw new Error('Error al verificar el acceso de tu cuenta.');
+                }
+            }
+            if (accessCheck && accessCheck.blocked) {
+                throw new Error(accessCheck.reason || 'Tu cuenta está bloqueada. Por favor, contacta con soporte.');
+            }
+
+            // --- CORRECCIÓN: Usar la Edge Function ---
+            const { data, error } = await window.auth.invokeFunction('openai-proxy', {
+                body: {
+                    type: 'text',
+                    prompt: systemPrompt,
+                    text: originalText,
+                    userId: this.user.id // Enviamos el ID para registrar el uso
+                }
+            });
+            if (error) throw error; // Actualizar el contador de usos en la UI
+
+            // Actualizar el contador de usos en la UI
+            // Recargamos el uso desde la DB para tener el dato más fresco y lo mostramos.
+            const updatedUsage = await this.loadUserUsage();
+            const aiLimit = (await this.loadUserSubscription()).plans?.ai_enhancements_limit || 0;
+            const aiUsed = updatedUsage?.ai_enhancements_used || 0;
+            document.getElementById('ai-uses-left').textContent = `${aiLimit - aiUsed}/${aiLimit}`;
+
+            const resultContainer = document.getElementById('ai-result-container');
+            resultContainer.textContent = data.result || "La IA no devolvió un resultado válido.";
+            resultContainer.classList.remove('hidden');
+
+            mainGenerateBtn.classList.add('hidden');
+            document.getElementById('apply-ai-btn').classList.remove('hidden');
+            document.getElementById('regenerate-ai-btn').classList.remove('hidden');
+        } catch (e) {
+            // Si el error es por límite de uso, la función ya muestra un mensaje claro.
+            if (!/limit/i.test(e.message)) window.showToast('No se pudo generar la mejora. Revisa la consola.', 'error');
+        } finally {
+            button.disabled = false; // Habilitar el botón que se usó
+            button.textContent = isRegenerating ? 'Reintentar' : 'Mejorar Texto';
         }
     }
+
+    handleApplyAi() {
+        const newText = document.getElementById('ai-result-container').textContent;
+        if (this.aiModalCallback) this.aiModalCallback(newText);
+        this.closeAiModal();
+    }
+}
 
 // =================================================================================
 // CLASE PARA EL ASISTENTE DE CONFIGURACIÓN (WIZARD)
