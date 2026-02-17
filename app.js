@@ -1,23 +1,23 @@
 ﻿// app.js - Lógica principal del Dashboard - v2026-02-17-001
 
 // CORRECCIÓN: Se importan todos los módulos necesarios para que el compilador (Vite) los reconozca.
-import '/auth.js'; // auth.js debe estar primero
-import '/csv-mapping-modal.js'; // Ensure CSV modal and helpers are loaded early
-import '/bulk-sending.js';
-import '/chats.js';
-import '/contacts.js';
-import '/smart-promotions.js';
-import '/sales-context.js';
-import '/designer-ai.js';
-import '/follow-ups.js';
-import '/kanban.js';
-import '/products.js';
-import '/quotes.js';
-import '/settings.js';
-import '/smart-labels.js';
-import '/templates.js';
-import '/video-ai.js';
-import '/appointments.js';
+import './auth.js'; // auth.js debe estar primero
+import './csv-mapping-modal.js'; // Ensure CSV modal and helpers are loaded early
+import './bulk-sending.js';
+import './chats.js';
+import './contacts.js';
+import './smart-promotions.js';
+import './sales-context.js';
+import './designer-ai.js';
+import './follow-ups.js';
+import './kanban.js';
+import './products.js';
+import './quotes.js';
+import './settings.js';
+import './smart-labels.js';
+import './templates.js';
+import './video-ai.js';
+import './appointments.js';
 import './auto-responses.js';
 import './prompt-training.js';
 import './personal-tasks.js';
