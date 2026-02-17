@@ -11,23 +11,36 @@
 
     // --- INICIO: CORRECCIÓN DE INICIALIZACIÓN DEFINITIVA ---
     function tryInitialize() {
-        // Inicializar si estamos en la vista de productos o si el script se carga después de que el DOM está listo
-        if (!isInitialized) {
-            const productsPanel = document.getElementById('products-panel') || document.getElementById('products');
-            // Check if panel is visible or active, or just init anyway to be safe for global buttons
-            initProductsPanel();
-            isInitialized = true;
+        // Inicializar SOLO si hay una sesión activa.
+        // Si no hay sesión, esperamos al evento auth:ready
+        if (window.auth && window.auth.session) {
+            if (!isInitialized) {
+                initProductsPanel();
+                isInitialized = true;
+            }
+        } else {
+            // Si no hay sesión, no hacemos nada. auth.js disparará auth:ready cuando esté listo.
+            // console.log('[products.js] Esperando sesión para inicializar...');
         }
     }
 
+    // Escuchar cuando la autenticación esté lista
+    document.addEventListener('auth:ready', () => {
+        // console.log('[products.js] Auth ready received, initializing...');
+        if (!isInitialized) {
+            initProductsPanel();
+            isInitialized = true;
+        }
+    });
+
     document.addEventListener('panel:activated', ({ detail }) => {
-        if (detail.panelId === 'products' && !isInitialized) {
+        if (detail.panelId === 'products' && !isInitialized && window.auth && window.auth.session) {
             initProductsPanel();
             isInitialized = true; // Marcar como inicializado
         }
     });
 
-    // Inicializar al cargar también, por si acaso
+    // Inicializar al cargar también, por si acaso (pero validando sesión dentro de tryInitialize)
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', tryInitialize);
     } else {
@@ -38,8 +51,11 @@
         //         console.log('Inicializando panel de Productos...');
         isInitialized = true;
         setupEventListeners();
-        loadLabels();
-        loadAndRenderProducts();
+        // Solo cargar datos si hay usuario autenticado
+        if (window.auth && window.auth.session) {
+            loadLabels();
+            loadAndRenderProducts();
+        }
     }
     // --- FIN: CORRECCIÓN DE INICIALIZACIÓN DEFINITIVA ---
 
