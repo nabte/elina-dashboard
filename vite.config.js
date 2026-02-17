@@ -29,7 +29,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5185,
+    port: 6813,
     strictPort: false,
     // Forzar recarga de HTML sin caché
     middlewareMode: false,
@@ -70,8 +70,32 @@ export default defineConfig({
             '/', '/index.html', '/dashboard.html', '/auth.html', '/settings.html',
             '/booking.html', '/blog.html', '/superadmin.html', '/privacy.html',
             '/terms.html', '/forgot-password.html', '/reset-password.html',
-            '/accept-invitation.html', '/data-usage.html'
+            '/accept-invitation.html', '/data-usage.html',
+            // Rutas sin extension (para navegacion limpia)
+            '/index', '/dashboard', '/auth', '/settings',
+            '/booking', '/blog', '/superadmin', '/privacy',
+            '/terms', '/forgot-password', '/reset-password',
+            '/accept-invitation', '/data-usage', '/login'
           ].includes(urlPath);
+
+          // Si es una ruta limpia (sin .html), redirigir a la versión con .html
+          if (urlPath === '/auth' || urlPath === '/login') {
+            req.url = `/auth.html${query ? '?' + query : ''}`;
+          } else if (urlPath === '/dashboard') {
+            req.url = `/dashboard.html${query ? '?' + query : ''}`;
+          } else if (urlPath === '/settings') {
+            req.url = `/settings.html${query ? '?' + query : ''}`;
+          } else if (urlPath === '/booking') {
+            req.url = `/booking.html${query ? '?' + query : ''}`;
+          } else if (urlPath === '/blog') {
+            req.url = `/blog.html${query ? '?' + query : ''}`;
+          } else if (urlPath === '/privacy') {
+            req.url = `/privacy.html${query ? '?' + query : ''}`;
+          } else if (urlPath === '/terms') {
+            req.url = `/terms.html${query ? '?' + query : ''}`;
+          } else if (urlPath === '/data-usage') {
+            req.url = `/data-usage.html${query ? '?' + query : ''}`;
+          }
 
           const isInternal = urlPath.startsWith('/public/') ||
             urlPath.startsWith('/src/') ||
