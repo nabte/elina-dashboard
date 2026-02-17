@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Elina IA: La inteligencia artificial que entrena con tu catálogo, responde por WhatsApp y cierra ventas en automático 24/7.">
+    <meta name="keywords" content="IA, WhatsApp, Automación de ventas, Chatbot, CRM, Inteligencia Artificial, Negocios">
+    <link rel="canonical" href="https://elinaia.com.mx/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://elinaia.com.mx/">
+    <meta property="og:title" content="Elina IA | Inteligencia Artificial Conversacional para Negocios">
+    <meta property="og:description"
+        content="La inteligencia artificial que entrena con tu catálogo, responde por WhatsApp y cierra ventas en automático 24/7.">
+    <meta property="og:image" content="https://brandcode.com.mx/Elina-logo.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://elinaia.com.mx/">
+    <meta property="twitter:title" content="Elina IA | Inteligencia Artificial Conversacional para Negocios">
+    <meta property="twitter:description"
+        content="La inteligencia artificial que entrena con tu catálogo, responde por WhatsApp y cierra ventas en automático 24/7.">
+    <meta property="twitter:image" content="https://brandcode.com.mx/Elina-logo.jpg">
+
+    <title>Elina IA | Inteligencia Artificial Conversacional para Negocios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --secondary: #0F172A;
+            --emerald-glow: rgba(16, 185, 129, 0.2);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F8FAFC;
+            color: #1E293B;
+            overflow-x: hidden;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        .font-heading {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 15px -3px var(--emerald-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px var(--emerald-glow);
+            filter: brightness(1.1);
+        }
+
+        .feature-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 30px 60px -12px rgba(15, 23, 42, 0.08);
+        }
+
+        .whatsapp-float {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+            background: #25D366;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(37, 211, 102, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .whatsapp-float:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes pulse-green {
+            0% {
+                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(37, 211, 102, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+            }
+        }
+
+        .whatsapp-pulse {
+            animation: pulse-green 2s infinite;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .price-card.featured {
+            border: 2px solid var(--primary);
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .chat-bubble {
+            max-width: 85%;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 1.25rem;
+            font-size: 0.875rem;
+            line-height: 1.4;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-bubble.left {
+            background: white;
+            color: #1E293B;
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        .chat-bubble.right {
+            background: #DCF8C6;
+            color: #1E293B;
+            margin-left: auto;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .product-card-msg {
+            background: white;
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid #E2E8F0;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<link rel="icon" type="image/x-icon" href="public/favicon.ico">
+
+<body class="antialiased selection:bg-emerald-100 selection:text-emerald-900">
+
+    <!-- WhatsApp Button -->
+    <div id="whatsapp-widget"
+        class="whatsapp-float whatsapp-pulse group flex items-center justify-center overflow-visible">
+        <a href="https://wa.me/521" target="_blank"
+            class="w-full h-full rounded-full flex items-center justify-center relative z-10 transition-transform duration-300">
+            <i data-lucide="message-circle" class="w-8 h-8 text-white fill-current"></i>
+        </a>
+        <div id="whatsapp-popup"
+            class="absolute right-full mr-4 bg-white text-slate-800 px-4 py-3 rounded-2xl text-sm font-bold shadow-xl opacity-0 transition-all duration-500 flex items-center gap-3 transform translate-x-4 border border-slate-100 min-w-[200px]">
+            <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-slate-200">
+                <img src="public/assets/Perfilchat.jpg" class="w-full h-full object-cover">
+            </div>
+            <span class="leading-tight">Hola soy Elina,<br>¿cómo puedo ayudarte? 👋</span>
+            <div
+                class="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-white transform rotate-45 border-r border-t border-slate-100">
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 transition-all duration-300 glass-nav" id="navbar">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <img src="public/assets/lgo_web.png" class="w-11 h-11 object-contain" alt="Elina Logo">
+                <span class="font-heading font-bold text-2xl text-slate-900 tracking-tight">Elina <span
+                        class="text-emerald-500">IA</span></span>
+            </div>
+            <div class="hidden md:flex items-center gap-10 font-semibold text-slate-600">
+                <a href="#features" class="hover:text-emerald-500 transition-colors">Funciones</a>
+                <a href="#training" class="hover:text-emerald-500 transition-colors">Entrenamiento</a>
+                <a href="#pricing" class="hover:text-emerald-500 transition-colors">Precios</a>
+                <a href="blog" class="hover:text-emerald-500 transition-colors">Blog</a>
+                <div class="flex items-center gap-4 ml-4">
+                    <a href="auth?tab=login"
+                        class="text-slate-900 font-bold hover:text-emerald-600 transition-colors">Log In</a>
+                    <a href="auth?tab=register"
+                        class="btn-primary px-7 py-3 rounded-2xl font-bold flex items-center gap-2">
+                        Prueba Gratis <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+                    </a>
+                </div>
+            </div>
+            <button id="mobile-menu-btn" class="md:hidden text-slate-900"><i data-lucide="menu"
+                    class="w-8 h-8"></i></button>
+        </div>
+        <!-- Mobile Menu Container -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white/95 backdrop-blur-md border-t border-slate-200">
+            <div class="flex flex-col p-6 space-y-4 font-semibold text-slate-600">
+                <a href="#features" class="hover:text-emerald-500 transition-colors py-2">Funciones</a>
+                <a href="#training" class="hover:text-emerald-500 transition-colors py-2">Entrenamiento</a>
+                <a href="#pricing" class="hover:text-emerald-500 transition-colors py-2">Precios</a>
+                <a href="blog" class="hover:text-emerald-500 transition-colors py-2">Blog</a>
+                <hr class="border-slate-200 my-2">
+                <a href="auth?tab=login"
+                    class="text-slate-900 font-bold hover:text-emerald-600 transition-colors py-2">Log In</a>
+                <a href="auth?tab=register"
+                    class="btn-primary text-center py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-white">
+                    Prueba Gratis <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <header class="relative pt-32 lg:pt-40 pb-20 overflow-hidden min-h-screen flex items-center">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.08),transparent_50%)]">
+        </div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-16 items-center">
+            <div class="space-y-8 reveal active">
+                <h1
+                    class="text-4xl sm:text-5xl lg:text-[5.5rem] font-extrabold font-heading leading-tight tracking-[calc(-0.02em)] text-slate-900">
+                    La IA que <br>
+                    <span class="gradient-text">Domina tu Catálogo</span>
+                </h1>
+                <p class="text-xl sm:text-2xl text-slate-500 leading-relaxed font-medium max-w-xl">
+                    Entrena a Elina con tus productos y deja que venda por ti. Responde dudas de stock, precios y envía
+                    fotos del catálogo automáticamente por WhatsApp.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-5 pt-6">
+                    <a href="auth?tab=register"
+                        class="btn-primary px-8 sm:px-10 py-5 rounded-3xl font-bold text-lg sm:text-xl flex items-center justify-center gap-3">
+                        Comenzar Prueba Gratuita <i data-lucide="arrow-right" class="w-6 h-6"></i>
+                    </a>
+                    <a href="#video-demo"
+                        class="bg-white border-2 border-slate-200 px-8 sm:px-10 py-5 rounded-3xl font-bold text-lg sm:text-xl text-slate-700 hover:border-emerald-300 transition-all text-center flex items-center justify-center gap-2">
+                        Ver Video <i data-lucide="play-circle" class="w-6 h-6"></i>
+                    </a>
+                </div>
+                <div class="flex items-center gap-8 pt-6">
+                    <div class="flex -space-x-4">
+                        <img src="public/assets/founder.png"
+                            class="w-12 h-12 rounded-full border-4 border-white shadow-sm object-cover">
+                        <img src="public/assets/ceo.png"
+                            class="w-12 h-12 rounded-full border-4 border-white shadow-sm object-cover">
+                        <img src="public/assets/manager.png"
+                            class="w-12 h-12 rounded-full border-4 border-white shadow-sm object-cover">
+                    </div>
+                    <p class="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest">+5,000 Negocios
+                        Automatizados
+                    </p>
+                </div>
+            </div>
+
+            <!-- WhatsApp Simulation -->
+            <div class="relative reveal active delay-200 lg:scale-105 flex justify-center">
+                <div
+                    class="w-full max-w-[340px] h-[680px] bg-slate-900 rounded-[3rem] border-8 border-slate-900 shadow-2xl relative overflow-hidden flex flex-col">
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-3xl z-30">
+                    </div>
+
+                    <!-- App Header -->
+                    <div class="bg-[#075E54] p-4 pt-8 flex items-center gap-3 text-white">
+                        <div
+                            class="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden p-0">
+                            <img src="public/assets/Perfilchat.jpg" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm">Elina IA ✨</h3>
+                            <p class="text-[10px] opacity-80">En línea ahora</p>
+                        </div>
+                    </div>
+
+                    <!-- Chat Background -->
+                    <div class="flex-1 bg-[#E5DDD5] p-4 pt-6 space-y-4 overflow-hidden relative">
+                        <div class="absolute inset-0 opacity-10"
+                            style="background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')">
+                        </div>
+
+                        <!-- Client -->
+                        <div class="chat-bubble left animate-in fade-in slide-in-from-left-4 duration-500">
+                            <p>¡Hola! Busco algo para hidratar la piel seca. ¿Qué me recomiendas? 🤔</p>
+                            <span class="text-[9px] text-slate-400 block text-right mt-1">10:45 AM</span>
+                        </div>
+
+                        <!-- Elina -->
+                        <div class="chat-bubble right animate-in fade-in slide-in-from-right-4 duration-500 delay-500">
+                            <p>¡Hola! Para piel seca te recomiendo nuestro **Serum Lumière Botanique**. Es 100% orgánico
+                                y ultra-hidratante. ✨</p>
+
+                            <!-- Product Card -->
+                            <div class="product-card-msg">
+                                <img src="public/assets/product_example.png" class="w-full h-40 object-cover">
+                                <div class="p-3">
+                                    <h4 class="font-bold text-sm">Serum Lumière Botanique 30ml</h4>
+                                    <div class="flex justify-between items-center mt-2">
+                                        <span class="text-emerald-600 font-bold">$749.00</span>
+                                        <span
+                                            class="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-1 rounded-full font-bold">Disponible</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="mt-3">¿Te gustaría que te envíe un link de pago o tienes alguna duda? 😊</p>
+                            <span class="text-[9px] text-slate-500 block text-right mt-1">10:45 AM</span>
+                        </div>
+
+                        <!-- Client -->
+                        <div class="chat-bubble left animate-in fade-in slide-in-from-left-4 duration-500 delay-1000">
+                            <p>Se ve genial, mándame el link porfa</p>
+                            <span class="text-[9px] text-slate-400 block text-right mt-1">10:46 AM</span>
+                        </div>
+
+                        <!-- Elina -->
+                        <div
+                            class="chat-bubble right animate-in fade-in slide-in-from-right-4 duration-500 delay-1500 font-bold">
+                            <p>¡Excelente elección! Aquí tienes tu link seguro: </p>
+                            <p class="text-blue-600 underline">pay.elinaia.com/serum-749</p>
+                            <span class="text-[9px] text-slate-500 block text-right mt-1">10:46 AM</span>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="bg-[#F0F0F0] p-3 flex items-center gap-3">
+                        <div
+                            class="flex-1 bg-white rounded-full py-2 px-4 shadow-sm border border-slate-200 text-slate-400 text-xs">
+                            Escribe un mensaje...</div>
+                        <div class="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-white">
+                            <i data-lucide="send" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floating Badge -->
+                <div
+                    class="absolute -right-8 bottom-20 bg-white p-5 rounded-[2rem] shadow-2xl flex items-center gap-4 animate-pulse">
+                    <div class="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center"><i
+                            data-lucide="shopping-cart" class="w-7 h-7 text-emerald-600"></i></div>
+                    <div>
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-wider">Ventas Cerradas</p>
+                        <p class="text-2xl font-black text-slate-900">+45,230</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Training Section -->
+    <section id="training" class="py-32 bg-slate-900 text-white relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-24 items-center">
+                <div class="reveal">
+                    <div
+                        class="inline-block px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 font-bold text-sm mb-6 uppercase tracking-widest">
+                        Entrenamiento Avanzado</div>
+                    <h2 class="text-5xl font-bold font-heading mb-8 leading-tight">Dale un Cerebro a tu WhatsApp</h2>
+                    <p class="text-xl text-slate-400 mb-10 leading-relaxed">
+                        No más respuestas genéricas. Sube tu catálogo de productos, tus manuales de servicio o la URL de
+                        tu sitio. Elina absorberá toda la información y responderá con precisión quirúrgica.
+                    </p>
+                    <div class="space-y-6">
+                        <div class="flex items-start gap-5">
+                            <div class="bg-emerald-500 p-3 rounded-xl mt-1 shadow-lg shadow-emerald-500/30"><i
+                                    data-lucide="file-text" class="w-6 h-6"></i></div>
+                            <div>
+                                <h4 class="text-xl font-bold mb-1">Cero Alucinaciones</h4>
+                                <p class="text-slate-400">Solo responde basándose en la información que tú le diste por
+                                    el canal oficial.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-5">
+                            <div class="bg-blue-500 p-3 rounded-xl mt-1 shadow-lg shadow-blue-500/30"><i
+                                    data-lucide="link" class="w-6 h-6"></i></div>
+                            <div>
+                                <h4 class="text-xl font-bold mb-1">Sincronización Web</h4>
+                                <p class="text-slate-400">Si cambias un precio en tu web, Elina lo sabrá al instante de
+                                    manera autónoma.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="reveal delay-200">
+                    <img src="public/assets/imagen1.jpg" class="w-full rounded-[4rem] shadow-3xl object-cover">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    </section>
+
+    <!-- Video Demo Section -->
+    <section id="video-demo" class="py-24 bg-slate-50 relative">
+        <div class="max-w-6xl mx-auto px-6 text-center">
+            <h2 class="text-4xl lg:text-5xl font-bold font-heading mb-6 text-slate-900">Descubre el poder de Elina</h2>
+            <p class="text-xl text-slate-500 mb-12 max-w-2xl mx-auto">Mira cómo Elina interactúa con tus clientes,
+                cierra ventas y gestiona tu agenda en tiempo real.</p>
+
+            <div
+                class="aspect-video rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white bg-slate-900 relative group reveal">
+                <!-- Placeholder for Video - Using a generic structure suitable for embedding -->
+                <div
+                    class="absolute inset-0 flex items-center justify-center bg-slate-800 hover:bg-slate-700 transition cursor-pointer">
+                    <div
+                        class="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center pl-2 shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
+                        <i data-lucide="play" class="w-10 h-10 text-white fill-current"></i>
+                    </div>
+                </div>
+                <!-- <iframe class="w-full h-full" src="https://www.youtube.com/embed/YOUR_VIDEO_ID" title="Elina Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe> -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="py-32 bg-white">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <h2 class="text-3xl sm:text-5xl font-bold font-heading mb-6 tracking-tight">Planes diseñados para crecer
+            </h2>
+            <p class="text-xl text-slate-500 mb-12 sm:mb-20">Empieza gratis por 7 días. Cancela cuando quieras.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
+                <!-- Starter -->
+                <div class="price-card p-10 rounded-[3rem] bg-slate-50 border-2 border-slate-100 reveal">
+                    <h3 class="text-2xl font-bold mb-4">Starter</h3>
+                    <div class="mb-8"><span class="text-5xl font-black">$999</span><span
+                            class="text-slate-400">/mes</span></div>
+                    <ul class="text-left space-y-5 mb-10 text-slate-600 font-medium">
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="text-emerald-500"></i> 1
+                            Número de WhatsApp</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="text-emerald-500"></i> 2
+                            Agentes humanos</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="text-emerald-500"></i> 300
+                            Respuestas IA /mes</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="text-emerald-500"></i>
+                            Automatizaciones básicas</li>
+                    </ul>
+                    <a href="auth?tab=register&plan=starter"
+                        class="w-full py-5 rounded-3xl border-2 border-slate-900 font-bold hover:bg-slate-900 hover:text-white transition-all text-center block">Elegir
+                        Starter</a>
+                </div>
+
+                <!-- Grow -->
+                <div class="price-card featured p-10 rounded-[3rem] bg-white reveal delay-100">
+                    <div
+                        class="inline-block px-4 py-1 bg-emerald-500 text-white rounded-full text-xs font-bold uppercase mb-6">
+                        MÁS POPULAR</div>
+                    <h3 class="text-2xl font-bold mb-4">Grow</h3>
+                    <div class="mb-8"><span class="text-5xl font-black">$1,999</span><span
+                            class="text-slate-400">/mes</span></div>
+                    <ul class="text-left space-y-5 mb-10 text-slate-600 font-medium">
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="text-emerald-500"></i>
+                            WhatsApp Ilimitado</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="text-emerald-500"></i> Agentes
+                            ilimitados</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="text-emerald-500"></i>
+                            Campaños masivas</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="text-emerald-500"></i>
+                            Generación de Imágenes/Videos</li>
+                    </ul>
+                    <a href="auth?tab=register&plan=grow"
+                        class="w-full btn-primary py-5 rounded-3xl font-bold shadow-xl shadow-emerald-100 text-center block">Elegir
+                        Plan Grow</a>
+                </div>
+
+                <!-- Business -->
+                <div class="price-card p-10 rounded-[3rem] bg-slate-50 border-2 border-slate-100 reveal delay-200">
+                    <h3 class="text-2xl font-bold mb-4">Business</h3>
+                    <div class="mb-8"><span class="text-5xl font-black">$2,799</span><span
+                            class="text-slate-400">/mes</span></div>
+                    <ul class="text-left space-y-5 mb-10 text-slate-600 font-medium">
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="text-emerald-500"></i> 3
+                            Números de WhatsApp</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="text-emerald-500"></i> API
+                            Abierta & Webhooks</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="text-emerald-500"></i> Roles
+                            avanzados de equipo</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="text-emerald-500"></i> Soporte
+                            prioritario 24/7</li>
+                    </ul>
+                    <a href="auth?tab=register&plan=business"
+                        class="w-full py-5 rounded-3xl border-2 border-slate-900 font-bold hover:bg-slate-900 hover:text-white transition-all text-center block">Elegir
+                        Business</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="py-32 bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <h2 class="text-5xl font-bold font-heading text-center mb-24 reveal">Testimonios que inspiran confianza</h2>
+            <div class="grid md:grid-cols-3 gap-12">
+                <div class="reveal">
+                    <div class="flex gap-1 text-emerald-500 mb-6"><i data-lucide="star" class="fill-current"></i><i
+                            data-lucide="star" class="fill-current"></i><i data-lucide="star"
+                            class="fill-current"></i><i data-lucide="star" class="fill-current"></i><i
+                            data-lucide="star" class="fill-current"></i></div>
+                    <p class="text-xl italic text-slate-700 leading-relaxed mb-8">"Llevaba meses buscando una IA que no
+                        pareciera un robot. Elina superó mis expectativas: entiende el sarcasmo, las dudas complejas y
+                        sabe cuándo derivar a un humano."</p>
+                    <div class="flex items-center gap-4">
+                        <img src="public/assets/ceo.png" class="w-16 h-16 rounded-full object-cover">
+                        <div>
+                            <p class="font-bold">Héctor Robles</p>
+                            <p class="text-sm text-slate-400">CEO en TechFlow</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="reveal delay-100">
+                    <div class="flex gap-1 text-emerald-500 mb-6"><i data-lucide="star" class="fill-current"></i><i
+                            data-lucide="star" class="fill-current"></i><i data-lucide="star"
+                            class="fill-current"></i><i data-lucide="star" class="fill-current"></i><i
+                            data-lucide="star" class="fill-current"></i></div>
+                    <p class="text-xl italic text-slate-700 leading-relaxed mb-8">"Me impresionó lo fácil que fue
+                        entrenarla. Solo subí mi PDF de 120 páginas y 5 minutos después estaba respondiendo dudas
+                        técnicas mejor que yo."</p>
+                    <div class="flex items-center gap-4">
+                        <img src="public/assets/founder.png" class="w-16 h-16 rounded-full object-cover">
+                        <div>
+                            <p class="font-bold">Mariana Solis</p>
+                            <p class="text-sm text-slate-400">Directora de Operaciones</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="reveal delay-200">
+                    <div class="flex gap-1 text-emerald-500 mb-6"><i data-lucide="star" class="fill-current"></i><i
+                            data-lucide="star" class="fill-current"></i><i data-lucide="star"
+                            class="fill-current"></i><i data-lucide="star" class="fill-current"></i><i
+                            data-lucide="star" class="fill-current"></i></div>
+                    <p class="text-xl italic text-slate-700 leading-relaxed mb-8">"El sistema de agendamiento es
+                        increíble, pero lo mejor es cómo maneja el catálogo. Mis asesores solo se encargan de cobrar,
+                        Elina hace todo el trabajo sucio."</p>
+                    <div class="flex items-center gap-4">
+                        <img src="public/assets/manager.png" class="w-16 h-16 rounded-full object-cover">
+                        <div>
+                            <p class="font-bold">Omar García</p>
+                            <p class="text-sm text-slate-400">Gerente de Ventas Automotriz</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-32 bg-slate-50">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <span class="text-emerald-500 font-bold tracking-widest uppercase text-sm mb-4 block">Dudas
+                    Comunes</span>
+                <h2 class="text-4xl lg:text-5xl font-bold font-heading text-slate-900">Preguntas Frecuentes</h2>
+            </div>
+
+            <div class="space-y-4">
+                <!-- FAQ 1 -->
+                <details
+                    class="group bg-white rounded-3xl p-6 shadow-sm [&_summary::-webkit-details-marker]:hidden open:shadow-xl transition-all border border-slate-100/50">
+                    <summary
+                        class="flex items-center justify-between cursor-pointer font-bold text-xl text-slate-800 gap-4 list-none group-hover:text-emerald-600 transition-colors">
+                        ¿Cómo entreno a Elina con mi información?
+                        <span
+                            class="bg-slate-50 w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-300 group-open:rotate-180 group-open:bg-emerald-50 text-emerald-500">
+                            <i data-lucide="chevron-down"></i>
+                        </span>
+                    </summary>
+                    <div class="text-slate-600 mt-4 leading-relaxed pl-1 text-lg">
+                        <p>Es muy simple. Tenemos un asistente (wizard) que te guía paso a paso con preguntas
+                            coloquiales para que Elina entienda todo sobre tu negocio rápidamente, sin complicaciones
+                            técnicas.</p>
+                    </div>
+                </details>
+
+                <!-- FAQ 2 -->
+                <details
+                    class="group bg-white rounded-3xl p-6 shadow-sm [&_summary::-webkit-details-marker]:hidden open:shadow-xl transition-all border border-slate-100/50">
+                    <summary
+                        class="flex items-center justify-between cursor-pointer font-bold text-xl text-slate-800 gap-4 list-none group-hover:text-emerald-600 transition-colors">
+                        ¿Elina puede agendar citas en mi calendario?
+                        <span
+                            class="bg-slate-50 w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-300 group-open:rotate-180 group-open:bg-emerald-50 text-emerald-500">
+                            <i data-lucide="chevron-down"></i>
+                        </span>
+                    </summary>
+                    <div class="text-slate-600 mt-4 leading-relaxed pl-1 text-lg">
+                        <p>¡Sí! Elina gestiona tu agenda por ti. Verifica tu disponibilidad en tiempo real, ofrece
+                            horarios a tus clientes y confirma las citas automáticamente. Además, envía recordatorios
+                            para reducir el ausentismo.</p>
+                    </div>
+                </details>
+
+                <!-- FAQ 3 -->
+                <details
+                    class="group bg-white rounded-3xl p-6 shadow-sm [&_summary::-webkit-details-marker]:hidden open:shadow-xl transition-all border border-slate-100/50">
+                    <summary
+                        class="flex items-center justify-between cursor-pointer font-bold text-xl text-slate-800 gap-4 list-none group-hover:text-emerald-600 transition-colors">
+                        ¿Qué pasa si la IA no sabe la respuesta?
+                        <span
+                            class="bg-slate-50 w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-300 group-open:rotate-180 group-open:bg-emerald-50 text-emerald-500">
+                            <i data-lucide="chevron-down"></i>
+                        </span>
+                    </summary>
+                    <div class="text-slate-600 mt-4 leading-relaxed pl-1 text-lg">
+                        <p>Elina está diseñada para ser honesta. Si no encuentra la respuesta en la información que le
+                            diste, lo dirá amablemente o derivará la conversación a un agente humano de tu equipo,
+                            asegurando siempre una atención de calidad.</p>
+                    </div>
+                </details>
+
+                <!-- FAQ 4 -->
+                <details
+                    class="group bg-white rounded-3xl p-6 shadow-sm [&_summary::-webkit-details-marker]:hidden open:shadow-xl transition-all border border-slate-100/50">
+                    <summary
+                        class="flex items-center justify-between cursor-pointer font-bold text-xl text-slate-800 gap-4 list-none group-hover:text-emerald-600 transition-colors">
+                        ¿Puedo conectar mi propio número de WhatsApp?
+                        <span
+                            class="bg-slate-50 w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-300 group-open:rotate-180 group-open:bg-emerald-50 text-emerald-500">
+                            <i data-lucide="chevron-down"></i>
+                        </span>
+                    </summary>
+                    <div class="text-slate-600 mt-4 leading-relaxed pl-1 text-lg">
+                        <p>Absolutamente. Puedes vincular tu número de WhatsApp Business actual mediante código QR en
+                            segundos. No perderás tus chats antiguos y podrás seguir usándolo en tu celular normalmente.
+                        </p>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="py-32 bg-emerald-500 relative overflow-hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.2),transparent_70%)]">
+        </div>
+        <div class="max-w-7xl mx-auto px-6 text-center relative z-10">
+            <h2 class="text-5xl lg:text-7xl font-black font-heading text-white mb-8 leading-tight">¿Listo para escalar
+                <br>tu negocio con IA?
+            </h2>
+            <p class="text-2xl text-emerald-50 mb-12 max-w-2xl mx-auto font-medium">Únete a más de 5,000 empresas que ya
+                están vendiendo en piloto automático.</p>
+            <div class="flex flex-col sm:flex-row gap-6 justify-center">
+                <a href="auth?tab=register"
+                    class="bg-white text-emerald-600 px-12 py-6 rounded-[2.5rem] font-black text-2xl shadow-2xl hover:scale-105 transition-all inline-block">Empezar
+                    Prueba de 7 Días</a>
+                <a href="https://wa.me/521"
+                    class="bg-emerald-600 text-white border-2 border-white/30 px-12 py-6 rounded-[2.5rem] font-bold text-2xl hover:bg-emerald-700 transition-all inline-block">Hablar
+                    con Ventas</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-white pt-24 pb-12">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid md:grid-cols-4 gap-16 pb-16 border-b border-slate-800">
+                <div class="col-span-2">
+                    <div class="flex items-center gap-3 mb-6">
+                        <img src="public/assets/lgo_web.png" class="w-10 h-10 object-contain" alt="Elina Logo">
+                        <span class="font-heading font-bold text-2xl tracking-tight">Elina IA</span>
+                    </div>
+                    <p class="text-slate-400 text-lg max-w-sm mb-6">
+                        Elevando el estándar de la atención al cliente con Inteligencia Artificial hecha en
+                        Latinoamérica.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-6 uppercase text-slate-500 text-xs tracking-widest">Navegación</h4>
+                    <ul class="space-y-4 text-slate-300 font-medium">
+                        <li><a href="#features" class="hover:text-emerald-400">Funciones</a></li>
+                        <li><a href="#pricing" class="hover:text-emerald-400">Precios</a></li>
+                        <li><a href="blog" class="hover:text-emerald-400">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-6 uppercase text-slate-500 text-xs tracking-widest">Legal</h4>
+                    <ul class="space-y-4 text-slate-300 font-medium">
+                        <li><a href="privacy" class="hover:text-emerald-400">Privacidad</a></li>
+                        <li><a href="terms" class="hover:text-emerald-400">Términos</a></li>
+                        <li><a href="data-usage" class="hover:text-emerald-400">Uso de Datos</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-8 text-center text-slate-500 text-sm">
+                © 2026 Elina Technologies S.A. de C.V.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // Reveal Animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Navbar Scroll
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('py-2', 'shadow-xl');
+                navbar.classList.remove('py-4');
+            } else {
+                navbar.classList.remove('py-2', 'shadow-xl');
+                navbar.classList.add('py-4');
+            }
+        });
+
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+
+                // Toggle icon between menu and x
+                const icon = mobileMenuBtn.querySelector('i');
+                if (mobileMenu.classList.contains('hidden')) {
+                    icon.setAttribute('data-lucide', 'menu');
+                } else {
+                    icon.setAttribute('data-lucide', 'x');
+                }
+                lucide.createIcons();
+            });
+
+            // Close menu when clicking a link
+            mobileMenu.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                    const icon = mobileMenuBtn.querySelector('i');
+                    icon.setAttribute('data-lucide', 'menu');
+                    lucide.createIcons();
+                });
+            });
+        }
+
+        // WhatsApp Widget Animation
+        window.addEventListener('load', () => {
+            const popup = document.getElementById('whatsapp-popup');
+            // Show after 1 second
+            setTimeout(() => {
+                popup.classList.remove('opacity-0', 'translate-x-4');
+                // Hide after 3 seconds (total 4s from load, or 3s after showing)
+                // "se oculte despues de 3 segundos despues" -> 3s after appearing
+                setTimeout(() => {
+                    popup.classList.add('opacity-0', 'translate-x-4');
+                }, 3000);
+            }, 1000);
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="./auth.js"></script>
+</body>
+
+</html>
