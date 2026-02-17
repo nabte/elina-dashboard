@@ -48,6 +48,14 @@ RewriteCond %{REQUEST_URI} !^/(assets|css|js|img|node_modules|dist|public|supaba
 RewriteCond %{REQUEST_URI} !\.(json|js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|html|map)$ [NC]
 RewriteRule ^([a-zA-Z0-9-]+)$ booking.html [L,QSA]
 
+# Evitar negociación de contenido (MultiViews) que puede causar conflictos con extensiones
+Options -MultiViews
+
+# 404 para archivos estáticos faltantes (evitar fallback a index.html)
+# Esto asegura que si falta chats.js, devuelva 404 en lugar del HTML de index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$ - [R=404,L]
+
 # Fallback general a index.html si no coincide con nada anterior
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
