@@ -215,7 +215,7 @@
             <div
                 class="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between shadow-sm z-30 flex-shrink-0">
                 <div class="flex items-center gap-3">
-                    <img src="public/assets/lgo_web.png" alt="Elina Logo" class="w-8 h-8 object-contain">
+                    <img src="assets/lgo_web.png" alt="Elina Logo" class="w-8 h-8 object-contain">
                     <span class="font-bold text-lg text-slate-900 tracking-tight font-heading">Elina <span
                             class="text-emerald-500">IA</span></span>
                 </div>
@@ -3813,92 +3813,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-
-    <!-- FIX INMEDIATO PARA QR - Sin depender de cache de app.js -->
-    <script>
-        // 💀 KILLER DE SERVICE WORKERS (Corrige error de carga de módulos)
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function (registrations) {
-                for (let registration of registrations) {
-                    console.log('💀 Eliminando Service Worker zombie:', registration);
-                    registration.unregister();
-                }
-            });
-        }
-        console.log('🔧 QR FIX INLINE CARGADO');
-        // Observar cambios en el DOM para corregir QRs con prefijo duplicado
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === 1) { // Element node
-                        // Buscar imgs en el nodo agregado
-                        const imgs = node.tagName === 'IMG' ? [node] : node.querySelectorAll?.('img') || [];
-                        imgs.forEach((img) => {
-                            if (img.src && img.src.includes('data:image/png;base64,data:image/png;base64,')) {
-                                console.log('🔧 Corrigiendo QR con prefijo duplicado');
-                                // Extraer solo la parte base64
-                                const parts = img.src.split(',');
-                                if (parts.length >= 3) {
-                                    const cleanBase64 = parts[2]; // Tomar la segunda parte base64
-                                    img.src = `data:image/png;base64,${cleanBase64}`;
-                                    console.log('✅ QR corregido');
-                                }
-                            }
-                        });
-                    }
-                });
-            });
-        });
-
-        // Observar todo el body
-        document.addEventListener('DOMContentLoaded', () => {
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
-            console.log('👀 Observer de QR activado');
-        });
-    </script>
-
-    <script>
-        // 🔧 HACK 1: Interceptar fetch ANTES de cargar app.js
-        const originalFetch = window.fetch;
-        window.fetch = async function (...args) {
-            const response = await originalFetch(...args);
-            if (args[0]?.includes?.('manage-whatsapp-instance')) {
-                const clone = response.clone();
-                clone.json().then(data => {
-                    console.log('📦 [HACK] Respuesta capturada:', data);
-
-                    // Si es pairing code, renderizar inmediatamente
-                    if (data.pairingCode) {
-                        setTimeout(() => {
-                            const container = document.getElementById('whatsapp-connection-container');
-                            if (container) {
-                                const formattedCode = data.pairingCode.length === 8
-                                    ? `${data.pairingCode.substring(0, 4)}-${data.pairingCode.substring(4)}`
-                                    : data.pairingCode;
-
-                                console.log('🎯 [HACK] Forzando pairing code:', formattedCode);
-                                container.innerHTML = `
-                                    <div class="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200">
-                                        <div class="text-6xl font-black text-purple-700 tracking-widest mb-4 font-mono">
-                                            ${formattedCode}
-                                        </div>
-                                        <p class="font-bold text-slate-800">Código de Emparejamiento</p>
-                                        <p class="text-sm text-slate-600 mt-2 text-center">
-                                            Ingresa este código en WhatsApp > Dispositivos Vinculados > Vincular con número de teléfono
-                                        </p>
-                                    </div>`;
-                            }
-                        }, 100);
-                    }
-                }).catch(() => { });
-            }
-            return response;
-        };
-        console.log('✅ [HACK] Fetch interceptor instalado');
-    </script>
 
     <script type="module" src="/app.js"></script>
 
