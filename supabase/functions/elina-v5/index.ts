@@ -26,7 +26,6 @@ import { processSmartPromotions } from './utils/smart-promotions.ts'
 import { processAudioMessage, isAudioMessage, extractAudioMessage } from './utils/audio-processor.ts'
 import { processImageMessage, isImageMessage, extractImageMessage } from './utils/image-processor.ts'
 import { processTextToSpeech, isTTSEnabled, getTTSVoice } from './utils/tts-processor.ts'
-import { isContactPausedForSpam, unpauseContact, checkAndPauseIfSpam } from './utils/anti-spam.ts'
 
 // console.log('🚀 ELINA V5 - Edge Function Started')
 
@@ -158,27 +157,6 @@ serve(async (req) => {
         // 3. ENSURE CONTACT EXISTS
         // ========================================================================
         const contact = await ensureContact(supabase, profile.id, remoteJid, pushName)
-
-        // ========================================================================
-        // 3.2 ANTI-SPAM CHECK
-        // ========================================================================
-        // Cuando el usuario responde, quitar el label de spam si lo tiene
-        await unpauseContact(supabase, contact.id)
-
-        // Verificar si el contacto está pausado por spam
-        const isPaused = await isContactPausedForSpam(supabase, contact.id)
-        if (isPaused) {
-            console.log(`⏸️ [ANTI_SPAM] Contact ${contact.id} is paused, sending reactivation message`)
-
-            await sendMessage(config, remoteJid,
-                '👋 ¡Hola! He notado que no has respondido a mis últimos mensajes.\n\n' +
-                '✅ Para reactivar nuestras conversaciones, simplemente responde con un "ok" o cualquier mensaje.\n\n' +
-                '_Esto ayuda a mantener el servicio activo y evitar envíos innecesarios._'
-            )
-
-            // El contacto fue despausado arriba, ahora puede continuar
-            console.log(`✅ [ANTI_SPAM] Contact ${contact.id} reactivated by user message`)
-        }
 
         // ========================================================================
         // 3.5 RATE LIMITING (Prevent abuse)
@@ -418,13 +396,6 @@ serve(async (req) => {
                     entities: {}
                 }
             )
-
-            // Check anti-spam después de auto-respuesta
-            try {
-                await checkAndPauseIfSpam(supabase, profile.id, contact.id)
-            } catch (spamError) {
-                console.error(`❌ [ANTI_SPAM] Error checking spam:`, spamError)
-            }
 
             return new Response(JSON.stringify({
                 success: true,
@@ -1177,19 +1148,6 @@ Reglas:
 
         } catch (qualityError) {
             console.error(`❌ [QUALITY] Error analyzing conversation quality:`, qualityError)
-            // No lanzar error - no queremos que falle la respuesta por esto
-        }
-
-        // ========================================================================
-        // 11.6 ANTI-SPAM CHECK (después de enviar respuesta)
-        // ========================================================================
-        try {
-            const shouldPause = await checkAndPauseIfSpam(supabase, profile.id, contact.id)
-            if (shouldPause) {
-                console.log(`⏸️ [ANTI_SPAM] Contact ${contact.id} paused due to ${3} consecutive messages without response`)
-            }
-        } catch (spamError) {
-            console.error(`❌ [ANTI_SPAM] Error checking spam:`, spamError)
             // No lanzar error - no queremos que falle la respuesta por esto
         }
 

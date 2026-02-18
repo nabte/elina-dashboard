@@ -370,6 +370,47 @@
             }
         });
 
+        // Listener para botón de prueba de recordatorios de tareas
+        document.getElementById('test-task-reminder')?.addEventListener('click', async () => {
+            const btn = document.getElementById('test-task-reminder');
+            if (!btn) return;
+
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Enviando...';
+
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    window.showToast?.('No estás autenticado', 'error');
+                    return;
+                }
+
+                // Llamar a la edge function directamente
+                const { error } = await supabase.functions.invoke('send-task-reminders', {
+                    body: { manual: true, userId: user.id }
+                });
+
+                if (error) {
+                    console.error('Error sending test reminder:', error);
+                    window.showToast?.('Error al enviar el recordatorio de prueba', 'error');
+                } else {
+                    window.showToast?.('✅ Recordatorio enviado a tu WhatsApp', 'success');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                window.showToast?.('Error al enviar el recordatorio', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                // Re-initialize lucide icons
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }
+        });
+
         // --- INICIO: Listeners para Voz de la IA (TTS) ---
         // Listener eliminado porque la voz siempre está activa
         /*

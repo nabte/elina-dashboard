@@ -3836,6 +3836,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 
+    <!-- Inicializar window.appModal ANTES de cargar módulos para que esté disponible -->
+    <script>
+        // Inicialización temprana de window.appModal
+        // El objeto completo se define en el script más adelante, pero esto asegura que existe
+        console.log('[Dashboard] Inicializando window.appModal...');
+        window.appModal = window.appModal || {
+            _initialized: false,
+            confirm: async function(message, title) {
+                // Si aún no está completamente inicializado, esperar un momento
+                if (!this._initialized) {
+                    console.warn('[appModal] Esperando inicialización completa...');
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    // Reintentar
+                    if (this._initialized) {
+                        return this.confirm(message, title);
+                    }
+                }
+                // Si después de esperar aún no está inicializado, usar confirm nativo
+                console.warn('[appModal] No inicializado, usando confirm nativo');
+                return confirm(message);
+            }
+        };
+    </script>
+
     <script type="module" src="/app.js?v=2.1.2"></script>
 
     <!-- Componente de Notificación Toast (Global) -->
@@ -3936,7 +3960,9 @@
     <!-- Script para sistema de modales -->
     <script>
         // Sistema de Modales Personalizados (Reemplazo de alert/prompt/confirm)
+        console.log('[Dashboard] Definiendo window.appModal completo...');
         window.appModal = {
+            _initialized: false, // Se marcará true al final
             // Confirmación (reemplaza confirm())
             confirm: function (message, title = 'Confirmar') {
                 return new Promise((resolve) => {
@@ -3945,6 +3971,20 @@
                     const messageEl = document.getElementById('app-confirm-message');
                     const okBtn = document.getElementById('app-confirm-ok');
                     const cancelBtn = document.getElementById('app-confirm-cancel');
+
+                    // Validar que todos los elementos existan
+                    if (!modal || !titleEl || !messageEl || !okBtn || !cancelBtn) {
+                        console.error('[appModal] Elementos del modal no encontrados:', {
+                            modal: !!modal,
+                            titleEl: !!titleEl,
+                            messageEl: !!messageEl,
+                            okBtn: !!okBtn,
+                            cancelBtn: !!cancelBtn
+                        });
+                        // Fallback a confirm nativo
+                        resolve(confirm(message));
+                        return;
+                    }
 
                     titleEl.textContent = title;
                     messageEl.textContent = message;
@@ -4089,6 +4129,10 @@
                 modal.classList.add('hidden');
             }
         };
+
+        // Marcar como inicializado
+        window.appModal._initialized = true;
+        console.log('[Dashboard] window.appModal completamente inicializado');
     </script>
 
     <!-- Modal para Crear Crítico con IA -->

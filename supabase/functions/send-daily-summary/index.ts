@@ -8,6 +8,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { canSendUserNotification } from '../_shared/user-notification-spam.ts'
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -91,6 +92,19 @@ serve(async (req) => {
                     // Solo enviar si la hora actual coincide con la configurada (±1 hora de margen)
                     if (Math.abs(currentHour - summaryHour) > 1) {
                         console.log(`⏭️ [DAILY_SUMMARY] Skipping user ${user.id} (scheduled for ${summaryTime}, current: ${currentTime})`)
+                        continue
+                    }
+
+                    // ANTI-SPAM CHECK: Verificar si podemos enviar
+                    const spamCheck = await canSendUserNotification(supabase, user.id)
+                    if (!spamCheck.canSend) {
+                        console.log(`⏸️ [DAILY_SUMMARY] Skipping user ${user.id}: ${spamCheck.reason}`)
+                        results.push({
+                            userId: user.id,
+                            userName: user.full_name,
+                            skipped: true,
+                            reason: spamCheck.reason
+                        })
                         continue
                     }
                 }
