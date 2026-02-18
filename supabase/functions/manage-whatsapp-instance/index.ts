@@ -102,10 +102,29 @@ serve(async (req) => {
                         .from('profiles')
                         .update({
                             whatsapp_connected: true,
-                            evolution_api_key: inst.token || null,
+                            evolution_api_key: inst.token || user_id, // Usar token de instancia o user_id como fallback
                             updated_at: new Date().toISOString()
                         })
                         .eq('id', user_id);
+                } else if (inst) {
+                    // ✅ Incluso si no está conectado, guardar API key si falta
+                    const { data: currentProfile } = await supabase
+                        .from('profiles')
+                        .select('evolution_api_key')
+                        .eq('id', user_id)
+                        .single();
+
+                    if (!currentProfile?.evolution_api_key) {
+                        console.log(`[STATUS] Instancia existe pero falta evolution_api_key, guardando ahora`);
+                        await supabase
+                            .from('profiles')
+                            .update({
+                                evolution_api_key: inst.token || user_id,
+                                evolution_api_url: EVOLUTION_API_URL,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', user_id);
+                    }
                 }
 
                 return new Response(JSON.stringify({
@@ -152,6 +171,27 @@ serve(async (req) => {
                 // Status 200 - verificar si la instancia realmente existe
                 const currentInst = await checkRes.json();
                 instanceExists = currentInst && (!Array.isArray(currentInst) || currentInst.length > 0);
+
+                // ✅ Si la instancia existe pero no hay API key en DB, guardarla ahora
+                if (instanceExists) {
+                    const { data: currentProfile } = await supabase
+                        .from('profiles')
+                        .select('evolution_api_key')
+                        .eq('id', user_id)
+                        .single();
+
+                    if (!currentProfile?.evolution_api_key) {
+                        console.log(`[CHECK] Instancia existe pero falta evolution_api_key, guardando ahora`);
+                        await supabase
+                            .from('profiles')
+                            .update({
+                                evolution_api_key: user_id,
+                                evolution_api_url: EVOLUTION_API_URL,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', user_id);
+                    }
+                }
             }
 
             // B. Crear instancia si no existe en Evolution (pero puede existir en DB)
@@ -190,6 +230,18 @@ serve(async (req) => {
                     console.error(`Response:`, JSON.stringify(createData, null, 2));
                     throw new Error(`Error al crear instancia: ${JSON.stringify(createData)}`);
                 }
+
+                // ✅ GUARDAR API KEY INMEDIATAMENTE después de crear la instancia
+                console.log(`[CREATE] Guardando evolution_api_key en la base de datos: ${user_id}`);
+                await supabase
+                    .from('profiles')
+                    .update({
+                        evolution_api_key: user_id, // El token ES el user_id (línea 162)
+                        evolution_api_url: EVOLUTION_API_URL,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', user_id);
+                console.log(`[CREATE] evolution_api_key guardada exitosamente`);
             }
 
             // C. Configurar Webhook

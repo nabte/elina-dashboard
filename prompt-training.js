@@ -1568,6 +1568,43 @@ window.loadFaqsList = async function () {
 
         if (error) throw error;
 
+        // INJECT SELECTION HEADER (Ideally this should be in the static HTML, but we inject it here)
+        let selectionHeader = document.getElementById('faq-selection-header');
+        if (!selectionHeader) {
+            selectionHeader = document.createElement('div');
+            selectionHeader.id = 'faq-selection-header';
+            selectionHeader.className = 'hidden flex justify-between items-center bg-slate-900 text-white p-3 rounded-xl mb-3 animate-in slide-in-from-top-2';
+            selectionHeader.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="font-bold text-sm pl-2"><span id="faq-selected-count">0</span> seleccionadas</span>
+                </div>
+                <button id="faq-batch-delete-btn" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center gap-2">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Eliminar
+                </button>
+            `;
+            // Insert before container
+            container.parentNode.insertBefore(selectionHeader, container);
+
+            // Attach listener
+            selectionHeader.querySelector('#faq-batch-delete-btn').addEventListener('click', () => {
+                const selected = Array.from(document.querySelectorAll('.faq-checkbox:checked')).map(cb => cb.value);
+                window.deleteFaqBatch(selected);
+            });
+        }
+
+        // Reset selection state
+        selectionHeader.classList.add('hidden');
+        const updateSelectionUI = () => {
+            const checkedBoxes = document.querySelectorAll('.faq-checkbox:checked');
+            const count = checkedBoxes.length;
+            document.getElementById('faq-selected-count').textContent = count;
+            if (count > 0) {
+                selectionHeader.classList.remove('hidden');
+            } else {
+                selectionHeader.classList.add('hidden');
+            }
+        };
+
         if (!data || data.length === 0) {
             container.innerHTML = `
                 <div class="text-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-xl">
@@ -1584,9 +1621,12 @@ window.loadFaqsList = async function () {
                 const answer = rMatch ? rMatch[1].trim() : text;
 
                 return `
-                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all group relative">
-                    <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                        <button onclick="window.deleteFaq('${file.id}')" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md" title="Eliminar">
+                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all group relative pl-10">
+                    <div class="absolute left-3 top-4 flex items-center">
+                        <input type="checkbox" value="${file.id}" class="faq-checkbox w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer">
+                    </div>
+                    <div class="absolute top-2 right-2 flex gap-1">
+                        <button onclick="window.deleteFaq('${file.id}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -1599,6 +1639,11 @@ window.loadFaqsList = async function () {
                 </div>
                 `;
             }).join('');
+
+            // Add checkbox listeners
+            container.querySelectorAll('.faq-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateSelectionUI);
+            });
         }
         if (window.lucide) lucide.createIcons();
 
@@ -1607,6 +1652,27 @@ window.loadFaqsList = async function () {
         container.innerHTML = `<p class="text-red-500 text-xs text-center">Error al cargar FAQs</p>`;
     }
 }
+
+// Update single delete to use custom modal
+window.deleteFaq = async function (fileId) {
+    const confirmed = await window.openCustomConfirmModal('¿Estás seguro de eliminar esta pregunta frecuente?');
+    if (!confirmed) return;
+
+    try {
+        const { error } = await window.auth.sb
+            .from('knowledge_files')
+            .delete()
+            .eq('id', fileId);
+
+        if (error) throw error;
+        await window.loadFaqsList();
+
+    } catch (err) {
+        console.error('Error deleting FAQ:', err);
+        window.showToast?.('Error al eliminar', 'error');
+    }
+}
+
 
 window.generateFaqs = async function () {
     const textInput = document.getElementById('raw-faq-text');
@@ -1665,23 +1731,7 @@ window.generateFaqs = async function () {
     }
 }
 
-window.deleteFaq = async function (fileId) {
-    if (!confirm('¿Estás seguro de eliminar esta pregunta frecuente?')) return;
 
-    try {
-        const { error } = await window.auth.sb
-            .from('knowledge_files')
-            .delete()
-            .eq('id', fileId);
-
-        if (error) throw error;
-        await window.loadFaqsList();
-
-    } catch (err) {
-        console.error('Error deleting FAQ:', err);
-        alert('Error al eliminar');
-    }
-}
 
 // Modal Logic
 function injectFaqModal() {
@@ -1809,3 +1859,90 @@ window.saveManualFaq = async function () {
 
 
 
+
+// ==========================================
+// CUSTOM MODAL & BATCH DELETE LOGIC
+// ==========================================
+
+window.openCustomConfirmModal = function (message) {
+    return new Promise((resolve) => {
+        // Remove existing if any
+        const existing = document.getElementById('custom-confirm-modal');
+        if (existing) existing.remove();
+
+        const modalHtml = `
+        <div id="custom-confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform duration-300">
+                <div class="p-6 text-center">
+                    <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="alert-triangle" class="w-7 h-7 text-red-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">¿Estás seguro?</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">${message}</p>
+                </div>
+                <div class="p-4 bg-slate-50 flex gap-3 border-t border-slate-100">
+                    <button id="custom-confirm-cancel" class="flex-1 py-2.5 text-slate-700 font-bold hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 rounded-xl transition-all">
+                        Cancelar
+                    </button>
+                    <button id="custom-confirm-ok" class="flex-1 py-2.5 bg-red-600 text-white font-bold hover:bg-red-700 shadow-lg shadow-red-200 rounded-xl transition-all">
+                        Sí, eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        if (window.lucide) lucide.createIcons();
+
+        const modal = document.getElementById('custom-confirm-modal');
+        const container = modal.querySelector('div');
+
+        // Animate in
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            container.classList.remove('scale-95');
+            container.classList.add('scale-100');
+        });
+
+        const close = (result) => {
+            modal.classList.add('opacity-0');
+            container.classList.remove('scale-100');
+            container.classList.add('scale-95');
+            setTimeout(() => {
+                modal.remove();
+                resolve(result);
+            }, 300);
+        };
+
+        document.getElementById('custom-confirm-cancel').onclick = () => close(false);
+        document.getElementById('custom-confirm-ok').onclick = () => close(true);
+    });
+};
+
+window.deleteFaqBatch = async function (ids) {
+    if (!ids || ids.length === 0) return;
+
+    const confirmed = await window.openCustomConfirmModal(`Se eliminarán permanentemente ${ids.length} preguntas frecuentes.`);
+    if (!confirmed) return;
+
+    try {
+        const { error } = await window.auth.sb
+            .from('knowledge_files')
+            .delete()
+            .in('id', ids);
+
+        if (error) throw error;
+
+        window.showToast?.(`${ids.length} FAQs eliminadas`, 'success');
+        await window.loadFaqsList(); // Reload list
+
+        // Hide selection header if it exists
+        const header = document.getElementById('faq-selection-header');
+        if (header) header.classList.add('hidden');
+
+    } catch (err) {
+        console.error('Error deleting batch:', err);
+        window.showToast?.('Error al eliminar: ' + err.message, 'error');
+    }
+};

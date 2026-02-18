@@ -57,7 +57,7 @@ serve(async (req) => {
 
       console.log(`Saving manual ${type} for user ${user.id}...`)
 
-      const extracted_text = `Title: ${question}\nContent: ${answer}`
+      const extracted_text = `P: ${question}\nR: ${answer}`
       const timestamp = Date.now()
       const safeQ = question.substring(0, 20).replace(/[^a-z0-9]/gi, '_')
 
@@ -116,6 +116,79 @@ serve(async (req) => {
       })
     }
 
+    // HANDLE BATCH CHUNKS (RAG Optimization)
+    if (reqData.type === 'batch_chunks') {
+      const { chunks, docTitle } = reqData;
+
+      if (!chunks || !Array.isArray(chunks) || chunks.length === 0) {
+        return new Response(JSON.stringify({ error: 'No chunks provided' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        })
+      }
+
+      console.log(`Processing batch of ${chunks.length} chunks for doc: ${docTitle}...`);
+
+      // 1. Bulk Insert into knowledge_files
+      const timestamp = Date.now();
+      const filesToInsert = chunks.map((chunk, index) => ({
+        user_id: user.id,
+        filename: `${docTitle}_part${index + 1}_${timestamp}.txt`,
+        file_path: `virtual://knowledge/${docTitle}/${timestamp}/${index + 1}`,
+        mime_type: 'text/plain',
+        file_size: chunk.length,
+        extracted_text: chunk,
+        status: 'ready'
+      }));
+
+      const { data: insertedFiles, error: insertError } = await supabaseClient
+        .from('knowledge_files')
+        .insert(filesToInsert)
+        .select();
+
+      if (insertError) throw insertError;
+
+      // 2. Generate Embeddings (Parallel with concurrency limit)
+      // We process them in the background ideally, but here we wait to ensure consistency
+      // To avoid timeout, we can process a few and let the rest be handled by a trigger if we had one,
+      // but simplistic approach for now is Promise.all with simple throttling if needed.
+      // Given the chunks are usually small (10-20), we can try all at once or in batches of 5.
+
+      const generateEmbeddingForFile = async (file: any) => {
+        try {
+          const embeddingResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-embedding-with-cache`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            },
+            body: JSON.stringify({ text: file.extracted_text }),
+          });
+
+          if (embeddingResponse.ok) {
+            const { embedding } = await embeddingResponse.json();
+            await supabaseClient.from('knowledge_embeddings').insert({
+              file_id: file.id,
+              user_id: user.id,
+              content: file.extracted_text,
+              embedding: embedding,
+              metadata: { type: 'chunk', source: docTitle }
+            });
+          }
+        } catch (err) {
+          console.error(`Failed embedding for file ${file.id}`, err);
+        }
+      };
+
+      // Execute all embeddings
+      await Promise.all(insertedFiles.map(f => generateEmbeddingForFile(f)));
+
+      return new Response(JSON.stringify({ success: true, count: insertedFiles.length }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
     // HANDLE AUTO GENERATION from rawText
     if (!rawText || rawText.length < 50) {
       return new Response(JSON.stringify({ error: 'Text too short (min 50 chars)' }), {
@@ -130,11 +203,15 @@ serve(async (req) => {
     if (!OPENROUTER_API_KEY) throw new Error('OPENROUTER_API_KEY missing')
 
     const prompt = `
-Extract 10-25 relevant question/answer pairs from the text below. 
-Each pair must be concise.
-Format as strict JSON array: [{"question": "...", "answer": "..."}]
+Analyze the text below and extract 10-25 question/answer pairs.
 
-Text:
+CRITICAL INSTRUCTIONS:
+1. The output MUST be in SPANISH (Español).
+2. If the input text is in English or another language, TRANSLATE the extracted FAQs to Spanish.
+3. Format specifically as a JSON array: [{"question": "...", "answer": "..."}]
+4. Keep answers concise and helpful.
+
+Text to analyze:
 ${rawText}
 `
 
@@ -147,7 +224,13 @@ ${rawText}
       },
       body: JSON.stringify({
         model: 'google/gemini-2.0-flash-001',
-        messages: [{ role: 'user', content: prompt }],
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an AI assistant that extracts FAQs. You MUST ALWAYS output the questions and answers in SPANISH (Español), even if the input is in English.'
+          },
+          { role: 'user', content: prompt }
+        ],
         temperature: 0.3
       })
     })

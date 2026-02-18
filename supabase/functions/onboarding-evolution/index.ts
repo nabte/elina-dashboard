@@ -106,31 +106,52 @@ serve(async (req) => {
         const user = users.find(u => u.email === email)
         if (!user) throw new Error(`Usuario no encontrado: ${email}`);
 
-        // 4. Generar Slug Personalizado
-        let baseSlug = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (!baseSlug || baseSlug.length < 3) {
-            baseSlug = instanceName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        // 4. Verificar si el usuario ya tiene un slug
+        const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('slug')
+            .eq('id', user.id)
+            .single();
+
+        let userSlug = existingProfile?.slug;
+
+        // Solo generar slug si no existe
+        if (!userSlug) {
+            let baseSlug = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (!baseSlug || baseSlug.length < 3) {
+                baseSlug = instanceName.toLowerCase().replace(/[^a-z0-9]/g, '');
+            }
+            userSlug = baseSlug;
+            console.log(`[ONBOARDING] 🐌 Slug generado: ${userSlug}`);
+        } else {
+            console.log(`[ONBOARDING] 🐌 Slug existente: ${userSlug}`);
         }
-        const userSlug = baseSlug;
-        console.log(`[ONBOARDING] 🐌 Slug generado: ${userSlug}`);
 
         // 5. Guardar datos en Supabase (SIN crear instancia todavía)
         console.log(`[SUPABASE] 📝 Guardando perfil en base de datos...`);
+
+        // Preparar datos de actualización (solo incluir slug si no existía antes)
+        const updateData: any = {
+            evolution_instance_name: instanceName,
+            full_name: nombre,
+            contact_phone: cleanNumber,
+            email: email,
+            whatsapp_connected: false, // Se conectará cuando el usuario escanee QR o ingrese código
+            bulk_sends_used: 0,
+            video_generations_used: 0,
+            image_generations_used: 0,
+            updated_at: new Date().toISOString()
+        };
+
+        // Solo incluir slug si no existía antes (evitar error de duplicado)
+        if (!existingProfile?.slug) {
+            updateData.slug = userSlug;
+        }
+
         const { error: dbError } = await supabase
             .from('profiles')
-            .update({
-                evolution_instance_name: instanceName,
-                full_name: nombre,
-                contact_phone: cleanNumber,
-                email: email,
-                slug: userSlug,
-                whatsapp_connected: false, // Se conectará cuando el usuario escanee QR o ingrese código
-                bulk_sends_used: 0,
-                video_generations_used: 0,
-                image_generations_used: 0,
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', user.id)
+            .update(updateData)
+            .eq('id', user.id);
 
         if (dbError) throw dbError;
         console.log(`[SUPABASE] ✅ Perfil guardado. Usuario debe conectar WhatsApp desde el dashboard.`);
@@ -151,7 +172,7 @@ serve(async (req) => {
             status: 200,
         })
 
-    } catch (error) {
+    } catch (error: any) {
         console.error(`[FATAL ERROR] ❌ ${error.message}`);
         return new Response(JSON.stringify({ error: error.message }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },

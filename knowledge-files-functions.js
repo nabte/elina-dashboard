@@ -841,24 +841,27 @@ async function saveNormalizedChunks(markdownText) {
         })
     });
 
-    // B. SAVE CHUNKS (Hidden for RAG)
-    console.log(`[RAG] Saving ${chunks.length} hidden chunks...`);
-    for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
-        await fetch(`${sbUrl}/functions/v1/generate-faqs`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session?.access_token || window.auth.sb.supabaseKey}`
-            },
-            body: JSON.stringify({
-                manual: true,
-                type: 'chunk',
-                question: `${docTitle} (Sección ${i + 1}): ${chunk.title}`,
-                answer: chunk.content
-            })
-        });
-    }
+    // B. SAVE CHUNKS (Hidden for RAG) - OPTIMIZED BATCH
+    console.log(`[RAG] Saving ${chunks.length} hidden chunks via Batch...`);
+
+    // Format chunks as text blocks
+    const formattedChunks = chunks.map((chunk, i) => {
+        return `Title: ${docTitle} (Sección ${i + 1}): ${chunk.title}\nContent: ${chunk.content}`;
+    });
+
+    await fetch(`${sbUrl}/functions/v1/generate-faqs`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token || window.auth.sb.supabaseKey}`
+        },
+        body: JSON.stringify({
+            manual: true,
+            type: 'batch_chunks',
+            docTitle: docTitle,
+            chunks: formattedChunks
+        })
+    });
 }
 
 // Expose functions to window

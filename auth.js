@@ -460,3 +460,93 @@ window.showToast = (message, type = 'success', duration = 5000) => {
   toast.classList.remove('translate-x-[120%]'); // Asegurarse de que no esté oculto por la animación
   toastTimeout = setTimeout(() => toast.classList.add('translate-x-[120%]'), duration); // Ocultar después de la duración
 };
+
+// ==========================================
+// IMPERSONATION TIMEOUT & AUDIT
+// ==========================================
+
+/**
+ * Finaliza la impersonación actual y registra en auditoría
+ */
+async function endImpersonation() {
+  try {
+    const impersonatedInfo = JSON.parse(localStorage.getItem('impersonated_user_info') || 'null');
+    const logId = impersonatedInfo?.logId;
+
+    // Llamar a edge function para registrar ended_at
+    if (logId && window.auth?.invokeFunction) {
+      try {
+        await window.auth.invokeFunction('end-impersonation', { body: { logId } });
+        console.log('[Impersonation] Log finalizado:', logId);
+      } catch (err) {
+        console.warn('[Impersonation] Error al finalizar log:', err);
+      }
+    }
+
+    // Restaurar sesión de superadmin
+    const superadminTokens = JSON.parse(localStorage.getItem('superadmin_session_tokens') || 'null');
+    if (superadminTokens?.access_token && superadminTokens?.refresh_token) {
+      await window.auth.sb.auth.setSession({
+        access_token: superadminTokens.access_token,
+        refresh_token: superadminTokens.refresh_token
+      });
+    }
+
+    // Limpiar localStorage
+    localStorage.removeItem('impersonated_user_info');
+    localStorage.removeItem('impersonation_timeout_id');
+
+    // Redirigir a superadmin
+    window.location.href = '/superadmin.html';
+  } catch (error) {
+    console.error('[Impersonation] Error al terminar impersonación:', error);
+    // Forzar limpieza en caso de error
+    localStorage.removeItem('impersonated_user_info');
+    localStorage.removeItem('superadmin_session_tokens');
+    localStorage.removeItem('impersonation_timeout_id');
+    window.location.href = '/';
+  }
+}
+
+/**
+ * Verifica el timeout de impersonación y lo termina automáticamente si expiró
+ */
+function checkImpersonationTimeout() {
+  const impersonatedInfo = JSON.parse(localStorage.getItem('impersonated_user_info') || 'null');
+
+  if (!impersonatedInfo || !impersonatedInfo.startedAt) {
+    return; // No hay impersonación activa
+  }
+
+  const startedAt = new Date(impersonatedInfo.startedAt);
+  const now = new Date();
+  const elapsedMinutes = (now - startedAt) / (1000 * 60);
+  const timeoutMinutes = impersonatedInfo.timeoutMinutes || 30;
+
+  if (elapsedMinutes >= timeoutMinutes) {
+    console.log('[Impersonation] Timeout alcanzado, finalizando impersonación...');
+    window.showToast?.('Sesión de impersonación expirada. Regresando a superadmin...', 'warning');
+    setTimeout(() => endImpersonation(), 2000);
+    return true; // Timeout alcanzado
+  }
+
+  // Calcular tiempo restante y mostrar warning si quedan menos de 5 minutos
+  const remainingMinutes = timeoutMinutes - elapsedMinutes;
+  if (remainingMinutes <= 5 && remainingMinutes > 4.5) {
+    window.showToast?.(`⏰ La sesión de impersonación expirará en ${Math.ceil(remainingMinutes)} minutos`, 'warning', 5000);
+  }
+
+  return false; // Aún válido
+}
+
+// Exponer función globalmente para poder llamarla desde el banner
+window.endImpersonation = endImpersonation;
+
+// Verificar timeout cada minuto si hay impersonación activa
+if (JSON.parse(localStorage.getItem('impersonated_user_info') || 'null')) {
+  // Verificar inmediatamente al cargar
+  checkImpersonationTimeout();
+
+  // Verificar cada minuto
+  setInterval(checkImpersonationTimeout, 60000);
+}

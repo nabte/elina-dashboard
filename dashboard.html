@@ -188,6 +188,11 @@
                         data-lucide="shield" class="w-4 h-4 flex-shrink-0"></i><span class="sidebar-text">Super
                         Admin</span></a>
 
+                <!-- Enlace Quality Dashboard (Solo para Super Admin) -->
+                <a href="/quality-dashboard.html" id="quality-dashboard-link"
+                    class="hidden nav-link text-sm flex items-center gap-3 px-4 py-2 rounded-md hover:bg-slate-700 transition-colors"><i
+                        data-lucide="chart-line" class="w-4 h-4 flex-shrink-0"></i><span class="sidebar-text">Análisis de Calidad</span></a>
+
                 <!-- Enlace Panel de Afiliados (Oculto por defecto) -->
                 <a href="#" id="affiliate-link"
                     class="hidden nav-link text-sm flex items-center gap-3 px-4 py-2 rounded-md text-amber-400 hover:bg-slate-700 transition-colors"
@@ -2704,6 +2709,23 @@
                                         class="w-full pl-11 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all py-3 text-sm"
                                         placeholder="Ej: 60">
                                 </div>
+
+                                <!-- Checkbox para habilitar reservas públicas -->
+                                <div class="mt-4 pt-4 border-t border-slate-100">
+                                    <label class="flex items-center gap-3 cursor-pointer select-none group">
+                                        <input type="checkbox" id="product-is-bookable" checked
+                                            class="w-4 h-4 text-blue-600 rounded">
+                                        <div class="flex-1">
+                                            <span class="text-sm font-bold text-slate-600 group-hover:text-blue-600 transition-colors">
+                                                Disponible para Reservas Públicas
+                                            </span>
+                                            <p class="text-xs text-slate-400 mt-0.5">
+                                                Permitir que clientes puedan agendar este servicio desde el sitio web
+                                            </p>
+                                        </div>
+                                        <i data-lucide="calendar-check" class="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors"></i>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -3814,7 +3836,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 
-    <script type="module" src="/app.js"></script>
+    <script type="module" src="/app.js?v=2.1.2"></script>
 
     <!-- Componente de Notificación Toast (Global) -->
     <div id="toast-notification"
@@ -4910,7 +4932,7 @@
         </script>
 
         <!-- Main Application Module - Entry Point -->
-        <script type="module" src="./app.js"></script>
+        <script type="module" src="./app.js?v=2.1.2"></script>
 </body>
 
 </html>

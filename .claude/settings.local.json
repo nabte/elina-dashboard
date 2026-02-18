@@ -29,7 +29,9 @@
       "Bash(findstr:*)",
       "Bash(supabase functions deploy:*)",
       "Bash(where:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(supabase functions serve:*)",
+      "Bash(npx supabase db dump:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

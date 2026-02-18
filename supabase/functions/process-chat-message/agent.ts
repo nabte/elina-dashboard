@@ -505,6 +505,10 @@ ${config.ragContext}
 ${config.placeholderInstructions}
 
 ${config.appointmentRules}
+
+**INSTRUCCIONES CRÍTICAS DE IDIOMA:**
+- Tu salida debe ser SIEMPRE en ESPAÑOL (Latinoamérica), sin excepciones.
+- Si el usuario escribe en otro idioma, responde en ESPAÑOL.
 `.trim()
 }
 

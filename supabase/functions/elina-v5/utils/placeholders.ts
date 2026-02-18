@@ -83,7 +83,7 @@ export async function processPlaceholders(
         }
     })
 
-    // 4. Limpiar Placeholders "Sucios" (IA hallucination: [105X:7305])
+    // 4. Limpiar Placeholders "Sucios" (IA hallucination: [105X:7305]) y PRODUCT_CARD
     const messRegex = /\[([^\]]+):(\d+)\]/g
     finalText = finalText.replace(messRegex, (fullMatch, content, idStr) => {
         const product = productMap[idStr]
@@ -92,6 +92,11 @@ export async function processPlaceholders(
         // CRITICAL FIX: Resolve [PRODUCT_MEDIA:ID] that might have been injected by CARD
         if (content === 'PRODUCT_MEDIA') {
             return product.mediaUrl || ''
+        }
+
+        // CRITICAL FIX: Remove [PRODUCT_CARD:ID] placeholders (not used, should be removed)
+        if (content === 'PRODUCT_CARD') {
+            return '' // Remove completely as products are already formatted by tools
         }
 
         if (content.startsWith('PRODUCT_') || content.startsWith('QUOTE_')) return fullMatch

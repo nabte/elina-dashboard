@@ -26,6 +26,7 @@ import { processSmartPromotions } from './utils/smart-promotions.ts'
 import { processAudioMessage, isAudioMessage, extractAudioMessage } from './utils/audio-processor.ts'
 import { processImageMessage, isImageMessage, extractImageMessage } from './utils/image-processor.ts'
 import { processTextToSpeech, isTTSEnabled, getTTSVoice } from './utils/tts-processor.ts'
+import { isContactPausedForSpam, unpauseContact, checkAndPauseIfSpam } from './utils/anti-spam.ts'
 
 // console.log('🚀 ELINA V5 - Edge Function Started')
 
@@ -159,6 +160,56 @@ serve(async (req) => {
         const contact = await ensureContact(supabase, profile.id, remoteJid, pushName)
 
         // ========================================================================
+        // 3.2 ANTI-SPAM CHECK
+        // ========================================================================
+        // Cuando el usuario responde, quitar el label de spam si lo tiene
+        await unpauseContact(supabase, contact.id)
+
+        // Verificar si el contacto está pausado por spam
+        const isPaused = await isContactPausedForSpam(supabase, contact.id)
+        if (isPaused) {
+            console.log(`⏸️ [ANTI_SPAM] Contact ${contact.id} is paused, sending reactivation message`)
+
+            await sendMessage(config, remoteJid,
+                '👋 ¡Hola! He notado que no has respondido a mis últimos mensajes.\n\n' +
+                '✅ Para reactivar nuestras conversaciones, simplemente responde con un "ok" o cualquier mensaje.\n\n' +
+                '_Esto ayuda a mantener el servicio activo y evitar envíos innecesarios._'
+            )
+
+            // El contacto fue despausado arriba, ahora puede continuar
+            console.log(`✅ [ANTI_SPAM] Contact ${contact.id} reactivated by user message`)
+        }
+
+        // ========================================================================
+        // 3.5 RATE LIMITING (Prevent abuse)
+        // ========================================================================
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+        const { count: messageCount } = await supabase
+            .from('chat_history')
+            .select('id', { count: 'exact', head: true })
+            .eq('contact_id', contact.id)
+            .gte('created_at', oneHourAgo)
+
+        const MAX_MESSAGES_PER_HOUR = 40
+
+        if ((messageCount || 0) >= MAX_MESSAGES_PER_HOUR) {
+            console.warn(`⚠️ [RATE_LIMIT] Contact ${contact.id} exceeded ${MAX_MESSAGES_PER_HOUR} messages/hour`)
+
+            await sendMessage(config, remoteJid,
+                '⏸️ Has enviado muchos mensajes en poco tiempo. Por favor espera un momento.\n\nSi es urgente, puedes llamarnos directamente.'
+            )
+
+            return new Response(JSON.stringify({
+                success: true,
+                throttled: true,
+                message_count: messageCount
+            }), {
+                headers: corsHeaders,
+                status: 200
+            })
+        }
+
+        // ========================================================================
         // 4. CHECK FILTERS
         // ========================================================================
         const filterResult = await shouldIgnoreMessage(supabase, config, contact.id)
@@ -249,6 +300,51 @@ serve(async (req) => {
         // console.log(`\n💬 [MESSAGE] Text: "${messageText.substring(0, 100)}${messageText.length > 100 ? '...' : ''}"`)
 
         // ========================================================================
+        // 5.3 CRITICAL SITUATION DETECTION (BEFORE BUFFERING)
+        // ========================================================================
+        // Detectar casos críticos lo más rápido posible
+        const { detectCriticalSituation, handleCriticalSituation } = await import('./core/critical-detection.ts')
+
+        // Construir contexto conversacional ligero (últimos 3 mensajes)
+        const { data: recentMsgs } = await supabase
+            .from('chat_history')
+            .select('message_type, content')
+            .eq('user_id', profile.id)
+            .eq('contact_id', contact.id)
+            .order('created_at', { ascending: false })
+            .limit(3)
+
+        const conversationContext = (recentMsgs || [])
+            .reverse()
+            .map((msg: any) => `${msg.message_type}: ${msg.content}`)
+            .join('\n')
+
+        const criticalResult = await detectCriticalSituation(
+            supabase,
+            profile.id,
+            messageText,
+            conversationContext
+        )
+
+        if (criticalResult.isCritical) {
+            console.log(`🚨 [CRITICAL] Critical situation detected: ${criticalResult.detectionType}`)
+
+            // Manejar situación crítica (aplicar etiqueta + notificar admin)
+            await handleCriticalSituation(supabase, config, contact, criticalResult)
+
+            // NO procesar el mensaje - un humano debe responder
+            return new Response(JSON.stringify({
+                success: true,
+                critical: true,
+                detection_type: criticalResult.detectionType,
+                reason: criticalResult.reason
+            }), {
+                headers: corsHeaders,
+                status: 200
+            })
+        }
+
+        // ========================================================================
         // 5.5 MESSAGE BUFFERING (Group rapid consecutive messages)
         // ========================================================================
         if (!isSimulation) {
@@ -322,6 +418,13 @@ serve(async (req) => {
                     entities: {}
                 }
             )
+
+            // Check anti-spam después de auto-respuesta
+            try {
+                await checkAndPauseIfSpam(supabase, profile.id, contact.id)
+            } catch (spamError) {
+                console.error(`❌ [ANTI_SPAM] Error checking spam:`, spamError)
+            }
 
             return new Response(JSON.stringify({
                 success: true,
@@ -442,15 +545,34 @@ serve(async (req) => {
         // console.log(`   - User preferences: ${context.userPreferences?.length || 0}`)
 
         // ========================================================================
-        // 7.5 RAG: RETRIEVE SEMANTIC CONTEXT
+        // 7.5 RAG: RETRIEVE SEMANTIC CONTEXT WITH CONVERSATIONAL ENRICHMENT
         // ========================================================================
         // console.log(`\n🧠 [RAG] Retrieving semantic context...`)
+
+        // 🎯 QUERY EXPANSION: Enrich search with recent conversational context
+        // This helps RAG find relevant information when user uses references like "eso", "ese", "pásame"
+        let enrichedQuery = messageText + (mediaContext ? ' ' + mediaContext : '')
+
+        if (context.recentMessages.length > 0) {
+            // Take last 3 messages (excluding current) and limit to 100 chars each
+            const recentContext = context.recentMessages
+                .slice(-3)
+                .map(m => m.content.substring(0, 100))
+                .join(' | ')
+
+            // Ponderar: mensaje actual tiene más peso que contexto
+            // Formato: "MENSAJE_ACTUAL [Contexto: conversación reciente]"
+            if (recentContext.trim().length > 0) {
+                enrichedQuery = `${messageText}\n\n[Contexto reciente: ${recentContext}]`
+                console.log(`🔍 [RAG] Query enriched with ${context.recentMessages.slice(-3).length} recent messages`)
+            }
+        }
 
         const ragContext = await retrieveContext(
             supabase,
             profile.id,
             contact.id,
-            messageText + (mediaContext ? ' ' + mediaContext : '')
+            enrichedQuery
         )
 
         const ragContextText = formatContextForPrompt(ragContext)
@@ -515,7 +637,8 @@ serve(async (req) => {
                 config,
                 contact.id,
                 agentResponse.toolCalls,
-                context.conversationState
+                context.conversationState,
+                messageText // ← Pasar mensaje original para detección inteligente
             )
 
             // Store for formatting later
@@ -843,6 +966,40 @@ Reglas:
         }
 
         // ========================================================================
+        // 10.8 VALIDATE RESPONSE (Anti-Hallucination)
+        // ========================================================================
+        const { validateResponse } = await import('./utils/response-validator.ts')
+
+        const responseValidation = await validateResponse(
+            supabase,
+            profile.id,
+            finalText,
+            allToolResults
+        )
+
+        if (!responseValidation.valid) {
+            console.error(`⚠️ [VALIDATION] Response has ${responseValidation.issues.length} issue(s):`, responseValidation.issues)
+
+            // Use fallback response
+            finalText = responseValidation.fallbackMessage || finalText
+
+            // Log hallucination for analysis (non-blocking)
+            supabase.from('hallucination_logs').insert({
+                user_id: profile.id,
+                contact_id: contact.id,
+                user_message: messageText,
+                hallucinated_response: agentResponse.text,
+                final_response: finalText,
+                issues: responseValidation.issues,
+                tool_results: allToolResults.map(t => ({ name: t.name, content: t.content.substring(0, 200) }))
+            }).then(() => {
+                console.log(`📊 [ANALYTICS] Hallucination logged`)
+            }).catch((err: any) => {
+                console.error(`❌ [ANALYTICS] Failed to log hallucination:`, err)
+            })
+        }
+
+        // ========================================================================
         // 11. SEND RESPONSE WITH MEDIA (LÓGICA n8n - SWITCH)
         // ========================================================================
         console.log(`\n📤 [SEND] Destination: ${remoteJid}`)
@@ -982,6 +1139,58 @@ Reglas:
                 })
                 console.log(`✅ [STATE] Saved ${mentionedProducts.length} mentioned products`)
             }
+        }
+
+        // ========================================================================
+        // 11.5 CONVERSATION QUALITY ANALYSIS
+        // ========================================================================
+        try {
+            const { analyzeConversationQuality, saveConversationQuality, notifyErrorsIfNeeded } =
+                await import('./utils/conversation-quality.ts')
+
+            const qualityAnalysis = await analyzeConversationQuality({
+                userId: profile.id,
+                contactId: contact.id,
+                messageText,
+                aiResponse: finalText,
+                toolCalls: agentResponse.toolCalls || [],
+                toolResults: allToolResults || [],
+                validationResult: responseValidation
+            })
+
+            // Guardar análisis en BD
+            await saveConversationQuality(
+                supabase,
+                profile.id,
+                contact.id,
+                qualityAnalysis,
+                messageText,
+                finalText
+            )
+
+            // Notificar si hay errores críticos
+            await notifyErrorsIfNeeded(supabase, profile.id, qualityAnalysis)
+
+            if (qualityAnalysis.hasErrors) {
+                console.log(`⚠️ [QUALITY] Issues detected: ${qualityAnalysis.errorTypes.join(', ')} (score: ${qualityAnalysis.qualityScore.toFixed(2)})`)
+            }
+
+        } catch (qualityError) {
+            console.error(`❌ [QUALITY] Error analyzing conversation quality:`, qualityError)
+            // No lanzar error - no queremos que falle la respuesta por esto
+        }
+
+        // ========================================================================
+        // 11.6 ANTI-SPAM CHECK (después de enviar respuesta)
+        // ========================================================================
+        try {
+            const shouldPause = await checkAndPauseIfSpam(supabase, profile.id, contact.id)
+            if (shouldPause) {
+                console.log(`⏸️ [ANTI_SPAM] Contact ${contact.id} paused due to ${3} consecutive messages without response`)
+            }
+        } catch (spamError) {
+            console.error(`❌ [ANTI_SPAM] Error checking spam:`, spamError)
+            // No lanzar error - no queremos que falle la respuesta por esto
         }
 
         // ========================================================================

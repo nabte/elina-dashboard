@@ -16,7 +16,8 @@ export async function executeToolCalls(
     config: AccountConfig,
     contactId: number,
     toolCalls: ToolCall[],
-    conversationState?: any  // ← Nuevo parámetro
+    conversationState?: any,  // ← Parámetro para estado conversacional
+    userMessage?: string      // ← Nuevo: mensaje original del usuario para detección inteligente
 ): Promise<ToolResult[]> {
     console.log(`🔧 [TOOLS] Executing ${toolCalls.length} tool call(s)`)
 
@@ -37,7 +38,8 @@ export async function executeToolCalls(
                         supabase,
                         config.userId,
                         functionArgs.query,
-                        functionArgs.limit || 5
+                        functionArgs.limit || 5,
+                        userMessage // ← Pasar mensaje original para detección automática
                     )
 
                     // Handle new structured response format
@@ -114,6 +116,14 @@ export async function executeToolCalls(
                         functionArgs.appointment_id,
                         functionArgs.new_date,
                         functionArgs.new_time
+                    )
+                    break
+
+                case 'consultar_promociones':
+                    const { consultarPromociones } = await import('./tools.ts')
+                    result = await consultarPromociones(
+                        supabase,
+                        config.userId
                     )
                     break
 

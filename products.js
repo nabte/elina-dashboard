@@ -1047,6 +1047,11 @@
                     // Establecer 60 minutos por defecto si no tiene duración
                     durationInput.value = product.service_duration_minutes || '60';
                 }
+                // Cargar estado de is_bookable (por defecto true si no está definido)
+                const isBookableCheckbox = document.getElementById('product-is-bookable');
+                if (isBookableCheckbox) {
+                    isBookableCheckbox.checked = product.is_bookable !== false; // true por defecto
+                }
             } else {
                 if (physicalRadio) physicalRadio.checked = true;
                 if (serviceRadio) serviceRadio.checked = false;
@@ -1135,6 +1140,12 @@
     }
 
     function openNewProductModal() {
+        // Force clear the ID to ensure we are in CREATE mode
+        const idInput = document.getElementById('product-id');
+        if (idInput) {
+            idInput.value = '';
+            console.log('[products.js] openNewProductModal: ID cleared for new product');
+        }
         openProductModal(null);
     }
 
@@ -1392,9 +1403,14 @@
             // Agregar duración solo para servicios
             if (productType === 'service') {
                 productData.service_duration_minutes = parseInt(document.getElementById('product-service-duration').value);
+                // Agregar estado de disponibilidad para reservas
+                const isBookableCheckbox = document.getElementById('product-is-bookable');
+                productData.is_bookable = isBookableCheckbox ? isBookableCheckbox.checked : true;
             } else {
                 // Asegurar que productos físicos no tengan duración
                 productData.service_duration_minutes = null;
+                // Los productos físicos no se pueden reservar
+                productData.is_bookable = false;
             }
 
             // Añadimos el user_id solo si estamos creando un producto nuevo, para satisfacer la política RLS.
@@ -1720,6 +1736,8 @@
     window.optimizeAllProducts = showOptimizeConfirmation;
     window.runBulkOptimization = runBulkOptimization;
     window.optimizeSingleProduct = optimizeSingleProduct;
+    window.openNewProductModal = openNewProductModal;
+    window.openEditProductModal = openEditProductModal;
 
     // Funciones para filtros y acciones masivas
     function handleLabelFilterChange(event) {

@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elina IA - Dashboard</title>
+    <!-- Versión: 2026-02-17-001 - Force Update App JS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Librería para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -187,6 +188,11 @@
                         data-lucide="shield" class="w-4 h-4 flex-shrink-0"></i><span class="sidebar-text">Super
                         Admin</span></a>
 
+                <!-- Enlace Quality Dashboard (Solo para Super Admin) -->
+                <a href="/quality-dashboard.html" id="quality-dashboard-link"
+                    class="hidden nav-link text-sm flex items-center gap-3 px-4 py-2 rounded-md hover:bg-slate-700 transition-colors"><i
+                        data-lucide="chart-line" class="w-4 h-4 flex-shrink-0"></i><span class="sidebar-text">Análisis de Calidad</span></a>
+
                 <!-- Enlace Panel de Afiliados (Oculto por defecto) -->
                 <a href="#" id="affiliate-link"
                     class="hidden nav-link text-sm flex items-center gap-3 px-4 py-2 rounded-md text-amber-400 hover:bg-slate-700 transition-colors"
@@ -214,7 +220,7 @@
             <div
                 class="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between shadow-sm z-30 flex-shrink-0">
                 <div class="flex items-center gap-3">
-                    <img src="public/assets/lgo_web.png" alt="Elina Logo" class="w-8 h-8 object-contain">
+                    <img src="assets/lgo_web.png" alt="Elina Logo" class="w-8 h-8 object-contain">
                     <span class="font-bold text-lg text-slate-900 tracking-tight font-heading">Elina <span
                             class="text-emerald-500">IA</span></span>
                 </div>
@@ -425,6 +431,13 @@
                                 <button id="request-qr-btn"
                                     class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-2.5 px-4 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition shadow-md">
                                     Conectar WhatsApp
+                                </button>
+
+                                <!-- Botón de verificar estado (oculto por defecto) -->
+                                <button id="verify-whatsapp-status-btn" style="display: none;"
+                                    class="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2">
+                                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                    Verificar Estado
                                 </button>
 
                                 <!-- Botón de desconexión (oculto por defecto) -->
@@ -2696,6 +2709,23 @@
                                         class="w-full pl-11 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all py-3 text-sm"
                                         placeholder="Ej: 60">
                                 </div>
+
+                                <!-- Checkbox para habilitar reservas públicas -->
+                                <div class="mt-4 pt-4 border-t border-slate-100">
+                                    <label class="flex items-center gap-3 cursor-pointer select-none group">
+                                        <input type="checkbox" id="product-is-bookable" checked
+                                            class="w-4 h-4 text-blue-600 rounded">
+                                        <div class="flex-1">
+                                            <span class="text-sm font-bold text-slate-600 group-hover:text-blue-600 transition-colors">
+                                                Disponible para Reservas Públicas
+                                            </span>
+                                            <p class="text-xs text-slate-400 mt-0.5">
+                                                Permitir que clientes puedan agendar este servicio desde el sitio web
+                                            </p>
+                                        </div>
+                                        <i data-lucide="calendar-check" class="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors"></i>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -3805,7 +3835,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-    <script type="module" src="/app.js"></script>
+
+    <script type="module" src="/app.js?v=2.1.2"></script>
 
     <!-- Componente de Notificación Toast (Global) -->
     <div id="toast-notification"
@@ -4829,49 +4860,79 @@
             });
             */
         </script>
-        <script defer src="./knowledge-files-functions.js"></script>
-        <!-- csv-mapping-modal.js is now imported in app.js -->
-        <script defer src="./sales-context.js"></script>
-        <script type="module">
-            import { initPlansModal } from './plans-modal.js';
-            document.addEventListener('DOMContentLoaded', () => {
-                initPlansModal();
+        <!-- Scripts for knowledge and sales context are now imported in app.js -->
+        <!-- Logic moved to app.js -->
 
-                // Mobile Sidebar Logic
-                const mobileToggle = document.getElementById('mobile-sidebar-toggle');
-                const mainSidebar = document.getElementById('main-sidebar');
-                const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        <!-- HACK: Forzar botón de Verificar Estado si el cache impide que se cargue -->
+        <script>
+            (function () {
+                console.log('🔧 [HACK] Verificador de botón iniciado...');
 
-                if (mobileToggle && mainSidebar) {
-                    mobileToggle.addEventListener('click', () => {
-                        mainSidebar.classList.add('open');
-                    });
-                }
+                function ensureVerifyButton() {
+                    const container = document.getElementById('whatsapp-connection-container');
+                    const verifyBtn = document.getElementById('verify-whatsapp-status-btn');
+                    const disconnectBtn = document.getElementById('disconnect-whatsapp-btn');
 
-                if (closeSidebarBtn && mainSidebar) {
-                    closeSidebarBtn.addEventListener('click', () => {
-                        mainSidebar.classList.remove('open');
-                    });
-                }
+                    // Si el botón de desconectar está visible (= estamos conectados)
+                    // PERO el botón de verificar NO existe, crearlo
+                    if (disconnectBtn && disconnectBtn.style.display === 'block' && !verifyBtn) {
+                        console.log('🔧 [HACK] Detectado estado conectado SIN botón de verificar. Creándolo...');
 
-                // Close sidebar on link click (mobile)
-                if (1024 > window.innerWidth) {
-                    document.querySelectorAll('.nav-link').forEach(link => {
-                        link.addEventListener('click', () => {
-                            if (mainSidebar) mainSidebar.classList.remove('open');
+                        // Crear el botón
+                        const newBtn = document.createElement('button');
+                        newBtn.id = 'verify-whatsapp-status-btn';
+                        newBtn.className = 'w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2';
+                        newBtn.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4"></i> Verificar Estado';
+
+                        // Insertar ANTES del botón de desconectar
+                        disconnectBtn.parentNode.insertBefore(newBtn, disconnectBtn);
+
+                        // Agregar event listener
+                        newBtn.addEventListener('click', async function () {
+                            console.log('[HACK] Botón Verificar Estado clickeado');
+
+                            if (!window.app || !window.app.verifyWhatsappStatus) {
+                                console.error('[HACK] app.verifyWhatsappStatus no disponible');
+                                return;
+                            }
+
+                            await window.app.verifyWhatsappStatus();
                         });
-                    });
+
+                        // Actualizar iconos de lucide
+                        if (window.lucide) {
+                            window.lucide.createIcons();
+                        }
+
+                        console.log('✅ [HACK] Botón de Verificar Estado creado exitosamente');
+                    }
                 }
 
-                // Refresh icons for new elements
-                if (window.lucide) {
-                    window.lucide.createIcons();
+                // Ejecutar al cargar
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        setTimeout(ensureVerifyButton, 2000); // Esperar 2s para que app.js cargue
+                    });
+                } else {
+                    setTimeout(ensureVerifyButton, 2000);
                 }
-            });
+
+                // Observar cambios en el contenedor (cuando cambia de desconectado a conectado)
+                const observer = new MutationObserver(() => {
+                    setTimeout(ensureVerifyButton, 500);
+                });
+
+                setTimeout(() => {
+                    const container = document.getElementById('whatsapp-connection-container');
+                    if (container) {
+                        observer.observe(container, { childList: true, subtree: true });
+                    }
+                }, 1000);
+            })();
         </script>
 
         <!-- Main Application Module - Entry Point -->
-        <script type="module" src="./app.js"></script>
+        <script type="module" src="./app.js?v=2.1.2"></script>
 </body>
 
 </html>

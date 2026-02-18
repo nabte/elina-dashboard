@@ -7,13 +7,136 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 /**
+ * Genera respuesta de proceso de compra usando LLM con datos disponibles
+ */
+async function generatePurchaseResponse(
+    companyName: string,
+    contactData: string
+): Promise<string> {
+    try {
+        const prompt = `Genera una respuesta BREVE (máximo 2-3 líneas) sobre cómo un cliente puede contratar/comprar.
+
+Empresa: ${companyName}
+Canales disponibles:
+${contactData}
+
+REGLAS CRÍTICAS:
+1. Máximo 2-3 líneas
+2. Incluye SOLO los canales mencionados arriba
+3. Tono amigable para WhatsApp
+4. NO inventes canales que no existen
+5. Formato simple, sin markdown complejo`
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7,
+                max_tokens: 100
+            })
+        })
+
+        if (!response.ok) throw new Error('LLM failed')
+
+        const data = await response.json()
+        return data.choices[0]?.message?.content?.trim() || `Contáctanos:\n${contactData}`
+
+    } catch (error) {
+        console.error('❌ [TOOL] Error generating response:', error)
+        return `Puedes contactarnos:\n${contactData}`
+    }
+}
+
+/**
+ * Sistema de cascada inteligente para obtener info de proceso de compra
+ * Nivel 1: Búsqueda semántica en FAQs (RAG)
+ * Nivel 2: Generación dinámica con LLM usando datos del perfil
+ * Nivel 3: Formato simple de datos disponibles
+ * Nivel 4: Mensaje genérico profesional
+ */
+async function fetchPurchaseProcessInfo(
+    supabase: SupabaseClient,
+    userId: string
+): Promise<string | null> {
+    try {
+        // NIVEL 1: Búsqueda semántica en knowledge_base usando RAG
+        console.log(`🔍 [PURCHASE_INFO] Nivel 1: Buscando en FAQs con RAG...`)
+
+        const { retrieveContext } = await import('./rag-system.ts')
+        const purchaseQuery = "¿Cómo puedo contratar, comprar o adquirir este producto o servicio? ¿Dónde lo compro?"
+
+        const ragContext = await retrieveContext(supabase, userId, 0, purchaseQuery)
+
+        if (ragContext.relevantKnowledge && ragContext.relevantKnowledge.length > 0) {
+            const topMatch = ragContext.relevantKnowledge[0]
+            // Umbral de confianza: 0.35 es suficientemente similar
+            if (topMatch.similarity >= 0.35) {
+                console.log(`✅ [PURCHASE_INFO] FAQ encontrada (similarity: ${topMatch.similarity})`)
+                return `\n\n📋 **INFORMACIÓN IMPORTANTE:**\n${topMatch.content}`
+            }
+            console.log(`⚠️ [PURCHASE_INFO] FAQ similarity baja (${topMatch.similarity}), continuando...`)
+        }
+
+        // NIVEL 2: No hay FAQs relevantes - Buscar datos del perfil
+        console.log(`🔍 [PURCHASE_INFO] Nivel 2: Obteniendo datos del perfil...`)
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('website, business_phone, business_address, social_media, company_name')
+            .eq('id', userId)
+            .single()
+
+        if (!profile) {
+            console.log(`⚠️ [PURCHASE_INFO] No se encontró perfil`)
+            return null
+        }
+
+        // Construir información de contacto disponible
+        const contactChannels: string[] = []
+        if (profile.website) contactChannels.push(`🌐 Sitio web: ${profile.website}`)
+        if (profile.business_phone) contactChannels.push(`📞 Teléfono: ${profile.business_phone}`)
+        if (profile.business_address) contactChannels.push(`📍 Dirección: ${profile.business_address}`)
+        if (profile.social_media?.whatsapp) contactChannels.push(`💬 WhatsApp: ${profile.social_media.whatsapp}`)
+        if (profile.social_media?.instagram) contactChannels.push(`📱 Instagram: @${profile.social_media.instagram}`)
+        if (profile.social_media?.facebook) contactChannels.push(`👥 Facebook: ${profile.social_media.facebook}`)
+
+        if (contactChannels.length === 0) {
+            // NIVEL 4: No hay datos - Mensaje genérico profesional
+            console.log(`⚠️ [PURCHASE_INFO] Nivel 4: Sin datos de contacto, mensaje genérico`)
+            return '\n\n📋 Contáctanos directamente para más información sobre cómo adquirir este producto o servicio.'
+        }
+
+        // NIVEL 2B: Generar respuesta inteligente con LLM
+        console.log(`🤖 [PURCHASE_INFO] Nivel 2B: Generando respuesta con LLM...`)
+        const contactData = contactChannels.join('\n')
+        const companyName = profile.company_name || 'nuestra empresa'
+
+        const generatedResponse = await generatePurchaseResponse(companyName, contactData)
+        console.log(`✅ [PURCHASE_INFO] Respuesta generada exitosamente`)
+
+        return `\n\n📋 **INFORMACIÓN IMPORTANTE:**\n${generatedResponse}`
+
+    } catch (error) {
+        console.error(`❌ [TOOL] Error fetching purchase info:`, error)
+        // NIVEL 3: Fallback en caso de error
+        return '\n\n📋 Para adquirir este producto, contáctanos directamente.'
+    }
+}
+
+/**
  * Busca productos por query
  */
 export async function buscarProductos(
     supabase: SupabaseClient,
     userId: string,
     query: string,
-    limit: number = 5
+    limit: number = 5,
+    originalMessage?: string // Nuevo parámetro para detectar intent de compra
 ): Promise<any> {
     console.log(`🔍 [TOOL] Searching products: "${query}"`)
 
@@ -58,7 +181,7 @@ export async function buscarProductos(
                     const faqContent = p.faq?.content ? `\n❓ FAQ: ${p.faq.content}` : '';
                     return {
                         ...p,
-                        formatting_hint: `🛍️ *${p.product_name}* — $${p.price}\n🔹 ${p.description || ''}${benefits}${usage}${faqContent}\n`
+                        formatting_hint: `🛍️ *${p.product_name}* — $${p.price}\n🔹 ${p.description || ''}${benefits}${usage}${faqContent}\n\n`
                     }
                 }) || [],
                 has_alternatives: false,
@@ -98,8 +221,8 @@ export async function buscarProductos(
                     return {
                         ...p,
                         formatting_hint: p.product_type === 'service'
-                            ? `🛍️ *${p.product_name}* — $${p.price}\n🔹 ${p.description || ''}${benefits}${usage}${faqContent}\n`
-                            : `[PRODUCT_CARD:${p.id}]` // Physical products still use card, but we could enhance this if allowed by UI
+                            ? `🛍️ *${p.product_name}* — $${p.price}\n🔹 ${p.description || ''}${benefits}${usage}${faqContent}\n\n`
+                            : `🛍️ *${p.product_name}* — $${p.price}\n🔹 ${p.description || ''}\n\n` // Use same format for physical products
                     }
                 }),
                 has_alternatives: false,
@@ -123,42 +246,83 @@ export async function buscarProductos(
     const results = data || []
 
     // Clasificación por fidelidad (Lógica Proactiva de n8n)
-    // Thresholds: >= 0.3 (Exacto), >= 0.15 (Alternativa)
-    // Nota: search_products_fulltext retorna 'similarity' o rank. Asumimos que viene algo usable.
-    // Si la función SQL no retorna score, usaremos todos como exactos si son pocos, o lógica simple.
-    // Para este caso, vamos a simular la lógica si no tenemos score explícito, 
-    // pero idealmente la función RPC debería devolverlo.
-
-    // Si la RPC no devuelve score, asumimos que todos son resultados válidos de fulltext
-    // Pero si podemos filtrar mejor en el cliente:
-
-    const highConfidence = results // En fulltext, lo que llega suele ser relevante
-    // Si tuviéramos similarity: results.filter(r => r.similarity >= 0.3)
+    const highConfidence = results
 
     if (highConfidence.length === 0) {
+        // 📊 Log búsqueda fallida para analytics (non-blocking)
+        supabase.from('product_search_misses').insert({
+            user_id: userId,
+            query: query,
+            original_message: originalMessage,
+            timestamp: new Date().toISOString()
+        }).then(() => {
+            console.log(`📊 [ANALYTICS] Search miss logged: "${query}"`)
+        }).catch((err: any) => {
+            console.error(`❌ [ANALYTICS] Failed to log search miss:`, err)
+        })
+
         return {
             status: "NOT_FOUND",
             message: `No encontré productos que coincidan con '${query}'.`
         }
     }
 
-    // Estructura "Anti-Alucinación"
-    return {
+    // 🎯 DETECCIÓN AUTOMÁTICA: Si el mensaje original contiene palabras de compra/contratación
+    // automáticamente buscamos y agregamos info del proceso de compra
+    let purchaseInfo = null
+    if (originalMessage) {
+        const purchaseKeywords = ['contratar', 'comprar', 'adquirir', 'obtener', 'conseguir', 'me ayuda']
+        const hasPurchaseIntent = purchaseKeywords.some(kw =>
+            originalMessage.toLowerCase().includes(kw)
+        )
+
+        if (hasPurchaseIntent) {
+            console.log(`🛒 [TOOL] Purchase intent detected, fetching process info...`)
+            purchaseInfo = await fetchPurchaseProcessInfo(supabase, userId)
+            if (purchaseInfo) {
+                console.log(`✅ [TOOL] Purchase process info added automatically`)
+            }
+        }
+    }
+
+    // Estructura "Anti-Alucinación" con Urgencia/Escasez
+    const result: any = {
         status: "SUCCESS",
         message: `Encontré ${highConfidence.length} coincidencias para '${query}'.`,
         exact_match_found: highConfidence.length > 0,
-        exact_matches: highConfidence.map(r => ({
-            id: r.id,
-            name: r.product_name,
-            price: r.price,
-            stock: r.stock,
-            description: r.description,
-            // URL solo interna, el LLM usa el placeholder
-            formatting_hint: `[PRODUCT_CARD:${r.id}]`
-        })),
-        has_alternatives: false, // En fulltext simple es difícil distinguir sin vector store
+        exact_matches: highConfidence.map(r => {
+            let urgencyNote = ''
+
+            // 🔥 URGENCIA: Stock bajo (últimas unidades)
+            if (r.stock !== null && r.stock > 0 && r.stock <= 5) {
+                urgencyNote = `\n⚠️ ¡Últimas ${r.stock} unidades disponibles!`
+            }
+
+            // 🔥 URGENCIA: Sin stock (agotado)
+            if (r.stock !== null && r.stock === 0) {
+                urgencyNote = `\n❌ Agotado temporalmente`
+            }
+
+            return {
+                id: r.id,
+                name: r.product_name,
+                price: r.price,
+                stock: r.stock,
+                description: r.description,
+                formatting_hint: `🛍️ *${r.product_name}* — $${r.price}${urgencyNote}\n🔹 ${r.description || ''}\n\n`
+            }
+        }),
+        has_alternatives: false,
         suggested_alternatives: []
     }
+
+    // Si encontramos info de proceso de compra, agregarla al resultado
+    if (purchaseInfo) {
+        result.purchase_process_info = purchaseInfo
+        result.message += ' ' + purchaseInfo
+    }
+
+    return result
 }
 
 /**
@@ -547,5 +711,92 @@ export async function modificarCita(
         newEndTime: newEndTime,
         formattedStartTime: formatTime(newStartTime),
         formattedEndTime: formatTime(newEndTime)
+    }
+}
+
+/**
+ * Consulta promociones activas
+ * Si no hay promociones, sugiere productos destacados de manera inteligente
+ */
+export async function consultarPromociones(
+    supabase: SupabaseClient,
+    userId: string
+): Promise<any> {
+    console.log(`🎁 [TOOL] Consulting active promotions...`)
+
+    try {
+        // 1. Buscar promociones activas
+        const now = new Date().toISOString()
+
+        const { data: promotions, error: promoError } = await supabase
+            .from('smart_promotions')
+            .select('id, title, description, benefits, call_to_action, discount, image_urls')
+            .eq('user_id', userId)
+            .eq('is_active', true)
+            .or(`no_schedule.eq.true,and(start_at.lte.${now},end_at.gte.${now})`)
+            .limit(5)
+
+        if (promoError) {
+            console.error(`❌ [TOOL] Error fetching promotions:`, promoError)
+        }
+
+        // 2. Si HAY promociones, devolverlas
+        if (promotions && promotions.length > 0) {
+            console.log(`✅ [TOOL] Found ${promotions.length} active promotion(s)`)
+
+            const formattedPromos = promotions.map((p: any) => ({
+                title: p.title,
+                description: p.description,
+                benefits: p.benefits,
+                callToAction: p.call_to_action,
+                discount: p.discount,
+                imageUrls: p.image_urls
+            }))
+
+            return {
+                hasPromotions: true,
+                promotions: formattedPromos,
+                message: `Tenemos ${promotions.length} promoción${promotions.length > 1 ? 'es' : ''} activa${promotions.length > 1 ? 's' : ''} en este momento.`
+            }
+        }
+
+        // 3. NO HAY PROMOCIONES - Buscar productos para sugerir
+        console.log(`ℹ️ [TOOL] No active promotions found - fetching featured products...`)
+
+        const productSearch = await buscarProductos(supabase, userId, '', 3) // Buscar 3 productos cualquiera
+
+        // 4. Si hay productos, sugerirlos como alternativa
+        if (productSearch.status === 'SUCCESS' && productSearch.exact_matches && productSearch.exact_matches.length > 0) {
+            console.log(`✅ [TOOL] Suggesting ${productSearch.exact_matches.length} products as alternative`)
+
+            const products = productSearch.exact_matches.slice(0, 3)
+
+            return {
+                hasPromotions: false,
+                promotions: [],
+                hasSuggestedProducts: true,
+                suggestedProducts: products,
+                message: `En este momento no tenemos promociones activas, pero aquí te muestro algunos de nuestros productos que podrían interesarte:`
+            }
+        }
+
+        // 5. No hay ni promociones ni productos
+        console.log(`⚠️ [TOOL] No promotions or products available`)
+
+        return {
+            hasPromotions: false,
+            promotions: [],
+            hasSuggestedProducts: false,
+            suggestedProducts: [],
+            message: `En este momento no tenemos promociones activas. Si necesitas algo específico, con gusto te ayudo a buscarlo.`
+        }
+
+    } catch (error) {
+        console.error(`❌ [TOOL] Error in consultarPromociones:`, error)
+        return {
+            hasPromotions: false,
+            promotions: [],
+            error: error instanceof Error ? error.message : 'Error consultando promociones'
+        }
     }
 }

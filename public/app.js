@@ -1,4 +1,4 @@
-﻿// app.js - Lógica principal del Dashboard
+﻿// app.js - Lógica principal del Dashboard - v2026-02-17-001
 
 // CORRECCIÓN: Se importan todos los módulos necesarios para que el compilador (Vite) los reconozca.
 import './auth.js'; // auth.js debe estar primero
@@ -21,6 +21,8 @@ import './appointments.js';
 import './auto-responses.js';
 import './prompt-training.js';
 import './personal-tasks.js';
+import { initPlansModal } from './plans-modal.js';
+import './knowledge-files-functions.js';
 import { initAffiliatePanel } from './affiliate-panel.js';
 import { initSupportChat } from './support-chat.js';
 
@@ -129,6 +131,12 @@ class DashboardApp {
         // Verificar estado de appointment_settings y actualizar menú
         this.checkAppointmentsEnabled();
 
+        // Inicializar modal de planes
+        initPlansModal();
+
+        // Inicializar lógica del sidebar móvil
+        this.initMobileSidebar();
+
         // --- INICIO: Manejo de Hash para navegación directa ---
         const handleHash = () => {
             const hash = window.location.hash.substring(1);
@@ -141,6 +149,33 @@ class DashboardApp {
         // Ejecutar al inicio si hay hash
         if (window.location.hash) handleHash();
         // --- FIN: Manejo de Hash ---
+    }
+
+    initMobileSidebar() {
+        const mobileToggle = document.getElementById('mobile-sidebar-toggle');
+        const mainSidebar = document.getElementById('main-sidebar');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+
+        if (mobileToggle && mainSidebar) {
+            mobileToggle.addEventListener('click', () => {
+                mainSidebar.classList.add('open');
+            });
+        }
+
+        if (closeSidebarBtn && mainSidebar) {
+            closeSidebarBtn.addEventListener('click', () => {
+                mainSidebar.classList.remove('open');
+            });
+        }
+
+        // Close sidebar on link click (mobile)
+        if (1024 > window.innerWidth) {
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (mainSidebar) mainSidebar.classList.remove('open');
+                });
+            });
+        }
     }
 
     async checkAppointmentsEnabled() {
@@ -1216,7 +1251,7 @@ class DashboardApp {
         try {
             const { data, error } = await window.auth.sb
                 .from('profiles')
-                .select('full_name, role, urlfoto')
+                .select('full_name, role, urlfoto, branding_settings')
                 .eq('id', this.user.id)
                 .single();
             if (error) throw error;
@@ -1226,14 +1261,19 @@ class DashboardApp {
             if (nameEl) nameEl.textContent = displayName;
 
             if (avatarEl) {
-                const photoUrl = (data.urlfoto || '').trim();
-                avatarEl.src = photoUrl ? photoUrl : `https://ui-avatars.com/api/?background=0A3B66&color=fff&name=${encodeURIComponent(displayName)}`;
+                // Prioridad: 1) Logo de branding, 2) Foto de WhatsApp, 3) Avatar generado
+                const brandingLogo = data.branding_settings?.logo_url;
+                const whatsappPhoto = (data.urlfoto || '').trim();
+                const defaultAvatar = `https://ui-avatars.com/api/?background=0A3B66&color=fff&name=${encodeURIComponent(displayName)}`;
+
+                avatarEl.src = brandingLogo || whatsappPhoto || defaultAvatar;
                 avatarEl.alt = `Logo de ${displayName}`;
             }
 
             if (data.role === 'superadmin') {
                 document.getElementById('superadmin-link')?.classList.remove('hidden');
                 document.getElementById('mobile-superadmin-link')?.classList.remove('hidden');
+                document.getElementById('quality-dashboard-link')?.classList.remove('hidden');
             }
         } catch (error) {
             console.error('Error al cargar el perfil del usuario:', error);
@@ -2475,6 +2515,13 @@ class Wizard {
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Teléfono de Contacto <span class="text-red-500">*</span>
+                            </label>
+                            <input type="tel" id="wizard-admin-phone-input" placeholder="Ej: +52 55 1234 5678"
+                                class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg focus:border-blue-500 outline-none text-sm" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">
                                 ¿Qué vendes? <span class="text-red-500">*</span>
                             </label>
                             <textarea id="wizard-company-description" rows="3"
@@ -2501,6 +2548,62 @@ class Wizard {
                                     <input type="time" id="wizard-work-end-hour"
                                         class="w-full px-2 py-2.5 border-2 border-slate-200 rounded-lg focus:border-blue-500 outline-none text-sm">
                                 </div>
+                            </div>
+                        </div>
+
+                         <!-- Redes Sociales y Web -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+                             <div class="col-span-1 md:col-span-3">
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Sitio Web</label>
+                                <input type="url" id="wizard-website" placeholder="https://miempresa.com"
+                                    class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg focus:border-blue-500 outline-none text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Instagram</label>
+                                <input type="text" id="wizard-social-instagram" placeholder="@usuario"
+                                    class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg focus:border-blue-500 outline-none text-sm">
+                            </div>
+                            <div class="col-span-1 md:col-span-2">
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Facebook</label>
+                                <input type="text" id="wizard-social-facebook" placeholder="facebook.com/pagina"
+                                    class="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg focus:border-blue-500 outline-none text-sm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Marca y Branding -->
+                <div class="bg-white rounded-xl shadow-md border border-indigo-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="palette" class="w-5 h-5 text-white"></i>
+                            <h5 class="text-base font-bold text-white">Marca y Personalidad</h5>
+                        </div>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <!-- Logo -->
+                        <div class="flex items-center gap-4">
+                            <div class="relative group">
+                                <img id="wizard-logo-preview" src="https://ui-avatars.com/api/?name=Company&background=random" class="w-16 h-16 rounded-full object-cover border-2 border-slate-200 bg-slate-50">
+                                <button type="button" id="wizard-upload-logo-btn" class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                    <i data-lucide="upload" class="w-5 h-5 text-white"></i>
+                                </button>
+                            </div>
+                            <div>
+                                <h6 class="text-sm font-semibold text-slate-800">Logo de la Empresa</h6>
+                                <p class="text-xs text-slate-500">Haz clic en la imagen para subir tu logo</p>
+                                <input type="file" id="wizard-logo-input" accept="image/*" class="hidden">
+                            </div>
+                        </div>
+
+                        <!-- Colores -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Colores de Marca</label>
+                            <div class="flex gap-3">
+                                <input type="color" id="wizard-brand-color-1" value="#3b82f6" class="w-10 h-10 rounded-lg cursor-pointer border-2 border-slate-200 p-0.5 bg-white shadow-sm" title="Color Principal">
+                                <input type="color" id="wizard-brand-color-2" value="#10b981" class="w-10 h-10 rounded-lg cursor-pointer border-2 border-slate-200 p-0.5 bg-white shadow-sm" title="Color Secundario">
+                                <input type="color" id="wizard-brand-color-3" value="#f59e0b" class="w-10 h-10 rounded-lg cursor-pointer border-2 border-slate-200 p-0.5 bg-white shadow-sm" title="Color de Acento">
+                                <input type="color" id="wizard-brand-color-4" value="#1e293b" class="w-10 h-10 rounded-lg cursor-pointer border-2 border-slate-200 p-0.5 bg-white shadow-sm" title="Color de Texto/Fondo">
                             </div>
                         </div>
                     </div>
@@ -2859,36 +2962,44 @@ class Wizard {
         this.syncContactsBtn?.addEventListener('click', () => this.handleSyncClick());
 
         // Listeners para el nuevo paso de info de la empresa
-        this.modal.querySelector('#wizard-upload-logo-btn')?.addEventListener('click', () => this.modal.querySelector('#wizard-logo-input').click());
-        this.modal.querySelector('#wizard-logo-input')?.addEventListener('change', (e) => this.previewLogo(e.target.files[0]));
+        // Listeners globales para elementos dinámicos (Delegación de Eventos)
+        this.modal.addEventListener('click', (e) => {
+            // Upload Logo Button
+            if (e.target.closest('#wizard-upload-logo-btn')) {
+                this.modal.querySelector('#wizard-logo-input')?.click();
+            }
+        });
 
-        // Listener para mostrar/ocultar configuración de citas
-        const appointmentsCheckbox = this.modal.querySelector('#wizard-appointments-enabled');
-        const appointmentsConfig = this.modal.querySelector('#wizard-appointments-config');
-        if (appointmentsCheckbox && appointmentsConfig) {
-            appointmentsCheckbox.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    appointmentsConfig.classList.remove('hidden');
-                } else {
-                    appointmentsConfig.classList.add('hidden');
-                }
-            });
-        }
+        this.modal.addEventListener('change', (e) => {
+            const target = e.target;
 
-        // Nuevo Listener para Smart Promo en el Wizard
-        const promoCheckbox = this.modal.querySelector('#wizard-has-promo');
-        const promoFields = this.modal.querySelector('#wizard-promo-fields');
-        if (promoCheckbox && promoFields) {
-            promoCheckbox.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    promoFields.classList.remove('hidden');
-                    // Focus al primer input
-                    setTimeout(() => promoFields.querySelector('input')?.focus(), 100);
-                } else {
-                    promoFields.classList.add('hidden');
+            // Logo Input
+            if (target.id === 'wizard-logo-input' && target.files?.length > 0) {
+                this.previewLogo(target.files[0]);
+            }
+
+            // Appointments Enabled
+            if (target.id === 'wizard-appointments-enabled') {
+                const config = this.modal.querySelector('#wizard-appointments-config');
+                if (config) {
+                    if (target.checked) config.classList.remove('hidden');
+                    else config.classList.add('hidden');
                 }
-            });
-        }
+            }
+
+            // Smart Promo
+            if (target.id === 'wizard-has-promo') {
+                const fields = this.modal.querySelector('#wizard-promo-fields');
+                if (fields) {
+                    if (target.checked) {
+                        fields.classList.remove('hidden');
+                        setTimeout(() => fields.querySelector('input')?.focus(), 100);
+                    } else {
+                        fields.classList.add('hidden');
+                    }
+                }
+            }
+        });
     }
 
     // ... (Métodos intermedios sin cambios: start, hide, changeStep, updateStepUI, previewLogo, loadExistingCompanySettings, handleSettingsSave, handleSyncClick)
@@ -3180,6 +3291,9 @@ class Wizard {
         // Actualizar wizard con diseño nuevo (evita caché HTML)
         this.updateWizardHTML();
 
+        // IMPORTANTE: Re-obtener referencia al formulario después de updateWizardHTML
+        this.companyForm = document.getElementById('wizard-company-form');
+
         if (!jumpToQA) { // CORRECCIÓN: Cargar datos al iniciar.
             this.loadExistingCompanySettings(); // CORRECCIÓN: Cargar datos al iniciar.
         }
@@ -3307,19 +3421,46 @@ class Wizard {
                 contact_phone: data.contact_phone ?? null,
             };
 
-            if (data.work_start_hour) this.companyForm.querySelector('#wizard-work-start-hour').value = `${String(data.work_start_hour).padStart(2, '0')}:00`;
-            if (data.work_end_hour) this.companyForm.querySelector('#wizard-work-end-hour').value = `${String(data.work_end_hour).padStart(2, '0')}:00`;
-            if (data.company_description) this.companyForm.querySelector('#wizard-company-description').value = data.company_description;
-            if (data.website) this.companyForm.querySelector('#wizard-website').value = data.website;
+            const workStartInput = this.companyForm.querySelector('#wizard-work-start-hour');
+            if (data.work_start_hour && workStartInput) workStartInput.value = `${String(data.work_start_hour).padStart(2, '0')}:00`;
+
+            const workEndInput = this.companyForm.querySelector('#wizard-work-end-hour');
+            if (data.work_end_hour && workEndInput) workEndInput.value = `${String(data.work_end_hour).padStart(2, '0')}:00`;
+
+            const descInput = this.companyForm.querySelector('#wizard-company-description');
+            if (data.company_description && descInput) descInput.value = data.company_description;
+
+            const websiteInput = this.companyForm.querySelector('#wizard-website');
+            if (data.website && websiteInput) websiteInput.value = data.website;
+
             if (data.social_media) {
-                this.companyForm.querySelector('#wizard-social-instagram').value = data.social_media.instagram || '';
-                this.companyForm.querySelector('#wizard-social-facebook').value = data.social_media.facebook || '';
+                const igInput = this.companyForm.querySelector('#wizard-social-instagram');
+                const fbInput = this.companyForm.querySelector('#wizard-social-facebook');
+                if (igInput) igInput.value = data.social_media.instagram || '';
+                if (fbInput) fbInput.value = data.social_media.facebook || '';
             }
-            if (data.branding_settings?.logo_url) this.companyForm.querySelector('#wizard-logo-preview').src = data.branding_settings.logo_url;
-            if (data.branding_settings?.colors) data.branding_settings.colors.forEach((c, i) => {
-                const colorInput = this.companyForm.querySelector(`#wizard-brand-color-${i + 1}`);
-                if (colorInput) colorInput.value = c;
-            });
+
+            // Cargar logo de branding
+            const logoPreview = this.companyForm.querySelector('#wizard-logo-preview');
+            console.log('[Wizard] Logo URL:', data.branding_settings?.logo_url);
+            console.log('[Wizard] Logo preview element:', logoPreview);
+            if (data.branding_settings?.logo_url && logoPreview) {
+                logoPreview.src = data.branding_settings.logo_url;
+                console.log('[Wizard] Logo cargado en preview');
+            }
+
+            // Cargar colores de branding
+            console.log('[Wizard] Colores:', data.branding_settings?.colors);
+            if (data.branding_settings?.colors) {
+                data.branding_settings.colors.forEach((c, i) => {
+                    const colorInput = this.companyForm.querySelector(`#wizard-brand-color-${i + 1}`);
+                    console.log(`[Wizard] Color ${i + 1}:`, c, 'Input:', colorInput);
+                    if (colorInput) {
+                        colorInput.value = c;
+                    }
+                });
+            }
+
             if (data.contact_phone && this.iti) this.iti.setNumber(data.contact_phone);
 
             // Cargar configuración de citas (appointment_settings) para sincronizar con Settings
@@ -3379,24 +3520,45 @@ class Wizard {
 
     async handleSettingsSave() {
         // CORRECCIÓN: Lógica de guardado y avance (CORRECCIÓN: Guardar para el usuario correcto)
+        // Re-obtener referencia al formulario porque updateWizardHTML reemplazó el DOM
+        this.companyForm = document.getElementById('wizard-company-form');
+
+        if (!this.companyForm) {
+            console.error('[Wizard] Form not found - cannot save settings');
+            window.showToast?.('Error: Formulario no encontrado', 'error');
+            return;
+        }
+
         this.nextBtn.disabled = true;
         this.nextBtn.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>`;
 
         try {
-            const logoFile = this.companyForm.querySelector('#wizard-logo-input').files[0];
+            // Null check aggressive para el input del logo
+            const logoInput = this.companyForm?.querySelector('#wizard-logo-input');
+            if (!logoInput) {
+                console.warn('[Wizard] #wizard-logo-input not found in form - skipping logo upload');
+            }
+
+            const logoFile = (logoInput?.files?.length > 0) ? logoInput.files[0] : null;
             let logoUrl = this.companyForm.querySelector('#wizard-logo-preview')?.src;
             if (logoFile) {
                 logoUrl = await this.app.uploadAsset(logoFile, 'logos');
             }
 
             const brandingSettings = {
-                logo_url: logoUrl.startsWith('https') ? logoUrl : null,
-                colors: Array.from({ length: 4 }, (_, i) => this.companyForm.querySelector(`#wizard-brand-color-${i + 1}`).value),
+                logo_url: logoUrl?.startsWith('https') ? logoUrl : null,
+                colors: Array.from({ length: 4 }, (_, i) => {
+                    const input = this.companyForm.querySelector(`#wizard-brand-color-${i + 1}`);
+                    return input ? input.value : '#000000'; // Fallback
+                }),
             };
 
-            const startHourInput = this.companyForm.querySelector('#wizard-work-start-hour').value;
-            const endHourInput = this.companyForm.querySelector('#wizard-work-end-hour').value;
-            const adminPhone = this.companyForm.querySelector('#wizard-admin-phone-input').value.trim() || null;
+            const startHourInput = this.companyForm.querySelector('#wizard-work-start-hour')?.value;
+            const endHourInput = this.companyForm.querySelector('#wizard-work-end-hour')?.value;
+
+            const adminPhoneInput = this.companyForm.querySelector('#wizard-admin-phone-input');
+            const adminPhone = adminPhoneInput ? adminPhoneInput.value.trim() : null;
+
             const companyName = this.companyForm.querySelector('#wizard-company-name')?.value.trim() || null;
 
             // Guardar nombre de empresa en organizations
@@ -3426,11 +3588,11 @@ class Wizard {
             const settingsData = {
                 work_start_hour: startHourInput ? parseInt(startHourInput.split(':')[0]) : null,
                 work_end_hour: endHourInput ? parseInt(endHourInput.split(':')[0]) : null,
-                company_description: this.companyForm.querySelector('#wizard-company-description').value,
-                website: this.companyForm.querySelector('#wizard-website').value,
+                company_description: this.companyForm.querySelector('#wizard-company-description')?.value || '',
+                website: this.companyForm.querySelector('#wizard-website')?.value || '',
                 social_media: {
-                    instagram: this.companyForm.querySelector('#wizard-social-instagram').value,
-                    facebook: this.companyForm.querySelector('#wizard-social-facebook').value,
+                    instagram: this.companyForm.querySelector('#wizard-social-instagram')?.value || '',
+                    facebook: this.companyForm.querySelector('#wizard-social-facebook')?.value || '',
                 },
                 contact_phone: adminPhone,
                 branding_settings: brandingSettings,

@@ -54,12 +54,37 @@ serve(async (req) => {
 
             // Update connection status in database
             const isConnected = connectionState === 'open'
+
+            // Get profile to extract user_id for API key
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('id, evolution_api_key')
+                .eq('evolution_instance_name', instanceName)
+                .single()
+
+            if (!profile) {
+                console.error(`[Router] ❌ Profile not found for instance: ${instanceName}`)
+                return new Response(JSON.stringify({ error: 'Profile not found' }), {
+                    headers: CORS_HEADERS,
+                    status: 404
+                })
+            }
+
+            // Prepare update data
+            const updateData: any = {
+                whatsapp_connected: isConnected,
+                updated_at: new Date().toISOString()
+            }
+
+            // ✅ Si está conectado y no hay API key, guardarla ahora
+            if (isConnected && !profile.evolution_api_key) {
+                console.log(`[Router] 🔑 Saving evolution_api_key for ${instanceName}`)
+                updateData.evolution_api_key = profile.id // user_id es la API key
+            }
+
             const { error } = await supabase
                 .from('profiles')
-                .update({
-                    whatsapp_connected: isConnected,
-                    updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq('evolution_instance_name', instanceName)
 
             if (error) {

@@ -66,6 +66,8 @@ function setupEventListeners() {
                 loadWithdrawals();
             } else if (targetId === 'ai-config-section') {
                 loadAiConfig();
+            } else if (targetId === 'impersonation-logs-section') {
+                loadImpersonationLogs();
             }
         });
     });
@@ -443,10 +445,16 @@ async function handleImpersonate(userId) {
             refresh_token: data.session.refresh_token
         });
 
-        localStorage.setItem('impersonated_user_info', JSON.stringify({
+        // Guardar información de impersonación incluyendo logId y timestamp
+        const impersonationData = {
             id: data.targetUserId,
-            email: data.targetUserEmail
-        }));
+            email: data.targetUserEmail,
+            logId: data.logId,
+            startedAt: new Date().toISOString(),
+            timeoutMinutes: 30
+        };
+
+        localStorage.setItem('impersonated_user_info', JSON.stringify(impersonationData));
 
         window.location.href = '/dashboard.html';
     } catch (e) {
@@ -836,6 +844,122 @@ async function restoreAiDefaults() {
         alert('Error al restaurar defaults: ' + e.message);
     } finally {
         if (btn) btn.disabled = false;
+    }
+}
+
+// --- REGISTROS DE IMPERSONACIÓN ---
+async function loadImpersonationLogs() {
+    const tbody = document.getElementById('impersonation-logs-table-body');
+    const loader = document.getElementById('impersonation-logs-loader');
+
+    if (!tbody) return;
+
+    try {
+        // Obtener logs de impersonación
+        const { data: logs, error } = await window.auth.sb
+            .from('impersonation_logs')
+            .select('*')
+            .order('started_at', { ascending: false })
+            .limit(100);
+
+        if (error) throw error;
+
+        if (loader) loader.style.display = 'none';
+
+        if (!logs || logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="p-12 text-center text-slate-500">No hay registros de impersonación.</td></tr>';
+            return;
+        }
+
+        // Obtener todos los IDs únicos de usuarios
+        const allUserIds = new Set();
+        logs.forEach(log => {
+            allUserIds.add(log.superadmin_id);
+            allUserIds.add(log.target_user_id);
+        });
+
+        // Obtener emails de todos los usuarios en una sola query
+        const { data: profiles, error: profilesError } = await window.auth.sb
+            .from('profiles')
+            .select('id, email')
+            .in('id', Array.from(allUserIds));
+
+        if (profilesError) throw profilesError;
+
+        // Crear un mapa de ID -> email para búsqueda rápida
+        const emailMap = {};
+        if (profiles) {
+            profiles.forEach(profile => {
+                emailMap[profile.id] = profile.email;
+            });
+        }
+
+        tbody.innerHTML = logs.map(log => {
+            const startDate = new Date(log.started_at);
+            const endDate = log.ended_at ? new Date(log.ended_at) : null;
+
+            // Calcular duración
+            let duration = '-';
+            let statusBadge = '';
+            if (endDate) {
+                const durationMs = endDate - startDate;
+                const minutes = Math.floor(durationMs / 60000);
+                const seconds = Math.floor((durationMs % 60000) / 1000);
+                duration = `${minutes}m ${seconds}s`;
+                statusBadge = '<span class="px-2.5 py-1 text-xs rounded-full font-medium bg-green-500/20 text-green-400 border border-green-500/30">Finalizada</span>';
+            } else {
+                statusBadge = '<span class="px-2.5 py-1 text-xs rounded-full font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">Activa</span>';
+            }
+
+            const superadminEmail = emailMap[log.superadmin_id] || 'N/A';
+            const targetUserEmail = emailMap[log.target_user_id] || 'N/A';
+            const ipAddress = log.ip_address || '-';
+
+            return `
+                <tr class="hover:bg-slate-800/50 transition-colors">
+                    <td class="p-4 border-b border-slate-700">
+                        <div class="text-sm font-medium text-white">${superadminEmail}</div>
+                        <div class="text-xs text-slate-500 font-mono">${log.superadmin_id.substring(0, 8)}...</div>
+                    </td>
+                    <td class="p-4 border-b border-slate-700">
+                        <div class="text-sm font-medium text-cyan-400">${targetUserEmail}</div>
+                        <div class="text-xs text-slate-500 font-mono">${log.target_user_id.substring(0, 8)}...</div>
+                    </td>
+                    <td class="p-4 border-b border-slate-700 text-sm text-slate-300">
+                        ${startDate.toLocaleString('es-MX', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}
+                    </td>
+                    <td class="p-4 border-b border-slate-700 text-sm text-slate-300">
+                        ${endDate ? endDate.toLocaleString('es-MX', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }) : '<span class="text-amber-400">En curso</span>'}
+                    </td>
+                    <td class="p-4 border-b border-slate-700 text-sm font-mono text-slate-400">
+                        ${duration}
+                    </td>
+                    <td class="p-4 border-b border-slate-700 text-sm text-slate-400 font-mono">
+                        ${ipAddress}
+                    </td>
+                    <td class="p-4 border-b border-slate-700 text-center">
+                        ${statusBadge}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        lucide.createIcons();
+    } catch (error) {
+        console.error('Error loading impersonation logs:', error);
+        if (loader) loader.querySelector('td').textContent = `Error: ${error.message}`;
     }
 }
 

@@ -156,13 +156,11 @@ Usa esta fecha como referencia absoluta para "mañana", "lunes", etc.
 
     // REGLAS CRÍTICAS SOBRE PRODUCTOS Y CONOCIMIENTO
     prompt += `\n🚨 **REGLAS CRÍTICAS SOBRE PRODUCTOS Y CONOCIMIENTO** 🚨\n`
-    prompt += `1. **PRIMERO: Consulta tu BASE DE CONOCIMIENTOS (Información Relevante abajo).** Si la respuesta está ahí (ej: "sí tenemos planes telefónicos"), USA esa información, incluso si no encuentras productos específicos en la base de datos.\n`
-    prompt += `2. PARA DETALLES DE PRECIOS O COMPRA: Usa la herramienta buscar_productos.\n`
-    prompt += `3. Si el usuario pregunta "qué vendes?", "qué productos tienes?", "qué manejas?", etc., DEBES usar buscar_productos con query vacía ("") para obtener el catálogo real.\n`
-    prompt += `4. **SI buscar_productos devuelve 0 resultados Y NO HAY NADA en la Base de Conocimientos:** Entonces sí, di: "No manejo esa marca/modelo actualmente."\n`
-    prompt += `5. **SI buscar_productos falla pero la Base de Conocimientos dice que SÍ ofrecemos el servicio:** Explica lo que sabes por la base de conocimientos y ofrece ayuda, NO digas que no lo manejas.\n`
-    prompt += `6. Solo menciona productos específicos (con precio y botón) que REALMENTE encontraste con la herramienta buscar_productos.\n`
-    prompt += `7. PROHIBIDO inventar productos, pero PERMITIDO hablar de servicios generales descritos en tu conocimiento (ej: "Hacemos desarrollo web", "Tenemos planes telefónicos").\n`
+    prompt += `1. **PRIMERO: Consulta tu BASE DE CONOCIMIENTOS (Información Relevante abajo).** Si la respuesta está ahí (ej: "sí tenemos planes telefónicos"), USA esa información.\n`
+    prompt += `2. PARA DETALLES DE PRECIOS: Usa la herramienta buscar_productos.\n`
+    prompt += `3. Si el usuario pregunta "qué vendes?", "qué productos tienes?", etc., usa buscar_productos con query vacía ("").\n`
+    prompt += `4. **INFORMACIÓN DE COMPRA/CONTRATACIÓN:** El sistema automáticamente incluye esta info cuando es relevante. Si la herramienta te devuelve "purchase_process_info", úsala directamente.\n`
+    prompt += `5. Solo menciona productos que REALMENTE encontraste con buscar_productos. NUNCA inventes precios o productos.\n`
 
     if (config.appointmentsEnabled) {
         prompt += `✅ **Citas**: Puedes consultar disponibilidad y agendar citas.\n`
@@ -283,6 +281,7 @@ Aquí tienes los productos que manejamos:
 - Si la herramienta dice "exact_matches", preséntalos con entusiasmo.
 - Si dice "suggested_alternatives", aclara: "No encontré el exacto, pero estos te pueden servir:..."
 - Si dice "status: NOT_FOUND", dilo honestamente.
+- **IMPORTANTE:** Si la herramienta incluye "purchase_process_info", agrégala después de mostrar los productos.
 
 **PROHIBIDO:**
 ❌ HACER MATEMÁTICAS TÚ MISMO (No sumes ni multipliques nada).
@@ -297,6 +296,55 @@ Aquí tienes los productos que manejamos:
 ❌ Enviar URLs de imágenes como texto (usa [PRODUCT_MEDIA:ID] en su lugar)
 `
     }
+
+    // Instrucciones para consultas de promociones
+    prompt += `\n## 🎁 CONSULTA DE PROMOCIONES (OBLIGATORIO)
+
+**CUANDO EL USUARIO PREGUNTE POR PROMOCIONES/DESCUENTOS/OFERTAS:**
+
+1. **USA LA HERRAMIENTA consultar_promociones INMEDIATAMENTE**
+   - NO inventes promociones
+   - NO digas "déjame verificar" sin usar la herramienta
+   - Llama a la tool ANTES de responder
+
+2. **SI LA HERRAMIENTA DEVUELVE hasPromotions: true:**
+   - Presenta las promociones con entusiasmo
+   - Incluye título, descripción, beneficios y call to action
+   - Formato sugerido:
+     🎉 *[Título de la promo]*
+     [Descripción]
+     ✨ [Beneficios]
+     [Call to Action]
+
+3. **SI LA HERRAMIENTA DEVUELVE hasPromotions: false Y hasSuggestedProducts: true:**
+   - SÉ PROACTIVO y muestra los productos sugeridos
+   - NO digas solo "no tenemos promos" - eso es MAL servicio
+   - Usa el mensaje de la herramienta + muestra los productos con formato:
+     🛍️ *[PRODUCT_NAME:ID]* — $[PRODUCT_PRICE:ID]
+     🔹 [PRODUCT_DESC:ID]
+     [PRODUCT_URL:ID]
+
+4. **SI NO HAY NI PROMOS NI PRODUCTOS:**
+   - Usa el mensaje que devuelve la herramienta
+   - Ofrece ayuda para buscar algo específico
+
+**EJEMPLO CORRECTO:**
+Usuario: "tienes alguna promo?"
+Acción: [LLAMAS consultar_promociones]
+Herramienta: { hasPromotions: false, hasSuggestedProducts: true, suggestedProducts: [...], message: "..." }
+Respuesta: "En este momento no tenemos promociones activas, pero aquí te muestro algunos de nuestros productos que podrían interesarte:
+
+🛍️ *[PRODUCT_NAME:101]* — $[PRODUCT_PRICE:101]
+🔹 [PRODUCT_DESC:101]
+[PRODUCT_URL:101]
+
+¿Te interesa alguno? 😊"
+
+**PROHIBIDO:**
+❌ Decir "Déjame verificar esa información" sin usar la herramienta
+❌ Responder "No tenemos promos" cuando hay productos que podrías sugerir
+❌ Inventar promociones que no existen
+`
 
     if (intent.primary === 'appointment_request') {
         prompt += `\n## Contexto Actual: Solicitud de Cita
@@ -472,6 +520,20 @@ function getAvailableTools(config: AccountConfig, intent: IntentDetectionResult)
                         }
                     },
                     required: ['query']
+                }
+            }
+        })
+
+        // Herramienta para consultar promociones activas
+        tools.push({
+            type: 'function',
+            function: {
+                name: 'consultar_promociones',
+                description: 'Consulta las promociones activas. Úsala cuando el cliente pregunte por promociones, descuentos, ofertas o deals. La herramienta devolverá las promos activas SI EXISTEN, o sugerencias de productos si no hay promos configuradas.',
+                parameters: {
+                    type: 'object',
+                    properties: {},
+                    required: []
                 }
             }
         })

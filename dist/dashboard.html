@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elina IA - Dashboard</title>
-    <!-- Versión: 2026-02-16-001 - Botón Verificar Estado WhatsApp -->
+    <!-- Versión: 2026-02-17-001 - Force Update App JS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Librería para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -16,6 +16,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="flow-builder-animations.css">
     <style>
         /* Forzar ancho completo para intl-tel-input */
         .iti {
@@ -34,8 +36,6 @@
             margin-left: 6px;
         }
     </style>
-    <script type="module" crossorigin src="/assets/modulepreload-polyfill-B5Qt9EMX.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/dashboard-DSi9585J.css">
 </head>
 
 <body class="bg-slate-100 text-slate-800">
@@ -188,6 +188,11 @@
                         data-lucide="shield" class="w-4 h-4 flex-shrink-0"></i><span class="sidebar-text">Super
                         Admin</span></a>
 
+                <!-- Enlace Quality Dashboard (Solo para Super Admin) -->
+                <a href="/quality-dashboard.html" id="quality-dashboard-link"
+                    class="hidden nav-link text-sm flex items-center gap-3 px-4 py-2 rounded-md hover:bg-slate-700 transition-colors"><i
+                        data-lucide="chart-line" class="w-4 h-4 flex-shrink-0"></i><span class="sidebar-text">Análisis de Calidad</span></a>
+
                 <!-- Enlace Panel de Afiliados (Oculto por defecto) -->
                 <a href="#" id="affiliate-link"
                     class="hidden nav-link text-sm flex items-center gap-3 px-4 py-2 rounded-md text-amber-400 hover:bg-slate-700 transition-colors"
@@ -215,7 +220,7 @@
             <div
                 class="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between shadow-sm z-30 flex-shrink-0">
                 <div class="flex items-center gap-3">
-                    <img src="/assets/lgo_web-DaqHEzAW.png" alt="Elina Logo" class="w-8 h-8 object-contain">
+                    <img src="assets/lgo_web.png" alt="Elina Logo" class="w-8 h-8 object-contain">
                     <span class="font-bold text-lg text-slate-900 tracking-tight font-heading">Elina <span
                             class="text-emerald-500">IA</span></span>
                 </div>
@@ -2704,6 +2709,23 @@
                                         class="w-full pl-11 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all py-3 text-sm"
                                         placeholder="Ej: 60">
                                 </div>
+
+                                <!-- Checkbox para habilitar reservas públicas -->
+                                <div class="mt-4 pt-4 border-t border-slate-100">
+                                    <label class="flex items-center gap-3 cursor-pointer select-none group">
+                                        <input type="checkbox" id="product-is-bookable" checked
+                                            class="w-4 h-4 text-blue-600 rounded">
+                                        <div class="flex-1">
+                                            <span class="text-sm font-bold text-slate-600 group-hover:text-blue-600 transition-colors">
+                                                Disponible para Reservas Públicas
+                                            </span>
+                                            <p class="text-xs text-slate-400 mt-0.5">
+                                                Permitir que clientes puedan agendar este servicio desde el sitio web
+                                            </p>
+                                        </div>
+                                        <i data-lucide="calendar-check" class="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors"></i>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -3814,84 +3836,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 
-    <!-- FIX INMEDIATO PARA QR - Sin depender de cache de app.js -->
-    <script>
-        console.log('🔧 QR FIX INLINE CARGADO');
-        // Observar cambios en el DOM para corregir QRs con prefijo duplicado
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === 1) { // Element node
-                        // Buscar imgs en el nodo agregado
-                        const imgs = node.tagName === 'IMG' ? [node] : node.querySelectorAll?.('img') || [];
-                        imgs.forEach((img) => {
-                            if (img.src && img.src.includes('data:image/png;base64,data:image/png;base64,')) {
-                                console.log('🔧 Corrigiendo QR con prefijo duplicado');
-                                // Extraer solo la parte base64
-                                const parts = img.src.split(',');
-                                if (parts.length >= 3) {
-                                    const cleanBase64 = parts[2]; // Tomar la segunda parte base64
-                                    img.src = `data:image/png;base64,${cleanBase64}`;
-                                    console.log('✅ QR corregido');
-                                }
-                            }
-                        });
-                    }
-                });
-            });
-        });
-
-        // Observar todo el body
-        document.addEventListener('DOMContentLoaded', () => {
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
-            console.log('👀 Observer de QR activado');
-        });
-    </script>
-
-    <script>
-        // 🔧 HACK 1: Interceptar fetch ANTES de cargar app.js
-        const originalFetch = window.fetch;
-        window.fetch = async function (...args) {
-            const response = await originalFetch(...args);
-            if (args[0]?.includes?.('manage-whatsapp-instance')) {
-                const clone = response.clone();
-                clone.json().then(data => {
-                    console.log('📦 [HACK] Respuesta capturada:', data);
-
-                    // Si es pairing code, renderizar inmediatamente
-                    if (data.pairingCode) {
-                        setTimeout(() => {
-                            const container = document.getElementById('whatsapp-connection-container');
-                            if (container) {
-                                const formattedCode = data.pairingCode.length === 8
-                                    ? `${data.pairingCode.substring(0, 4)}-${data.pairingCode.substring(4)}`
-                                    : data.pairingCode;
-
-                                console.log('🎯 [HACK] Forzando pairing code:', formattedCode);
-                                container.innerHTML = `
-                                    <div class="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200">
-                                        <div class="text-6xl font-black text-purple-700 tracking-widest mb-4 font-mono">
-                                            ${formattedCode}
-                                        </div>
-                                        <p class="font-bold text-slate-800">Código de Emparejamiento</p>
-                                        <p class="text-sm text-slate-600 mt-2 text-center">
-                                            Ingresa este código en WhatsApp > Dispositivos Vinculados > Vincular con número de teléfono
-                                        </p>
-                                    </div>`;
-                            }
-                        }, 100);
-                    }
-                }).catch(() => { });
-            }
-            return response;
-        };
-        console.log('✅ [HACK] Fetch interceptor instalado');
-    </script>
-
-    <script type="module" src="/app.js"></script>
+    <script type="module" src="/app.js?v=2.1.2"></script>
 
     <!-- Componente de Notificación Toast (Global) -->
     <div id="toast-notification"
@@ -4902,6 +4847,19 @@
             </div>
         </div>
         <!-- Script eliminado: El wizard se maneja desde app.js -->
+        <script type="module">
+            /* Legacy Script Removed - Logic moved to prompt-training.js
+            import { initPersonalTasks } from './personal-tasks.js';
+
+            // Sidebar Group Toggling Logic (Keep if needed elsewhere, but for now commenting out to be safe)
+            document.querySelectorAll('a[data-group]').forEach(trigger => {
+                trigger.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // Basic toggle logic if needed
+                });
+            });
+            */
+        </script>
         <!-- Scripts for knowledge and sales context are now imported in app.js -->
         <!-- Logic moved to app.js -->
 
@@ -4974,7 +4932,7 @@
         </script>
 
         <!-- Main Application Module - Entry Point -->
-        <script type="module" src="./app.js"></script>
+        <script type="module" src="./app.js?v=2.1.2"></script>
 </body>
 
 </html>

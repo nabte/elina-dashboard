@@ -329,47 +329,6 @@
             }
         });
 
-        // Listener para botón de prueba de resumen diario
-        document.getElementById('test-daily-summary')?.addEventListener('click', async () => {
-            const btn = document.getElementById('test-daily-summary');
-            if (!btn) return;
-
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Enviando...';
-
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                    window.showToast?.('No estás autenticado', 'error');
-                    return;
-                }
-
-                // Llamar a la edge function directamente
-                const { data, error } = await supabase.functions.invoke('send-daily-summary', {
-                    body: { manual: true, userId: user.id }
-                });
-
-                if (error) {
-                    console.error('Error sending test summary:', error);
-                    window.showToast?.('Error al enviar el resumen de prueba', 'error');
-                } else {
-                    window.showToast?.('✅ Resumen enviado a tu WhatsApp', 'success');
-                }
-
-            } catch (error) {
-                console.error('Error:', error);
-                window.showToast?.('Error al enviar el resumen', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-                // Re-initialize lucide icons
-                if (window.lucide) {
-                    window.lucide.createIcons();
-                }
-            }
-        });
-
         // --- INICIO: Listeners para Voz de la IA (TTS) ---
         // Listener eliminado porque la voz siempre está activa
         /*
