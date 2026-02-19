@@ -31,7 +31,13 @@
       "Bash(where:*)",
       "Bash(netstat:*)",
       "Bash(supabase functions serve:*)",
-      "Bash(npx supabase db dump:*)"
+      "Bash(npx supabase db dump:*)",
+      "Bash(supabase migration up:*)",
+      "mcp__supabase__get_project_url",
+      "Bash(psql:*)",
+      "Bash(wc -l:*)",
+      "Bash(node:*)",
+      "Bash(npx supabase db push:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

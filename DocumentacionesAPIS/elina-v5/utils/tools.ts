@@ -12,7 +12,11 @@ export interface Product {
     price: string
     stock: number | null
     description: string | null
+    enhanced_description?: string | null
     media_url: string | null
+    faq?: any // jsonb array
+    benefits?: string | null
+    usage_instructions?: string | null
 }
 
 /**

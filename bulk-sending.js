@@ -331,8 +331,39 @@ class BulkSendingModule {
         });
     }
 
+    async requestNotificationPermission() {
+        if (!("Notification" in window)) {
+            console.log("This browser does not support desktop notification");
+            return false;
+        }
+        if (Notification.permission === "granted") {
+            return true;
+        }
+        if (Notification.permission !== "denied") {
+            const permission = await Notification.requestPermission();
+            return permission === "granted";
+        }
+        return false;
+    }
+
+    sendBrowserNotification(title, body) {
+        if (Notification.permission === "granted") {
+            const notification = new Notification(title, {
+                body: body,
+                icon: '/public/favicon.ico' // Ajusta si tienes un icono específico
+            });
+
+            // Opcional: cerrar la notificación automáticamente después de unos segundos
+            setTimeout(() => notification.close(), 5000);
+        }
+    }
+
     async handleBulkSend(e) {
         e.preventDefault();
+
+        // Solicitar permiso para notificaciones al inicio de la interacción
+        await this.requestNotificationPermission();
+
         const button = e.target.querySelector('button[type="submit"]');
         button.disabled = true;
         const buttonText = button.querySelector('.button-text');
@@ -422,9 +453,15 @@ class BulkSendingModule {
             if (!response.ok) throw new Error('El servidor de automatización (n8n) no respondió correctamente.');
 
             if (scheduledAt) {
-                alert('¡Campaña programada! La enviaremos automáticamente en la fecha y hora seleccionadas.');
+                const msg = '¡Campaña programada! La enviaremos automáticamente en la fecha y hora seleccionadas.';
+                // alert(msg); // Opcional: mantener alert o quitarlo
+                this.sendBrowserNotification('Campaña Programada', msg);
+                window.showToast?.(msg, 'success'); // Usar toast si disponible
             } else {
-                alert('¡Campaña enviada! El proceso se ejecutará en segundo plano. Puedes cerrar esta ventana.');
+                const msg = '¡Campaña iniciada! El proceso se está ejecutando en segundo plano.';
+                // alert(msg); // Opcional: mantener alert o quitarlo
+                this.sendBrowserNotification('Campaña Enviada', msg);
+                window.showToast?.(msg, 'success'); // Usar toast si disponible
             }
 
             // Mostrar el botón de detener después de iniciar la campaña
@@ -444,7 +481,9 @@ class BulkSendingModule {
 
         } catch (error) {
             console.error('Error al enviar la campaña:', error);
-            alert(`Error al enviar la campaña: ${error.message}`);
+            // alert(`Error al enviar la campaña: ${error.message}`);
+            window.showToast?.(`Error al enviar la campaña: ${error.message}`, 'error');
+            this.sendBrowserNotification('Error en Campaña', `No se pudo enviar la campaña: ${error.message}`);
 
             // Si hay error, limpiar el active_campaign_id para permitir reintentar
             try {

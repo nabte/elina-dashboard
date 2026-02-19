@@ -2,12 +2,14 @@
 
 (function () {
     let isInitialized = false;
+    let productsTableListenerAdded = false; // Nueva bandera para evitar duplicados
     let allProductsData = []; // Caché para los productos del usuario
     let currentSearchTerm = ''; // Termino actual del buscador
     let currentLabelFilter = ''; // Filtro actual de etiqueta
     let currentStatusFilter = ''; // Filtro actual de estado
     let allLabelsData = []; // Caché de etiquetas disponibles
     let pricingTiers = []; // Estado local para los rangos de precios
+    let productToDeleteId = null; // ID del producto a eliminar
 
     // --- INICIO: CORRECCIÓN DE INICIALIZACIÓN DEFINITIVA ---
     function tryInitialize() {
@@ -94,7 +96,6 @@
         document.getElementById('download-template-btn')?.addEventListener('click', downloadTemplate);
         document.getElementById('export-products-btn')?.addEventListener('click', exportProductsToCSV);
         const csvInput = document.getElementById('import-csv-input');
-        console.log('[Products Init] CSV Input encontrado:', !!csvInput);
         csvInput?.addEventListener('change', handleCsvImport);
 
         // Listeners para el nuevo modal
@@ -104,14 +105,16 @@
         document.getElementById('product-form')?.addEventListener('submit', handleSaveProduct);
         document.getElementById('product-description-ai-enhance-btn')?.addEventListener('click', handleProductDescriptionAiEnhance);
 
+        // Listeners for Delete Confirmation Modal
+        document.getElementById('cancel-delete-btn')?.addEventListener('click', closeDeleteModal);
+        document.getElementById('confirm-delete-btn')?.addEventListener('click', confirmDeleteProduct);
+
         // --- CORRECCIÓN: Agregar listener para Optimizar Todo ---
         const bulkOptimizeBtn = document.getElementById('bulk-optimize-btn');
         if (bulkOptimizeBtn) {
-            console.log('[products.js] Listener agregado a bulk-optimize-btn');
             // Remove previous and add new to avoid duplication
             bulkOptimizeBtn.onclick = (e) => {
                 e.preventDefault();
-                console.log('[products.js] Click en bulk-optimize-btn');
                 showOptimizeConfirmation();
             };
         } else {
@@ -144,11 +147,33 @@
             });
         });
 
-        // Listeners para la tabla (editar y borrar)
-        document.getElementById('products-table-body')?.addEventListener('click', (e) => {
-            if (e.target.closest('.edit-product-btn')) openEditProductModal(e.target.closest('.edit-product-btn').dataset.id);
-            if (e.target.closest('.delete-product-btn')) handleDeleteProduct(e.target.closest('.delete-product-btn').dataset.id);
-        });
+        // Listeners para la tabla (editar y borrar) con prevención de duplicados
+        const tableBody = document.getElementById('products-table-body');
+        if (tableBody && !productsTableListenerAdded) {
+            tableBody.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-product-btn');
+                const deleteBtn = e.target.closest('.delete-product-btn');
+
+                if (editBtn) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    e.preventDefault();
+                    const id = editBtn.dataset.id;
+                    openEditProductModal(id);
+                    return; // Detener aquí
+                }
+
+                if (deleteBtn) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    e.preventDefault();
+                    const id = deleteBtn.dataset.id;
+                    handleDeleteProduct(id);
+                    return; // Detener aquí
+                }
+            });
+            productsTableListenerAdded = true;
+        }
         document.querySelectorAll('[data-role="products-search"]').forEach(input => {
             input.addEventListener('input', handleProductsSearch);
         });
@@ -362,29 +387,137 @@
         }
     }
 
-    async function handleDeleteProduct(productId) {
+    function handleDeleteProduct(productId) {
         if (!productId) return;
 
-        // Usar modal personalizado si está disponible, sino usar confirm nativo
-        const confirmed = window.appModal?.confirm
-            ? await window.appModal.confirm('¿Eliminar este producto de forma permanente? Esta acción no se puede deshacer.', '⚠️ Confirmar eliminación')
-            : confirm('⚠️ ¿Eliminar este producto de forma permanente?\n\nEsta acción no se puede deshacer.');
+        productToDeleteId = productId;
 
-        if (!confirmed) {
-            return;
+        // Estrategia simplificada: Usar ÚNICAMENTE el modal dedicado
+        const modal = document.getElementById('delete-product-modal');
+
+        if (!modal) {
+            console.warn('[Products] Modal #delete-product-modal no encontrado. Intentando crearlo dinámicamente...');
+
+            // Crear el modal dinámicamente si no existe
+            const newModal = document.createElement('div');
+            newModal.id = 'delete-product-modal';
+            newModal.className = 'fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden';
+            newModal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+                    <div class="flex flex-col items-center text-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                            <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800">¿Eliminar producto?</h3>
+                        <p class="text-slate-600">
+                            Esta acción eliminará el producto de forma permanente. No se puede deshacer.
+                        </p>
+                        <div class="flex gap-3 w-full mt-2">
+                            <button id="cancel-delete-btn" class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium transition-colors">
+                                Cancelar
+                            </button>
+                            <button id="confirm-delete-btn" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors shadow-lg shadow-red-200">
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(newModal);
+
+            // Reasignar variable
+            const createdModal = document.getElementById('delete-product-modal');
+
+            // Agregar listeners a los nuevos botones
+            document.getElementById('cancel-delete-btn').addEventListener('click', closeDeleteModal);
+            document.getElementById('confirm-delete-btn').addEventListener('click', confirmDeleteProduct);
+
+
+            if (createdModal) {
+                createdModal.classList.remove('hidden');
+                createdModal.style.display = 'flex';
+                createdModal.style.alignItems = 'center';
+                createdModal.style.justifyContent = 'center';
+                createdModal.style.zIndex = '999999';
+
+                if (typeof lucide?.createIcons === 'function') {
+                    lucide.createIcons();
+                }
+                return; // Terminar aquí ya que lo hemos mostrado
+            }
         }
 
+        if (modal) {
+            // Forzar visualización con estilos inline para garantizar que se vea
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            modal.style.zIndex = '999999'; // Z-index muy alto
+
+            if (typeof lucide?.createIcons === 'function') {
+                lucide.createIcons();
+            }
+        } else {
+            console.error('[Products] Modal #delete-product-modal NO encontrado en el DOM');
+            // Fallback extremo
+            if (confirm('¿Eliminar producto de forma permanente?')) {
+                executeDeletion(productId);
+            }
+        }
+    }
+
+    function closeDeleteModal() {
+        const modal = document.getElementById('delete-product-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+        productToDeleteId = null;
+    }
+
+    async function confirmDeleteProduct() {
+        if (!productToDeleteId) return;
+
+        const btn = document.getElementById('confirm-delete-btn');
+        let originalText = 'Eliminar';
+        if (btn) {
+            originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline mr-2"></i> Eliminando...';
+            if (typeof lucide?.createIcons === 'function') lucide.createIcons();
+        }
+
+        await executeDeletion(productToDeleteId);
+
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    async function executeDeletion(id) {
         try {
             const { error } = await window.auth.sb
                 .from('products')
                 .delete()
-                .eq('id', productId);
+                .eq('id', id);
 
             if (error) throw error;
 
-            allProductsData = allProductsData.filter(p => p.id !== productId);
+
+            // Filtrar asegurando coincidencia de tipos (string vs number)
+            const initialCount = allProductsData.length;
+            allProductsData = allProductsData.filter(p => String(p.id) !== String(id));
+            const finalCount = allProductsData.length;
+
             renderProductsTable();
-            loadAndRenderProducts();
+            window.showToast?.('Producto eliminado correctamente', 'success');
+            closeDeleteModal();
+
+            // Recalcular métricas si es necesario
+            calculateQualityMetrics(allProductsData);
+
         } catch (error) {
             console.error('Error al eliminar el producto:', error);
             const message = error?.message || 'No se pudo eliminar el producto.';

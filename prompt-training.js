@@ -2,6 +2,10 @@
 let chatHistory = [];
 let systemCapabilities = {};
 
+// 🔄 NEW: Variables para persistencia de sesiones
+let currentSessionId = null;  // UUID de la sesión actual
+let loadedSessions = [];      // Lista de sesiones previas
+
 // Lista de palabras clave para detectar límites del sistema
 const limitKeywords = [
     /puedes borrar/i, /eliminar mensaje/i, /crear grupo/i, /campaña/i,
@@ -58,6 +62,8 @@ async function initPromptTraining(mode = 'prompt', initialTabId = null) {
         //         console.log('[Prompt Training] Rendering Prompt Editor UI');
         renderPromptEditorUI(container);
         await loadCurrentPrompt(userId);
+        await loadSimulationSessions(userId);  // 🔄 NUEVO: cargar sesiones previas
+        await loadOrCreateSession(userId);     // 🔄 NUEVO: cargar o crear sesión actual
         await loadSystemCapabilities();
         setupSimulationChatListeners(container);
     }
@@ -99,18 +105,13 @@ function setupSimulationChatListeners(container) {
     // Botón Restaurar
     const restartBtn = container.querySelector('#restart-simulation-btn');
     if (restartBtn) {
-        restartBtn.addEventListener('click', () => {
-            const messagesContainer = container.querySelector('#simulation-chat-messages');
-            if (messagesContainer) {
-                messagesContainer.innerHTML = `
-                    <div class="text-center text-slate-400 py-8">
-                        <i data-lucide="message-square" class="w-12 h-12 mx-auto mb-2 opacity-20"></i>
-                        <p>Inicia una conversación para probar el prompt</p>
-                    </div>
-                `;
-                chatHistory = [];
-                if (window.lucide) lucide.createIcons();
+        restartBtn.addEventListener('click', async () => {
+            // 🔄 NUEVO: Usar función de nueva sesión
+            if (!confirm('¿Iniciar nueva sesión? La sesión actual se guardará automáticamente.')) {
+                return;
             }
+
+            await startNewSession();
         });
     }
 }
@@ -182,6 +183,12 @@ async function loadCurrentPrompt(userId) {
         const editor = document.getElementById('prompt-editor');
         if (editor) {
             editor.value = initialEditorContent;
+
+            // 📊 NUEVO: Actualizar contador de caracteres
+            updateCharacterCount();
+
+            // 📊 NUEVO: Listener para actualizar contador en tiempo real
+            editor.addEventListener('input', updateCharacterCount);
         }
 
         // Mostrar status si cargamos un borrador
@@ -201,6 +208,40 @@ async function loadCurrentPrompt(userId) {
     } catch (error) {
         console.error('[Prompt Training] Error al cargar prompt:', error);
         currentPrompt = '';
+    }
+}
+
+/**
+ * 📊 Actualiza el contador de caracteres del prompt del usuario
+ */
+function updateCharacterCount() {
+    const editor = document.getElementById('prompt-editor');
+    const counter = document.getElementById('prompt-char-count');
+
+    if (!editor || !counter) return;
+
+    const charCount = editor.value.length;
+    const HARD_MAX = 2500; // 🔒 Límite DURO del prompt de usuario (bloqueado por maxlength)
+
+    // Actualizar texto del contador
+    counter.textContent = `${charCount} / 2,500 caracteres`;
+
+    // Cambiar color según el límite
+    if (charCount >= HARD_MAX) {
+        counter.className = 'font-mono font-bold text-red-600';
+        counter.textContent = `🔒 ${charCount} / 2,500 (MÁXIMO ALCANZADO)`;
+    } else if (charCount > HARD_MAX * 0.9) { // > 2250
+        counter.className = 'font-mono font-medium text-red-500';
+        counter.textContent = `⚠️ ${charCount} / 2,500 (quedan ${HARD_MAX - charCount})`;
+    } else if (charCount > HARD_MAX * 0.7) { // > 1750
+        counter.className = 'font-mono font-medium text-amber-600';
+        counter.textContent = `⚠️ ${charCount} / 2,500 (cerca del límite)`;
+    } else if (charCount > HARD_MAX * 0.5) { // > 1250
+        counter.className = 'font-mono font-medium text-blue-600';
+        counter.textContent = `${charCount} / 2,500`;
+    } else {
+        counter.className = 'font-mono font-medium text-slate-600';
+        counter.textContent = `${charCount} / 2,500 caracteres`;
     }
 }
 
@@ -440,10 +481,10 @@ function renderPromptEditorUI(container) {
     injectPromptStyles();
 
     container.innerHTML = `
-        <div class="space-y-6 prompt-training-container">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[720px]">
+        <div class="space-y-6 prompt-training-container lg:h-full lg:flex lg:flex-col pb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:flex-1 lg:min-h-0">
                 <!-- Panel izquierdo: Editor de Prompt -->
-                <div class="flex flex-col bg-white rounded-xl shadow-lg p-6 border border-slate-100 overflow-hidden">
+                <div class="flex flex-col bg-white rounded-xl shadow-lg p-6 border border-slate-100 overflow-hidden h-full min-h-[600px] lg:min-h-0">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-3">
                             <h3 class="text-xl font-bold">Entrenamiento Prompt</h3>
@@ -470,9 +511,16 @@ function renderPromptEditorUI(container) {
                                 </button>
                             </div>
 
-                            <textarea id="prompt-editor" 
+                            <textarea id="prompt-editor"
+                                maxlength="2500"
                                 class="flex-1 w-full bg-slate-50 p-4 font-mono text-sm outline-none resize-none transition-all scroll-smooth"
-                                placeholder="Escribe aquí las instrucciones para tu IA..."></textarea>
+                                placeholder="Escribe aquí las instrucciones para tu IA... (máximo 2,500 caracteres)"></textarea>
+
+                            <!-- Contador de Caracteres -->
+                            <div class="flex items-center justify-between px-4 py-2 bg-slate-100 border-t border-slate-200 text-xs shrink-0">
+                                <span class="text-slate-500">Tamaño del prompt</span>
+                                <span id="prompt-char-count" class="font-mono font-medium text-slate-600">0 caracteres</span>
+                            </div>
                         </div>
 
                         <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 shrink-0 shadow-inner">
@@ -480,31 +528,67 @@ function renderPromptEditorUI(container) {
                                 <i data-lucide="sparkles" class="w-4 h-4 text-blue-600"></i>
                                 Mejorar con IA
                             </label>
-                            <div class="flex gap-2">
-                                <input type="text" id="improvement-input" 
+                            <div class="flex gap-2 mb-3">
+                                <input type="text" id="improvement-input"
                                     class="flex-1 px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
                                     placeholder="Ej: 'Haz que sea más amable'...">
-                                <button id="improve-prompt-btn" onclick="improvePromptWithAI()" 
+                                <button id="improve-prompt-btn" onclick="improvePromptWithAI()"
                                     class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-bold text-[11px] transition-all flex items-center gap-2 whitespace-nowrap shadow-md active:scale-95">
                                     <i data-lucide="sparkles" class="w-4 h-4"></i>
                                     MEJORAR
                                 </button>
-                                <button onclick="document.getElementById('example-file-input').click()" 
+                                <button onclick="document.getElementById('example-file-input').click()"
                                     class="p-2 text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-all shadow-sm" title="Subir ejemplo">
                                     <i data-lucide="paperclip" class="w-4 h-4"></i>
                                 </button>
+                            </div>
+                            <!-- 🧠 Análisis Automático -->
+                            <div class="border-t border-blue-200 pt-3">
+                                <button onclick="analyzeAndImprovePrompt()"
+                                    class="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 font-bold text-[11px] transition-all flex items-center justify-center gap-2 shadow-md active:scale-95">
+                                    <i data-lucide="brain" class="w-4 h-4"></i>
+                                    ANALIZAR EJEMPLOS Y MEJORAR PROMPT
+                                </button>
+                                <p class="text-xs text-blue-700 mt-2 text-center">Usa tus ejemplos guardados (👍👎) para optimizar automáticamente</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Panel derecho: Chat de Simulación -->
-                <div class="flex flex-col simulator-dark-theme p-6 overflow-hidden h-full">
+                <div class="flex flex-col simulator-dark-theme p-6 overflow-hidden h-full min-h-[600px] lg:min-h-0">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-xl font-bold flex items-center gap-2 text-white">
-                            Simulador de Chat
-                            <span class="px-2 py-0.5 bg-green-500 bg-opacity-20 text-green-300 rounded-full text-[10px] font-bold uppercase tracking-wider border border-green-500 border-opacity-30">Sandbox</span>
-                        </h3>
+                        <div class="flex items-center gap-3">
+                            <h3 class="text-xl font-bold flex items-center gap-2 text-white">
+                                Simulador de Chat
+                                <span class="px-2 py-0.5 bg-green-500 bg-opacity-20 text-green-300 rounded-full text-[10px] font-bold uppercase tracking-wider border border-green-500 border-opacity-30">Sandbox</span>
+                            </h3>
+                            <!-- 📋 Dropdown de Sesiones -->
+                            <div class="relative">
+                                <button id="sessions-dropdown-btn" onclick="toggleSessionsDropdown()"
+                                    class="flex items-center gap-2 px-3 py-1.5 bg-slate-700 bg-opacity-60 text-slate-300 hover:bg-slate-600 rounded-lg transition-all text-sm border border-slate-600">
+                                    <i data-lucide="folder-open" class="w-4 h-4"></i>
+                                    <span id="current-session-name" class="max-w-32 truncate">Sesión actual</span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                </button>
+                                <!-- Dropdown Menu -->
+                                <div id="sessions-dropdown" class="hidden absolute top-full right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-50">
+                                    <div class="p-3 border-b border-slate-700">
+                                        <button onclick="startNewSession()" class="w-full flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all text-sm font-medium">
+                                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                            Nueva Sesión
+                                        </button>
+                                    </div>
+                                    <div id="sessions-list" class="p-2">
+                                        <!-- Sesiones se renderizarán aquí -->
+                                        <div class="text-center text-slate-500 text-sm py-8">
+                                            <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
+                                            <p>No hay sesiones anteriores</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <button id="restart-simulation-btn" class="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all" title="Reiniciar chat">
                             <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                         </button>
@@ -750,9 +834,21 @@ function renderAiMemoryUI(container, initialTabId = null) {
                     <div class="space-y-4">
                         <div class="flex justify-between items-center">
                             <h3 class="font-bold text-slate-800">Tus FAQs Activas</h3>
-                            <button onclick="window.openFaqModal()" class="text-xs bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-2 px-3 rounded-lg shadow-sm transition-colors flex items-center gap-2">
-                                <i data-lucide="plus" class="w-3 h-3"></i> Manual
-                            </button>
+                            <div class="flex gap-2">
+                                <button onclick="window.openFaqBulkEditModal()" class="text-xs bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-2 px-3 rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                                    <i data-lucide="table-2" class="w-3 h-3"></i> Edición Masiva
+                                </button>
+                                <button onclick="window.exportFaqsCsv()" class="text-xs bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-2 px-3 rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                                    <i data-lucide="download" class="w-3 h-3"></i> Exportar
+                                </button>
+                                <button onclick="document.getElementById('faq-csv-upload').click()" class="text-xs bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-2 px-3 rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                                    <i data-lucide="upload" class="w-3 h-3"></i> Importar CSV
+                                </button>
+                                <input type="file" id="faq-csv-upload" class="hidden" accept=".csv" onchange="window.importFaqsCsv(this.files[0])">
+                                <button onclick="window.openFaqModal()" class="text-xs bg-violet-600 border border-violet-600 hover:bg-violet-700 text-white font-bold py-2 px-3 rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                                    <i data-lucide="plus" class="w-3 h-3"></i> Manual
+                                </button>
+                            </div>
                         </div>
                         <div id="faq-list-container" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                             <div class="text-center py-12 text-slate-400">
@@ -889,8 +985,8 @@ async function improvePromptWithAI() {
 
         const { data, error } = await window.auth.invokeFunction('openai-proxy', {
             body: {
-                prompt: `Prompt actual:\n\n${currentPromptText}\n\nInstrucciones de mejora: ${improvementText}\n\nMejora el prompt siguiendo estas instrucciones. Devuelve SOLO el prompt mejorado, sin explicaciones adicionales.`,
-                systemInstruction: 'Eres un experto en optimización de prompts para asistentes de IA conversacionales. Tu tarea es mejorar prompts basándote en las instrucciones del usuario, manteniendo la esencia original, mejorando la claridad, efectividad y estructura. Los prompts deben ser específicos, accionables y optimizados para agentes de IA que responden mensajes de WhatsApp.',
+                prompt: `Prompt actual (${currentPromptText.length} caracteres):\n\n${currentPromptText}\n\nInstrucciones de mejora: ${improvementText}\n\n⚠️ IMPORTANTE: El prompt mejorado NO DEBE exceder 2,500 caracteres (límite del sistema para el prompt de usuario).\n\nMejora el prompt siguiendo estas instrucciones. Devuelve SOLO el prompt mejorado, sin explicaciones adicionales.`,
+                systemInstruction: 'Eres un experto en optimización de prompts para asistentes de IA conversacionales. Tu tarea es mejorar prompts basándote en las instrucciones del usuario, manteniendo la esencia original, mejorando la claridad, efectividad y estructura. Los prompts deben ser específicos, accionables y optimizados para agentes de IA que responden mensajes de WhatsApp.\n\n🔒 RESTRICCIÓN CRÍTICA: El prompt del usuario NUNCA debe exceder 2,500 caracteres. Si el prompt actual está cerca del límite, prioriza ser conciso y eliminar redundancias en lugar de agregar contenido.',
                 model: 'gpt-4o-mini'
             }
         });
@@ -1026,9 +1122,16 @@ window.sendSimulationMessage = async function () {
 
     if (!message) return;
 
+    // 🔄 NUEVO: Generar ID único para el mensaje del usuario
+    const userMsgId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     // Agregar mensaje del usuario al chat
-    addMessageToChat('user', message);
+    addMessageToChat('user', message, userMsgId);
+    chatHistory.push({ id: userMsgId, role: 'user', content: message });
     input.value = '';
+
+    // 🔄 NUEVO: Guardar mensaje de usuario en BD
+    await saveMessageToDB(currentSessionId, 'user', message, userMsgId);
 
     // Ocultar alerta de límite
     document.getElementById('limit-alert')?.classList.add('hidden');
@@ -1038,7 +1141,13 @@ window.sendSimulationMessage = async function () {
 
     if (hasLimit) {
         document.getElementById('limit-alert')?.classList.remove('hidden');
-        addMessageToChat('assistant', '⚠️ Lo siento, esta solicitud requiere desarrollo adicional. El sistema actual no puede realizar esta acción solo modificando el prompt.');
+        const limitResponse = '⚠️ Lo siento, esta solicitud requiere desarrollo adicional. El sistema actual no puede realizar esta acción solo modificando el prompt.';
+        const aiMsgId = `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        addMessageToChat('assistant', limitResponse, aiMsgId);
+        chatHistory.push({ id: aiMsgId, role: 'assistant', content: limitResponse });
+
+        // 🔄 NUEVO: Guardar respuesta de límite en BD
+        await saveMessageToDB(currentSessionId, 'assistant', limitResponse, aiMsgId);
         return;
     }
 
@@ -1046,11 +1155,25 @@ window.sendSimulationMessage = async function () {
         showTypingIndicator();
         const response = await simulateAIResponse(message);
         removeTypingIndicator();
-        addMessageToChat('assistant', response);
+
+        // 🔄 NUEVO: Generar ID único para respuesta de IA
+        const aiMsgId = `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        addMessageToChat('assistant', response, aiMsgId);
+        chatHistory.push({ id: aiMsgId, role: 'assistant', content: response });
+
+        // 🔄 NUEVO: Guardar respuesta de IA en BD
+        await saveMessageToDB(currentSessionId, 'assistant', response, aiMsgId);
+
     } catch (error) {
         removeTypingIndicator();
         console.error('[Prompt Training] Error al simular respuesta:', error);
-        addMessageToChat('assistant', '❌ Error al generar respuesta. Verifica tu configuración.');
+        const errorMsg = '❌ Error al generar respuesta. Verifica tu configuración.';
+        const errorMsgId = `ai_error_${Date.now()}`;
+        addMessageToChat('assistant', errorMsg, errorMsgId);
+        chatHistory.push({ id: errorMsgId, role: 'assistant', content: errorMsg });
+
+        // 🔄 NUEVO: Guardar mensaje de error en BD
+        await saveMessageToDB(currentSessionId, 'assistant', errorMsg, errorMsgId);
     }
 };
 
@@ -1150,7 +1273,7 @@ async function simulateAIResponse(userMessage) {
     }
 }
 
-function addMessageToChat(role, content, messageId = null) {
+function addMessageToChat(role, content, messageId = null, feedback = null) {
     const messagesContainer = document.getElementById('simulation-chat-messages');
     if (!messagesContainer) return;
 
@@ -1158,7 +1281,11 @@ function addMessageToChat(role, content, messageId = null) {
     if (emptyMessage) emptyMessage.remove();
 
     const msgId = messageId || `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    chatHistory.push({ id: msgId, role, content, timestamp: new Date() });
+
+    // 🔄 MODIFICADO: No agregar a chatHistory si ya está (evitar duplicados al cargar desde BD)
+    if (!chatHistory.find(m => m.id === msgId)) {
+        chatHistory.push({ id: msgId, role, content, timestamp: new Date(), feedback });
+    }
 
     const messageDiv = document.createElement('div');
     messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} mb-3`;
@@ -1264,6 +1391,7 @@ async function saveTrainingExample(messageId, isGood) {
 
         const embedding = embeddingData?.embedding || null;
 
+        // 🔄 NUEVO: Guardar con simulation_session_id
         await window.auth.sb.from('training_examples').insert({
             user_id: userId,
             contact_id: `SIM${userId.slice(0, 8)}`,
@@ -1271,8 +1399,24 @@ async function saveTrainingExample(messageId, isGood) {
             ai_response: aiMessage.content,
             is_good_example: isGood,
             embedding: embedding,
-            notes: isGood ? 'Ejemplo guardado desde simulación' : 'Ejemplo marcado como malo desde simulación'
+            notes: isGood ? 'Ejemplo guardado desde simulación' : 'Ejemplo marcado como malo desde simulación',
+            simulation_session_id: currentSessionId  // 🔄 NUEVO: vincular con sesión
         });
+
+        // 🔄 NUEVO: Actualizar feedback en simulation_messages
+        if (currentSessionId) {
+            await window.auth.sb
+                .from('simulation_messages')
+                .update({ feedback: isGood ? 'good' : 'bad' })
+                .eq('id', messageId);
+
+            // 🔄 NUEVO: Incrementar contador en simulation_sessions
+            const field = isGood ? 'good_examples_count' : 'bad_examples_count';
+            await window.auth.sb.rpc('increment_session_counter', {
+                p_session_id: currentSessionId,
+                p_field: field
+            });
+        }
 
         const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
         if (messageDiv) {
@@ -1946,3 +2090,992 @@ window.deleteFaqBatch = async function (ids) {
         window.showToast?.('Error al eliminar: ' + err.message, 'error');
     }
 };
+
+// ==========================================
+// CSV IMPORT / EXPORT LOGIC
+// ==========================================
+
+window.exportFaqsCsv = async function () {
+    try {
+        const userId = await window.getUserId();
+        const { data, error } = await window.auth.sb
+            .from('knowledge_files')
+            .select('extracted_text, filename')
+            .eq('user_id', userId)
+            .like('filename', 'faq_%');
+
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            window.showToast?.('No hay FAQs para exportar', 'info');
+            return;
+        }
+
+        let csvContent = "Question,Answer\n";
+
+        data.forEach(file => {
+            const text = file.extracted_text || '';
+            const pMatch = text.match(/P:\s*(.*?)(?=\nR:|$)/s);
+            const rMatch = text.match(/R:\s*(.*)/s);
+
+            let question = pMatch ? pMatch[1].trim() : (file.filename || 'Untitled');
+            let answer = rMatch ? rMatch[1].trim() : text;
+
+            // Escape quotes and wrap in quotes
+            const escapeCsv = (str) => {
+                if (!str) return '""';
+                // Replace " with "" and wrap in "
+                return '"' + str.replace(/"/g, '""') + '"';
+            };
+
+            csvContent += `${escapeCsv(question)},${escapeCsv(answer)}\n`;
+        });
+
+        // Trigger download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "elina_faqs_export.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+    } catch (err) {
+        console.error('Error exporting CSV:', err);
+        window.showToast?.('Error al exportar CSV', 'error');
+    }
+};
+
+window.importFaqsCsv = async function (file) {
+    if (!file) return;
+
+    // Clear input so same file can be selected again
+    const input = document.getElementById('faq-csv-upload');
+    if (input) input.value = '';
+
+    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+        window.showToast?.('Por favor sube un archivo CSV válido', 'error');
+        return;
+    }
+
+    try {
+        window.showToast?.('Procesando CSV...', 'info');
+        const text = await file.text();
+        const rows = parseCsv(text);
+
+        if (rows.length === 0) {
+            window.showToast?.('El archivo CSV parece vacío o mal formateado. Asegúrate de usar comillas para textos con comas.', 'error');
+            console.log('Parsed rows:', rows);
+            return;
+        }
+
+        // Validate headers roughly (optional, but good practice)
+        // We assume headers might exist. If the first row looks like "Question,Answer", skip it.
+        let dataRows = rows;
+        if (rows.length > 0) {
+            const h1 = rows[0][0]?.toLowerCase();
+            const h2 = rows[0][1]?.toLowerCase();
+            // Basic heuristic checking for header row
+            if ((h1?.includes('question') || h1?.includes('pregunta')) && (h2?.includes('answer') || h2?.includes('respuesta'))) {
+                dataRows = rows.slice(1);
+            }
+        }
+
+        const faqs = dataRows.map(row => {
+            if (row.length < 2) return null;
+            return {
+                question: row[0],
+                answer: row[1]
+            };
+        }).filter(item => item && item.question && item.answer);
+
+        if (faqs.length === 0) {
+            window.showToast?.('No se encontraron preguntas válidas en el CSV', 'error');
+            return;
+        }
+
+        window.showToast?.(`Subiendo ${faqs.length} FAQs...`, 'info');
+
+        // Call Backend
+        const { data: { session } } = await window.auth.sb.auth.getSession();
+        const sbUrl = window.auth.sb.supabaseUrl;
+
+        const response = await fetch(`${sbUrl}/functions/v1/generate-faqs`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session?.access_token || window.auth.sb.supabaseKey}`
+            },
+            body: JSON.stringify({
+                type: 'csv_import',
+                faqs: faqs
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+
+        const result = await response.json();
+
+        window.showToast?.(`✅ ${result.count || faqs.length} FAQs importadas exitosamente`, 'success');
+        await window.loadFaqsList();
+
+    } catch (err) {
+        console.error('Error importing CSV:', err);
+        window.showToast?.('Error al importar: ' + err.message, 'error');
+    }
+};
+
+// Simple CSV Parser handling quotes
+function parseCsv(text) {
+    const rows = [];
+    let currentRow = [];
+    let currentCell = '';
+    let insideQuote = false;
+
+    // Normalize newlines
+    text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+            if (insideQuote && nextChar === '"') {
+                currentCell += '"';
+                i++; // Skip escape
+            } else {
+                insideQuote = !insideQuote;
+            }
+        } else if (char === ',' && !insideQuote) {
+            currentRow.push(currentCell.trim());
+            currentCell = '';
+        } else if (char === '\n' && !insideQuote) {
+            if (currentCell || currentRow.length > 0) {
+                currentRow.push(currentCell.trim());
+                rows.push(currentRow);
+            }
+            currentRow = [];
+            currentCell = '';
+        } else {
+            currentCell += char;
+        }
+    }
+
+    // Push last cell/row
+    if (currentCell || currentRow.length > 0) {
+        currentRow.push(currentCell.trim());
+        rows.push(currentRow);
+    }
+
+    return rows;
+}
+
+
+// ==========================================
+// BULK EDITOR MODAL
+// ==========================================
+
+window.openFaqBulkEditModal = async function () {
+    // 1. Fetch FAQs
+    window.showToast?.('Cargando editor masivo...', 'info');
+    let faqs = [];
+    try {
+        const userId = await window.getUserId();
+        const { data, error } = await window.auth.sb
+            .from('knowledge_files')
+            .select('*')
+            .eq('user_id', userId)
+            .like('filename', 'faq_%')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        faqs = data || [];
+
+    } catch (err) {
+        console.error('Error fetching FAQs for bulk edit:', err);
+        window.showToast?.('Error al cargar FAQs', 'error');
+        return;
+    }
+
+    // 2. Build Modal HTML
+    const modalHtml = `
+    <div id="faq-bulk-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <!-- Header -->
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div>
+                   <h3 class="font-bold text-xl text-slate-800 flex items-center gap-2">
+                        <i data-lucide="table-2" class="w-5 h-5 text-violet-600"></i> 
+                        Edición Masiva de FAQs
+                   </h3>
+                   <p class="text-xs text-slate-500">Edita todas tus preguntas en una sola vista. Los cambios regenerarán el conocimiento de la IA.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">${faqs.length} preguntas</span>
+                    <button onclick="document.getElementById('faq-bulk-modal').remove()" class="p-2 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Table Content -->
+            <div class="flex-1 overflow-auto bg-slate-50 p-4">
+                <table class="w-full border-collapse bg-white rounded-lg shadow-sm overflow-hidden text-sm">
+                    <thead class="bg-slate-100 text-slate-500 font-bold uppercase text-xs sticky top-0 z-10 shadow-sm">
+                        <tr>
+                            <th class="p-3 text-left w-1/3 border-b border-slate-200">Pregunta (Trigger)</th>
+                            <th class="p-3 text-left w-1/2 border-b border-slate-200">Respuesta IA</th>
+                            <th class="p-3 text-center w-20 border-b border-slate-200">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="faq-bulk-tbody" class="divide-y divide-slate-100">
+                        ${faqs.map(faq => {
+        const text = faq.extracted_text || '';
+        const pMatch = text.match(/P:\s*(.*?)(?=\nR:|$)/s);
+        const rMatch = text.match(/R:\s*(.*)/s);
+        const question = pMatch ? pMatch[1].trim() : (faq.filename.replace('faq_', '') || '');
+        const answer = rMatch ? rMatch[1].trim() : text;
+
+        return `
+                            <tr class="hover:bg-slate-50 group transition-colors" data-id="${faq.id}">
+                                <td class="p-2 align-top">
+                                    <textarea class="faq-q-input w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none resize-y min-h-[60px] text-slate-700 font-medium bg-transparent focus:bg-white transition-all" placeholder="Escribe la pregunta...">${escapeHtmlValue(question)}</textarea>
+                                </td>
+                                <td class="p-2 align-top">
+                                    <textarea class="faq-a-input w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none resize-y min-h-[60px] text-slate-600 bg-transparent focus:bg-white transition-all" placeholder="Escribe la respuesta...">${escapeHtmlValue(answer)}</textarea>
+                                </td>
+                                <td class="p-2 align-top text-center pt-4">
+                                    <button onclick="this.closest('tr').classList.add('opacity-50', 'bg-red-50'); this.closest('tr').dataset.deleted = 'true'; this.disabled = true;" 
+                                        class="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Marcar para eliminar">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            `;
+    }).join('')}
+                    </tbody>
+                </table>
+                ${faqs.length === 0 ? '<div class="text-center py-10 text-slate-400">No hay FAQs para editar.</div>' : ''}
+                
+                <div class="mt-4 text-center">
+                     <button onclick="addEmptyRow()" class="text-xs font-bold text-violet-600 hover:text-violet-700 hover:bg-violet-50 px-4 py-2 rounded-lg transition-colors border border-dashed border-violet-200">
+                        + Agregar Fila
+                     </button>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="p-4 border-t border-slate-100 bg-white flex justify-between items-center">
+                <div class="text-xs text-slate-400 italic">
+                    <i data-lucide="info" class="w-3 h-3 inline mr-1"></i>
+                    Los cambios se aplicarán al guardar. Las filas marcadas en rojo se eliminarán.
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="document.getElementById('faq-bulk-modal').remove()" class="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-bold text-sm transition-colors">
+                        Cancelar
+                    </button>
+                    <button onclick="window.saveBulkFaqs()" id="btn-save-bulk" class="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-200 transition-all active:scale-95 flex items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    if (window.lucide) lucide.createIcons();
+
+    // Helper to escape HTML for input values
+    function escapeHtmlValue(str) {
+        return str.replace(/"/g, '&quot;');
+    }
+
+    // Add empty row helper
+    window.addEmptyRow = function () {
+        const tbody = document.getElementById('faq-bulk-tbody');
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 group transition-colors bg-violet-50/30';
+        tr.dataset.new = 'true';
+        tr.innerHTML = `
+            <td class="p-2 align-top">
+                <textarea class="faq-q-input w-full p-2 border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none resize-y min-h-[60px] text-slate-700 font-medium bg-white transition-all" placeholder="Nueva pregunta..."></textarea>
+            </td>
+            <td class="p-2 align-top">
+                <textarea class="faq-a-input w-full p-2 border border-violet-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none resize-y min-h-[60px] text-slate-600 bg-white transition-all" placeholder="Nueva respuesta..."></textarea>
+            </td>
+            <td class="p-2 align-top text-center pt-4">
+                <button onclick="this.closest('tr').remove()" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Eliminar fila">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+        tr.scrollIntoView({ behavior: 'smooth' });
+        if (window.lucide) lucide.createIcons();
+    };
+};
+
+window.saveBulkFaqs = async function () {
+    const rows = Array.from(document.querySelectorAll('#faq-bulk-tbody tr'));
+    const updates = [];
+    const deletions = [];
+    const newItems = [];
+
+    rows.forEach(row => {
+        const id = row.dataset.id;
+        const isDeleted = row.dataset.deleted === 'true';
+        const isNew = row.dataset.new === 'true';
+
+        const qInput = row.querySelector('.faq-q-input');
+        const aInput = row.querySelector('.faq-a-input');
+
+        const question = qInput?.value.trim();
+        const answer = aInput?.value.trim();
+
+        if (isDeleted && id) {
+            deletions.push(id);
+        } else if (isNew) {
+            if (question && answer) {
+                newItems.push({ question, answer });
+            }
+        } else if (id && question && answer) {
+            // Check if changed? For now, we update all or could rely on simple logic.
+            // Let's Just push to updates. Optimization: check against original value if stored.
+            // For robustness, we update all valid rows not deleted.
+            updates.push({ id, question, answer });
+        }
+    });
+
+    if (updates.length === 0 && deletions.length === 0 && newItems.length === 0) {
+        window.showToast?.('No hay cambios para guardar', 'info');
+        return;
+    }
+
+    if (!confirm(`Se actualizarán ${updates.length}, crearán ${newItems.length} y eliminarán ${deletions.length} preguntas. ¿Confirmar?`)) return;
+
+    const btn = document.getElementById('btn-save-bulk');
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Procesando...';
+    if (window.lucide) lucide.createIcons();
+
+    try {
+        const { data: { session } } = await window.auth.sb.auth.getSession();
+        const sbUrl = window.auth.sb.supabaseUrl;
+        const promises = [];
+
+        // 1. Handle Deletions
+        if (deletions.length > 0) {
+            promises.push(window.deleteFaqBatch(deletions));
+        }
+
+        // 2. Handle New Items (Reuse csv_import logic but via direct backend call)
+        if (newItems.length > 0) {
+            const p = fetch(`${sbUrl}/functions/v1/generate-faqs`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || window.auth.sb.supabaseKey}`
+                },
+                body: JSON.stringify({
+                    type: 'csv_import', // Same logic as CSV import: creates new entries
+                    faqs: newItems
+                })
+            }).then(r => r.json());
+            promises.push(p);
+        }
+
+        // 3. Handle Updates (New Bulk Update Endpoint)
+        if (updates.length > 0) {
+            const p = fetch(`${sbUrl}/functions/v1/generate-faqs`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || window.auth.sb.supabaseKey}`
+                },
+                body: JSON.stringify({
+                    type: 'bulk_update',
+                    updates: updates
+                })
+            }).then(r => r.json());
+            promises.push(p);
+        }
+
+        await Promise.all(promises);
+
+        window.showToast?.('Cambios guardados exitosamente', 'success');
+        document.getElementById('faq-bulk-modal').remove();
+        await window.loadFaqsList();
+
+    } catch (err) {
+        console.error('Error saving bulk faqs:', err);
+        window.showToast?.('Error al guardar cambios: ' + err.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+            if (window.lucide) lucide.createIcons();
+        }
+    }
+};
+
+// ============================================
+// 🔄 SIMULACIÓN: PERSISTENCIA DE SESIONES
+// ============================================
+
+/**
+ * Carga la lista de sesiones anteriores del usuario
+ */
+async function loadSimulationSessions(userId) {
+    try {
+        const { data, error } = await window.auth.invokeFunction('get-simulation-sessions', {
+            body: { limit: 10 }
+        });
+
+        if (!error && data?.sessions) {
+            loadedSessions = data.sessions;
+            console.log(`📋 [Simulación] Loaded ${loadedSessions.length} sessions`);
+            renderSessionHistory(loadedSessions); // ✅ Renderizar sesiones en UI
+        }
+    } catch (error) {
+        console.error('[Simulación] Error loading sessions:', error);
+    }
+}
+
+/**
+ * Renderiza la lista de sesiones en el dropdown
+ */
+function renderSessionHistory(sessions) {
+    const sessionsList = document.getElementById('sessions-list');
+    if (!sessionsList) return;
+
+    if (!sessions || sessions.length === 0) {
+        sessionsList.innerHTML = `
+            <div class="text-center text-slate-500 text-sm py-8">
+                <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
+                <p>No hay sesiones anteriores</p>
+            </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        return;
+    }
+
+    sessionsList.innerHTML = sessions.map(session => {
+        const isActive = session.id === currentSessionId;
+        const date = new Date(session.created_at).toLocaleString('es-MX', {
+            dateStyle: 'short',
+            timeStyle: 'short'
+        });
+
+        return `
+            <div onclick="loadSession('${session.id}')"
+                class="session-card p-3 rounded-lg cursor-pointer transition-all mb-2 ${isActive
+                ? 'bg-blue-600 bg-opacity-20 border border-blue-500'
+                : 'bg-slate-700 bg-opacity-30 hover:bg-slate-600 hover:bg-opacity-40 border border-transparent'
+            }">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-white truncate">
+                            ${isActive ? '🟢 ' : ''}${session.session_name || 'Sin nombre'}
+                        </p>
+                        <p class="text-xs text-slate-400 mt-0.5">${date}</p>
+                    </div>
+                    ${isActive ? '<span class="shrink-0 px-2 py-0.5 bg-blue-500 text-white rounded text-[10px] font-bold">ACTIVA</span>' : ''}
+                </div>
+                <div class="flex items-center gap-3 mt-2 text-xs text-slate-400">
+                    <span class="flex items-center gap-1" title="Mensajes totales">
+                        <i data-lucide="message-circle" class="w-3 h-3"></i>
+                        ${session.total_messages || 0}
+                    </span>
+                    <span class="flex items-center gap-1 text-green-400" title="Respuestas buenas">
+                        👍 ${session.good_examples_count || 0}
+                    </span>
+                    <span class="flex items-center gap-1 text-red-400" title="Respuestas malas">
+                        👎 ${session.bad_examples_count || 0}
+                    </span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+}
+
+/**
+ * Toggle del dropdown de sesiones
+ */
+function toggleSessionsDropdown() {
+    const dropdown = document.getElementById('sessions-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('hidden');
+    }
+}
+
+// Cerrar dropdown cuando se hace click fuera
+document.addEventListener('click', function (e) {
+    const dropdown = document.getElementById('sessions-dropdown');
+    const btn = document.getElementById('sessions-dropdown-btn');
+    if (dropdown && btn && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+        dropdown.classList.add('hidden');
+    }
+});
+
+/**
+ * Carga una sesión específica
+ */
+async function loadSession(sessionId) {
+    try {
+        if (sessionId === currentSessionId) {
+            console.log('[Simulación] Session already loaded');
+            toggleSessionsDropdown();
+            return;
+        }
+
+        // Cargar mensajes de la sesión
+        const { data: messages, error } = await window.auth.sb
+            .from('simulation_messages')
+            .select('*')
+            .eq('session_id', sessionId)
+            .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        // Actualizar estado
+        currentSessionId = sessionId;
+        sessionStorage.setItem('current_simulation_session_id', sessionId);
+
+        // Limpiar chat actual
+        chatHistory = [];
+        const messagesContainer = document.getElementById('simulation-chat-messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = '';
+        }
+
+        // Cargar mensajes
+        if (messages && messages.length > 0) {
+            chatHistory = messages.map(msg => ({
+                id: msg.id,
+                role: msg.role,
+                content: msg.content,
+                feedback: msg.feedback
+            }));
+
+            chatHistory.forEach(msg => {
+                addMessageToChat(msg.role, msg.content, msg.id, msg.feedback);
+            });
+        } else {
+            messagesContainer.innerHTML = `
+                <div class="text-center text-slate-400 py-12">
+                    <i data-lucide="message-square" class="w-16 h-16 mx-auto mb-4 opacity-10"></i>
+                    <p class="text-lg font-medium opacity-50">Sesión vacía</p>
+                    <p class="text-sm opacity-30 mt-1">Escribe un mensaje para comenzar</p>
+                </div>
+            `;
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Actualizar UI
+        const session = loadedSessions.find(s => s.id === sessionId);
+        if (session) {
+            const sessionNameEl = document.getElementById('current-session-name');
+            if (sessionNameEl) {
+                sessionNameEl.textContent = session.session_name || 'Sin nombre';
+            }
+        }
+
+        renderSessionHistory(loadedSessions);
+        toggleSessionsDropdown();
+
+        console.log(`✅ [Simulación] Loaded session ${sessionId} with ${messages?.length || 0} messages`);
+
+    } catch (error) {
+        console.error('[Simulación] Error loading session:', error);
+        window.showToast?.('Error al cargar la sesión', 'error');
+    }
+}
+
+/**
+ * Crea una nueva sesión
+ */
+async function startNewSession() {
+    try {
+        const userId = await window.getUserId();
+
+        // Crear nueva sesión
+        const editorContent = document.getElementById('prompt-editor')?.value?.trim();
+        const { data: response, error } = await window.auth.invokeFunction('create-simulation-session', {
+            body: {
+                session_name: `Simulación ${new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}`,
+                draft_prompt: editorContent
+            }
+        });
+
+        if (error) throw error;
+
+        // Actualizar estado
+        currentSessionId = response.session.id;
+        sessionStorage.setItem('current_simulation_session_id', currentSessionId);
+        chatHistory = [];
+
+        // Limpiar chat
+        const messagesContainer = document.getElementById('simulation-chat-messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = `
+                <div class="text-center text-slate-400 py-12">
+                    <i data-lucide="message-square" class="w-16 h-16 mx-auto mb-4 opacity-10"></i>
+                    <p class="text-lg font-medium opacity-50">Prueba tu nuevo prompt aquí</p>
+                    <p class="text-sm opacity-30 mt-1">Escribe un mensaje para comenzar la simulación</p>
+                </div>
+            `;
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Actualizar nombre de sesión
+        const sessionNameEl = document.getElementById('current-session-name');
+        if (sessionNameEl) {
+            sessionNameEl.textContent = response.session.session_name || 'Nueva sesión';
+        }
+
+        // Recargar lista de sesiones
+        await loadSimulationSessions(userId);
+        toggleSessionsDropdown();
+
+        console.log(`✅ [Simulación] Created new session ${currentSessionId}`);
+        window.showToast?.('Nueva sesión creada', 'success');
+
+    } catch (error) {
+        console.error('[Simulación] Error creating new session:', error);
+        window.showToast?.('Error al crear nueva sesión', 'error');
+    }
+}
+
+/**
+ * Carga o crea una sesión de simulación
+ */
+async function loadOrCreateSession(userId) {
+    try {
+        // 1. Intentar cargar sesión guardada en sessionStorage
+        const savedSessionId = sessionStorage.getItem('current_simulation_session_id');
+
+        if (savedSessionId) {
+            // Verificar si la sesión existe y cargar mensajes
+            const { data: messages, error } = await window.auth.sb
+                .from('simulation_messages')
+                .select('*')
+                .eq('session_id', savedSessionId)
+                .order('created_at', { ascending: true });
+
+            if (!error && messages) {
+                console.log(`📋 [Simulación] Loaded ${messages.length} messages from session ${savedSessionId}`);
+
+                // Cargar mensajes al chat
+                chatHistory = messages.map(msg => ({
+                    id: msg.id,
+                    role: msg.role,
+                    content: msg.content,
+                    feedback: msg.feedback
+                }));
+
+                // Renderizar historial en UI
+                const messagesContainer = document.getElementById('simulation-chat-messages');
+                if (messagesContainer) {
+                    messagesContainer.innerHTML = '';
+                    if (messages.length > 0) {
+                        chatHistory.forEach(msg => {
+                            addMessageToChat(msg.role, msg.content, msg.id, msg.feedback);
+                        });
+                    }
+                }
+
+                currentSessionId = savedSessionId;
+
+                // 🔄 NUEVO: Actualizar nombre de sesión en UI
+                const session = loadedSessions.find(s => s.id === savedSessionId);
+                if (session) {
+                    const sessionNameEl = document.getElementById('current-session-name');
+                    if (sessionNameEl) {
+                        sessionNameEl.textContent = session.session_name || 'Sesión actual';
+                    }
+                }
+
+                return;
+            }
+        }
+
+        // 2. Si no hay sesión válida, crear nueva
+        const editorContent = document.getElementById('prompt-editor')?.value?.trim();
+
+        const { data: response, error: createError } = await window.auth.invokeFunction('create-simulation-session', {
+            body: {
+                session_name: `Simulación ${new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}`,
+                draft_prompt: editorContent
+            }
+        });
+
+        if (!createError && response?.session) {
+            currentSessionId = response.session.id;
+            sessionStorage.setItem('current_simulation_session_id', currentSessionId);
+            chatHistory = [];
+            console.log(`✅ [Simulación] Created new session ${currentSessionId}`);
+
+            // 🔄 NUEVO: Actualizar nombre de sesión en UI
+            const sessionNameEl = document.getElementById('current-session-name');
+            if (sessionNameEl) {
+                sessionNameEl.textContent = response.session.session_name || 'Nueva sesión';
+            }
+        } else {
+            console.error('[Simulación] Error creating session:', createError);
+        }
+
+    } catch (error) {
+        console.error('[Simulación] Error in loadOrCreateSession:', error);
+    }
+}
+
+/**
+ * Guarda un mensaje en la base de datos
+ */
+async function saveMessageToDB(sessionId, role, content, msgId, metadata = {}) {
+    try {
+        if (!sessionId) {
+            console.warn('[Simulación] No session ID, skipping DB save');
+            return;
+        }
+
+        const { data, error } = await window.auth.invokeFunction('save-simulation-message', {
+            body: {
+                session_id: sessionId,
+                role: role,
+                content: content,
+                metadata: metadata
+            }
+        });
+
+        if (error) {
+            console.error('[Simulación] Error saving message to DB:', error);
+        } else {
+            console.log(`✅ [Simulación] Saved ${role} message to DB`);
+        }
+    } catch (error) {
+        console.error('[Simulación] Exception saving message:', error);
+    }
+}
+
+/**
+ * 🧠 Analiza ejemplos de entrenamiento y sugiere mejoras al prompt
+ */
+async function analyzeAndImprovePrompt() {
+    try {
+        // Mostrar loading
+        if (window.showLoadingOverlay) {
+            window.showLoadingOverlay('Analizando tus ejemplos guardados...');
+        }
+
+        const { data, error } = await window.auth.invokeFunction('analyze-training-examples', {
+            body: {
+                include_draft: true // Usar draft si existe
+            }
+        });
+
+        if (window.hideLoadingOverlay) {
+            window.hideLoadingOverlay();
+        }
+
+        if (error) {
+            console.error('[Prompt Training] Error analyzing examples:', error);
+            window.showToast?.(error.error || 'Error al analizar ejemplos', 'error');
+            return;
+        }
+
+        if (!data || !data.analysis) {
+            window.showToast?.('No se recibió análisis', 'error');
+            return;
+        }
+
+        console.log('[Prompt Training] Analysis received:', data);
+
+        // Mostrar modal con resultados
+        showAnalysisModal(data.analysis, data.stats);
+
+    } catch (error) {
+        if (window.hideLoadingOverlay) {
+            window.hideLoadingOverlay();
+        }
+        console.error('[Prompt Training] Error in analyzeAndImprovePrompt:', error);
+        window.showToast?.('Error al analizar ejemplos', 'error');
+    }
+}
+
+/**
+ * Muestra modal con análisis de ejemplos
+ */
+function showAnalysisModal(analysis, stats) {
+    const modal = document.createElement('div');
+    modal.id = 'analysis-modal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+    modal.onclick = (e) => {
+        if (e.target === modal) closeAnalysisModal();
+    };
+
+    const goodPatterns = analysis.good_patterns || [];
+    const badPatterns = analysis.bad_patterns || [];
+    const suggestions = analysis.suggestions || [];
+    const changes = analysis.suggested_changes || { add: [], modify: [], remove: [] };
+
+    const hasChanges = changes.add.length > 0 || changes.modify.length > 0 || changes.remove.length > 0;
+
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="brain" class="w-8 h-8"></i>
+                        <div>
+                            <h2 class="text-2xl font-bold">Análisis de Ejemplos</h2>
+                            <p class="text-sm text-purple-100 mt-1">
+                                ${stats.total_good} buenos • ${stats.total_bad} malos
+                            </p>
+                        </div>
+                    </div>
+                    <button onclick="closeAnalysisModal()" class="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-all">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                ${goodPatterns.length > 0 ? `
+                <!-- Patrones Positivos -->
+                <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                    <h3 class="text-lg font-bold text-green-900 mb-3 flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+                        Patrones Positivos
+                    </h3>
+                    <ul class="space-y-2">
+                        ${goodPatterns.map(pattern => `
+                            <li class="flex items-start gap-2 text-sm text-green-800">
+                                <span class="text-green-500 mt-0.5">✓</span>
+                                <span>${pattern}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+
+                ${badPatterns.length > 0 ? `
+                <!-- Patrones Negativos -->
+                <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <h3 class="text-lg font-bold text-red-900 mb-3 flex items-center gap-2">
+                        <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
+                        Patrones Negativos
+                    </h3>
+                    <ul class="space-y-2">
+                        ${badPatterns.map(pattern => `
+                            <li class="flex items-start gap-2 text-sm text-red-800">
+                                <span class="text-red-500 mt-0.5">✗</span>
+                                <span>${pattern}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+
+                ${suggestions.length > 0 ? `
+                <!-- Sugerencias -->
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <h3 class="text-lg font-bold text-blue-900 mb-3 flex items-center gap-2">
+                        <i data-lucide="lightbulb" class="w-5 h-5 text-blue-600"></i>
+                        Sugerencias de Mejora
+                    </h3>
+                    <ol class="space-y-3">
+                        ${suggestions.map((suggestion, i) => `
+                            <li class="flex items-start gap-3 text-sm text-blue-800">
+                                <span class="font-bold text-blue-600 mt-0.5">${i + 1}.</span>
+                                <span>${suggestion}</span>
+                            </li>
+                        `).join('')}
+                    </ol>
+                </div>
+                ` : ''}
+
+                ${hasChanges ? `
+                <!-- Cambios Sugeridos -->
+                <div class="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                    <h3 class="text-lg font-bold text-purple-900 mb-3 flex items-center gap-2">
+                        <i data-lucide="scissors" class="w-5 h-5 text-purple-600"></i>
+                        Cambios Quirúrgicos Sugeridos
+                    </h3>
+                    <p class="text-xs text-purple-700 mb-4">Aplica estos cambios específicos sin reescribir todo el prompt</p>
+
+                    ${changes.add.length > 0 ? `
+                    <div class="mb-4">
+                        <h4 class="font-semibold text-sm text-purple-800 mb-2 flex items-center gap-2">
+                            <span class="text-green-600">+</span> AGREGAR
+                        </h4>
+                        ${changes.add.map((change, i) => `
+                            <div class="bg-white border border-purple-200 rounded-lg p-3 mb-2 text-sm">
+                                <p class="text-purple-700 font-medium mb-1">📍 ${change.where}</p>
+                                <div class="bg-green-50 border border-green-200 rounded p-2 font-mono text-xs text-green-900 whitespace-pre-wrap">+ ${change.text}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ` : ''}
+
+                    ${changes.modify.length > 0 ? `
+                    <div class="mb-4">
+                        <h4 class="font-semibold text-sm text-purple-800 mb-2 flex items-center gap-2">
+                            <span class="text-blue-600">~</span> MODIFICAR
+                        </h4>
+                        ${changes.modify.map((change, i) => `
+                            <div class="bg-white border border-purple-200 rounded-lg p-3 mb-2 text-sm">
+                                <div class="bg-red-50 border border-red-200 rounded p-2 font-mono text-xs text-red-900 whitespace-pre-wrap mb-2">- ${change.original}</div>
+                                <div class="bg-green-50 border border-green-200 rounded p-2 font-mono text-xs text-green-900 whitespace-pre-wrap">+ ${change.new}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ` : ''}
+
+                    ${changes.remove.length > 0 ? `
+                    <div class="mb-4">
+                        <h4 class="font-semibold text-sm text-purple-800 mb-2 flex items-center gap-2">
+                            <span class="text-red-600">-</span> ELIMINAR
+                        </h4>
+                        ${changes.remove.map((change, i) => `
+                            <div class="bg-white border border-purple-200 rounded-lg p-3 mb-2 text-sm">
+                                <div class="bg-red-50 border border-red-200 rounded p-2 font-mono text-xs text-red-900 whitespace-pre-wrap">- ${change.text}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ` : ''}
+                </div>
+                ` : ''}
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="border-t border-gray-200 p-4 bg-gray-50 flex gap-3 justify-end">
+                <button onclick="closeAnalysisModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all font-medium">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    if (window.lucide) lucide.createIcons();
+}
+
+/**
+ * Cierra modal de análisis
+ */
+function closeAnalysisModal() {
+    const modal = document.getElementById('analysis-modal');
+    if (modal) {
+        modal.remove();
+    }
+}

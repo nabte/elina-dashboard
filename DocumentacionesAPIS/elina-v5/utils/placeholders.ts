@@ -30,7 +30,8 @@ export async function processPlaceholders(
             productIds: [],
             productsMap: {},
             shouldGenerateQuote: false,
-            quoteItems: []
+            quoteItems: [],
+            productMedia: []
         }
     }
 
@@ -48,7 +49,8 @@ export async function processPlaceholders(
             productIds,
             productsMap: {},
             shouldGenerateQuote: false,
-            quoteItems: []
+            quoteItems: [],
+            productMedia: []
         }
     }
 
@@ -75,8 +77,8 @@ export async function processPlaceholders(
         switch (field.toUpperCase()) {
             case 'NAME': return product.productName
             case 'PRICE': return `$${product.price.toFixed(2)}`
-            case 'URL': return product.mediaUrl || ''
-            case 'MEDIA': return product.mediaUrl || '' // Alias para URL de media
+            case 'URL': return '' // No mostrar URL en texto, se envía como media automáticamente
+            case 'MEDIA': return '' // No mostrar URL en texto, se envía como media automáticamente
             case 'STOCK': return String(product.stock)
             case 'DESC': return product.description || ''
             default: return fullMatch
@@ -119,15 +121,32 @@ export async function processPlaceholders(
         })
     }
 
-    // 7. Calcular totales (si está en el texto)
-    // TODO: Implementar lógica de cálculo de totales si es necesario en el texto final
+    // 7. Recopilar media de productos procesados
+    // Regla: Si el producto fue mencionado (productIds) Y tiene mediaUrl, agregarlo
+    const productMedia: Array<{ productId: number; url: string; type: 'image' | 'video' }> = []
+
+    productIds.forEach(id => {
+        const product = productMap[String(id)]
+        if (product && product.mediaUrl) {
+            // Detectar tipo por extensión
+            const isVideo = /\.(mp4|mov|avi|webm)$/i.test(product.mediaUrl)
+            productMedia.push({
+                productId: product.id,
+                url: product.mediaUrl,
+                type: isVideo ? 'video' : 'image'
+            })
+        }
+    })
+
+    console.log(`   - Found ${productMedia.length} product media from ${productIds.length} products`)
 
     return {
         finalText,
         productIds,
         productsMap: productMap,
         shouldGenerateQuote,
-        quoteItems
+        quoteItems,
+        productMedia
     }
 }
 

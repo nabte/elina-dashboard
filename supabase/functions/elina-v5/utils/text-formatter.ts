@@ -21,6 +21,12 @@ export function formatTextForWhatsApp(text: string): string {
         // Asegurar espacio después de puntos seguidos de letra
         .replace(/\.([A-ZÁÉÍÓÚÑ])/g, '. $1')
 
+        // 🎨 NUEVO: Asegurar salto de línea antes de emojis de viñeta (🔹, 🔸, ✨, etc.)
+        .replace(/([^\n])\s*(🔹|🔸|✨|📦|💎|⭐|🎯|🔥|💡|📍|💰|🏆|🎁|⚡)/g, '$1\n$2')
+
+        // 🎨 NUEVO: Asegurar salto de línea después de precio (formato $XXX.XX o $XXX)
+        .replace(/(\$[\d,]+\.?\d*)\s+(?=[🔹🔸✨📦💎⭐🎯🔥💡📍💰🏆🎁⚡¿?A-Z])/g, '$1\n')
+
         // Asegurar salto de línea después de dos puntos si sigue lista
         .replace(/:(\s*)-/g, ':\n-')
         .replace(/:(\s*)\d+\./g, ':\n$1$2.')
@@ -31,6 +37,9 @@ export function formatTextForWhatsApp(text: string): string {
 
         // Asegurar salto antes de números de lista
         .replace(/([^\n])\n?(\d+)\.\s/g, '$1\n$2. ')
+
+        // 🎨 NUEVO: Asegurar salto antes de preguntas (¿...?)
+        .replace(/([^\n])\s*(¿[^?]+\?)/g, '$1\n$2')
 
         // Limpiar espacios múltiples
         .replace(/[ \t]{2,}/g, ' ')

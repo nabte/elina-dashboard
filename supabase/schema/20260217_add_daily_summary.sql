@@ -65,10 +65,44 @@ BEGIN
         ALTER TABLE public.profiles
         ADD COLUMN smtp_config jsonb DEFAULT NULL;
     END IF;
+
+    -- Campo: notification_messages_sent (contador de mensajes sin respuesta)
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+        AND table_name = 'profiles'
+        AND column_name = 'notification_messages_sent'
+    ) THEN
+        ALTER TABLE public.profiles
+        ADD COLUMN notification_messages_sent integer DEFAULT 0;
+    END IF;
+
+    -- Campo: notification_last_acknowledged_at (última respuesta de WhatsApp)
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+        AND table_name = 'profiles'
+        AND column_name = 'notification_last_acknowledged_at'
+    ) THEN
+        ALTER TABLE public.profiles
+        ADD COLUMN notification_last_acknowledged_at timestamptz DEFAULT NULL;
+    END IF;
 END $$;
 
--- Comentarios SMTP
+-- Comentarios
 COMMENT ON COLUMN public.profiles.smtp_config IS 'Configuración SMTP: {host, port, secure, user, password, from_email, from_name}';
+COMMENT ON COLUMN public.profiles.notification_messages_sent IS 'Contador de mensajes de notificación enviados sin respuesta del usuario';
+COMMENT ON COLUMN public.profiles.notification_last_acknowledged_at IS 'Última vez que el usuario respondió a una notificación por WhatsApp';
+
+-- Función RPC para incrementar contador de notificaciones de forma atómica
+CREATE OR REPLACE FUNCTION increment_notification_counter(user_id uuid)
+RETURNS void AS $$
+BEGIN
+    UPDATE public.profiles
+    SET notification_messages_sent = COALESCE(notification_messages_sent, 0) + 1
+    WHERE id = user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================
 -- 2. Crear tabla conversation_quality_log

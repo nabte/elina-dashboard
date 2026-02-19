@@ -35,7 +35,7 @@ export async function shouldIgnoreMessage(
     // El usuario confirmó explícitamente: "si entro de sus label existe 'ignorar' ingoramos"
     const hasIgnoredLabel = contactLabels.some(label =>
         label.toLowerCase() === 'ignorar' ||
-        config.ignoredLabels.includes(label)
+        (config.ignoredLabels && config.ignoredLabels.includes(label))
     )
 
     if (hasIgnoredLabel) {

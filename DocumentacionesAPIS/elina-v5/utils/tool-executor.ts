@@ -7,6 +7,7 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import type { AccountConfig, ToolCall, ToolResult } from '../config/types.ts'
 import { buscarProductos, agendarCita, consultarDisponibilidad } from './tools.ts'
+import { cacheProductsMentioned } from './product-cache.ts'
 
 /**
  * Ejecuta una lista de tool calls y devuelve los resultados
@@ -39,19 +40,40 @@ export async function executeToolCalls(
                         functionArgs.limit || 5
                     )
 
+                    // 🔥 CACHEAR productos mencionados para follow-up questions
+                    if (products.length > 0) {
+                        // No await para no bloquear la respuesta
+                        cacheProductsMentioned(supabase, config.userId, contactId, products)
+                            .catch(err => console.error(`⚠️ [CACHE] Failed to cache products: ${err.message}`))
+                    }
+
                     result = {
-                        products: products.map(p => ({
-                            id: p.id,
-                            name: p.product_name,
-                            price: p.price,
-                            stock: p.stock,
-                            description: p.description,
-                            media_url: p.media_url
-                        })),
+                        products: products.map(p => {
+                            // Usar enhanced_description si existe, sino description normal
+                            const bestDescription = p.enhanced_description || p.description
+
+                            // Formatear FAQs si existen
+                            let faqText = ''
+                            if (p.faq && Array.isArray(p.faq) && p.faq.length > 0) {
+                                faqText = '\nFAQs:\n' + p.faq.map((item: any, idx: number) =>
+                                    `${idx + 1}. ${item.question}\n   → ${item.answer}`
+                                ).join('\n')
+                            }
+
+                            return {
+                                id: p.id,
+                                name: p.product_name,
+                                price: p.price,
+                                stock: p.stock,
+                                description: bestDescription,
+                                media_url: p.media_url,
+                                benefits: p.benefits || null,
+                                usage_instructions: p.usage_instructions || null,
+                                faqs: faqText || null
+                            }
+                        }),
                         count: products.length
                     }
-                    break
-
                     break
 
                 case 'consultar_disponibilidad':

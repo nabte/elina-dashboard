@@ -7,6 +7,7 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import type { AccountConfig, ConversationContext, Message, Contact, Product } from '../config/types.ts'
 import { getRelevantLearnings } from '../memory/long-term.ts'
+import { getRecentlyMentionedProducts } from './product-cache.ts'
 
 /**
  * Obtiene el perfil por nombre de instancia
@@ -152,12 +153,14 @@ export async function loadConversationContext(
         recentMessages,
         accountLearnings,
         userPreferences,
-        topProducts
+        topProducts,
+        recentlyMentionedProducts
     ] = await Promise.all([
         getChatHistory(supabase, config.userId, contact.id, 10),
         getRelevantLearnings(supabase, config.userId, currentMessage, 5),
         getUserPreferences(supabase, contact.id),
-        config.hasProducts ? getTopProducts(supabase, config.userId, 5) : Promise.resolve([])
+        config.hasProducts ? getTopProducts(supabase, config.userId, 5) : Promise.resolve([]),
+        config.hasProducts ? getRecentlyMentionedProducts(supabase, config.userId, contact.id, 5) : Promise.resolve([])
     ])
 
     return {
@@ -165,6 +168,7 @@ export async function loadConversationContext(
         accountLearnings,
         userPreferences,
         topProducts,
+        recentlyMentionedProducts, // 🔥 Productos mencionados recientemente con FAQs
         ragContext: undefined, // TODO: Implementar RAG
         activePromotions: [], // TODO: Cargar promociones activas
         appointmentSlots: [] // TODO: Cargar slots si es necesario

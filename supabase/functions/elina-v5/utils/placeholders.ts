@@ -30,7 +30,8 @@ export async function processPlaceholders(
             productIds: [],
             productsMap: {},
             shouldGenerateQuote: false,
-            quoteItems: []
+            quoteItems: [],
+            productMedia: []
         }
     }
 
@@ -48,7 +49,8 @@ export async function processPlaceholders(
             productIds,
             productsMap: {},
             shouldGenerateQuote: false,
-            quoteItems: []
+            quoteItems: [],
+            productMedia: []
         }
     }
 
@@ -74,78 +76,77 @@ export async function processPlaceholders(
 
         switch (field.toUpperCase()) {
             case 'NAME': return product.productName
-            case 'PRICE': return product.price.toFixed(2)
-            case 'URL': return product.mediaUrl || ''
-            case 'MEDIA': return product.mediaUrl || '' // Alias para URL de media
+            case 'PRICE': return `$${product.price.toFixed(2)}`
+            case 'URL': return '' // No mostrar URL en texto, se envía como media automáticamente
+            case 'MEDIA': return '' // No mostrar URL en texto, se envía como media automáticamente
             case 'STOCK': return String(product.stock)
             case 'DESC': return product.description || ''
             default: return fullMatch
         }
     })
 
-    // 4. Limpiar Placeholders "Sucios" (IA hallucination: [105X:7305]) y PRODUCT_CARD
+    // 4. Limpiar Placeholders "Sucios" (IA hallucination: [105X:7305])
+    // Reemplaza [CUALQUIER_TEXTO:ID] por el nombre real del producto
     const messRegex = /\[([^\]]+):(\d+)\]/g
     finalText = finalText.replace(messRegex, (fullMatch, content, idStr) => {
         const product = productMap[idStr]
         if (!product) return fullMatch
 
-        // CRITICAL FIX: Resolve [PRODUCT_MEDIA:ID] that might have been injected by CARD
-        if (content === 'PRODUCT_MEDIA') {
-            return product.mediaUrl || ''
-        }
+        // Si es un placeholder técnico ya procesado (o que parezca uno), ignorarlo
+        if (content.startsWith('PRODUCT_')) return fullMatch
 
-        // CRITICAL FIX: Remove [PRODUCT_CARD:ID] placeholders (not used, should be removed)
-        if (content === 'PRODUCT_CARD') {
-            return '' // Remove completely as products are already formatted by tools
-        }
-
-        if (content.startsWith('PRODUCT_') || content.startsWith('QUOTE_')) return fullMatch
         return product.productName
     })
 
-    // ---------------------------------------------------------
-    // NUEVO: CÁLCULOS MATEMÁTICOS DETERMINISTAS (ANTI-ALUCINACIÓN)
-    // ---------------------------------------------------------
+    // 5. Detectar necesidad de cotización
+    const shouldGenerateQuote = detectQuoteNeed(text, productIds.length)
 
-    let runningTotal = 0
-    let hasCalculations = false
-
-    // 1. Procesar Items de Cotización: [QUOTE_ITEM:ID:QTY]
-    // Ejemplo: [QUOTE_ITEM:101:3] -> "3x Toner TN-1000 ($150.00) = $450.00"
-    const quoteItemRegex = /\[QUOTE_ITEM:(\d+):(\d+)\]/g
-    finalText = finalText.replace(quoteItemRegex, (match, idStr, qtyStr) => {
-        const product = productMap[idStr]
-        const quantity = parseInt(qtyStr, 10)
-
-        if (!product || isNaN(quantity)) return match
-
-        const subtotal = product.price * quantity
-        runningTotal += subtotal
-        hasCalculations = true
-
-        // Formato de salida para la línea de item
-        return `• ${quantity}x *${product.productName}* ($${product.price.toFixed(2)}) = *$${subtotal.toFixed(2)}*`
-    })
-
-    // 2. Procesar Total General: [QUOTE_TOTAL]
-    // Ejemplo: [QUOTE_TOTAL] -> "💰 TOTAL: $450.00"
-    if (hasCalculations) {
-        finalText = finalText.replace(/\[QUOTE_TOTAL\]/g, () => {
-            return `\n💰 *TOTAL A PAGAR: $${runningTotal.toFixed(2)}*`
+    // 6. Generar items de cotización si es necesario
+    const quoteItems: QuoteItem[] = []
+    if (shouldGenerateQuote) {
+        // Extraer cantidades del texto (simple heuristic)
+        // Busca patrones como "2 unidades de [PROD:123]" o "x3 [PROD:123]"
+        // Esta es una simplificación, la lógica real puede ser más compleja
+        productIds.forEach(id => {
+            const product = productMap[String(id)]
+            if (product) {
+                quoteItems.push({
+                    product_id: product.id,
+                    product_name: product.productName,
+                    quantity: 1, // Default a 1 por ahora
+                    price: product.price,
+                    subtotal: product.price
+                })
+            }
         })
     }
 
-    // Si la IA puso [QUOTE_TOTAL] pero no hubo items (error de uso), lo borramos o ponemos 0
-    finalText = finalText.replace(/\[QUOTE_TOTAL\]/g, '')
+    // 7. Recopilar media de productos procesados
+    // Regla: Si el producto fue mencionado (productIds) Y tiene mediaUrl, agregarlo
+    const productMedia: Array<{ productId: number; url: string; type: 'image' | 'video' }> = []
 
-    // ---------------------------------------------------------
+    productIds.forEach(id => {
+        const product = productMap[String(id)]
+        if (product && product.mediaUrl) {
+            // Detectar tipo por extensión
+            const isVideo = /\.(mp4|mov|avi|webm)$/i.test(product.mediaUrl)
+            productMedia.push({
+                productId: product.id,
+                url: product.mediaUrl,
+                type: isVideo ? 'video' : 'image'
+            })
+        }
+    })
+
+    console.log(`   - Found ${productMedia.length} product media from ${productIds.length} products`)
 
     return {
         finalText,
         productIds,
         productsMap: productMap,
-        shouldGenerateQuote: hasCalculations, // Si calculamos, implícitamente es una cotización
-        quoteItems: [] // Ya no necesitamos esto explícito si el texto ya lo trae renderizado
+        shouldGenerateQuote,
+        quoteItems,
+        productMedia
     }
 }
 
@@ -178,14 +179,4 @@ function detectQuoteNeed(text: string, productCount: number): boolean {
     if (productCount > 0 && hasKeyword) return true
 
     return false
-}
-
-/**
- * Reemplaza el placeholder [APPOINTMENT_CALENDAR_LINK] con la URL real del calendario
- */
-export function replaceAppointmentCalendarLink(text: string, slug?: string): string {
-    if (!slug) return text
-
-    const calendarUrl = `https://elinaia.com.mx/${slug}`
-    return text.replace(/\[APPOINTMENT_CALENDAR_LINK\]/g, calendarUrl)
 }

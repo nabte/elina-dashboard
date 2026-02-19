@@ -8,7 +8,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { canSendUserNotification } from '../_shared/user-notification-spam.ts'
+import { canSendUserNotification, incrementNotificationCounter } from '../_shared/user-notification-spam.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -112,6 +112,11 @@ serve(async (req) => {
                     user.evolution_api_url,
                     user.evolution_instance_name
                 )
+
+                // Incrementar contador anti-spam si se envió exitosamente
+                if (sent && !isManual) {
+                    await incrementNotificationCounter(supabase, user.id)
+                }
 
                 results.push({
                     userId: user.id,

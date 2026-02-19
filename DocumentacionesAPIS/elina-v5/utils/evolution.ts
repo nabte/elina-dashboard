@@ -13,20 +13,19 @@ export async function sendMessage(
     config: AccountConfig,
     remoteJid: string,
     text: string,
-    delay: boolean = true
+    enableDelay: boolean = true
 ): Promise<void> {
     console.log(`📤 [EVOLUTION] Sending message to ${remoteJid}`)
 
-    // Simular delay de escritura si está habilitado
-    if (delay) {
-        await simulateTypingDelay(text.length)
-    }
-
     const url = `${config.evolutionApiUrl}/message/sendText/${config.instanceName}`
+
+    // Calcular delay aleatorio entre 1000-2000ms
+    const delayMs = enableDelay ? Math.floor(Math.random() * 1000) + 1000 : 0
 
     const payload = {
         number: remoteJid,
-        text: text
+        text: text,
+        ...(enableDelay && { delay: delayMs })
     }
 
     console.log(`📤 [EVOLUTION] URL: ${url}`)
@@ -70,6 +69,32 @@ export async function sendImage(
     // Limpiar número (remover @s.whatsapp.net si existe)
     const cleanNumber = remoteJid.replace('@s.whatsapp.net', '')
 
+    // Extraer extensión de la URL para mimetype
+    const extension = imageUrl.split('.').pop()?.toLowerCase() || 'jpg'
+    const mimetypes: Record<string, string> = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'webp': 'image/webp'
+    }
+    const mimetype = mimetypes[extension] || 'image/jpeg'
+
+    // Delay aleatorio entre 1000-2000ms
+    const delayMs = Math.floor(Math.random() * 1000) + 1000
+
+    const payload = {
+        number: cleanNumber,
+        mediatype: 'image',
+        mimetype: mimetype,
+        caption: caption || '',
+        media: imageUrl,
+        fileName: `image.${extension}`,
+        delay: delayMs
+    }
+
+    console.log(`📤 [EVOLUTION] Payload:`, JSON.stringify(payload, null, 2))
+
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -77,16 +102,12 @@ export async function sendImage(
                 'Content-Type': 'application/json',
                 'apikey': config.evolutionApiKey
             },
-            body: JSON.stringify({
-                number: cleanNumber,
-                mediatype: 'image',
-                media: imageUrl,
-                caption: caption || ''
-            })
+            body: JSON.stringify(payload)
         })
 
         if (!response.ok) {
-            throw new Error(`Evolution API error: ${response.status}`)
+            const errorText = await response.text()
+            throw new Error(`Evolution API error: ${response.status} - ${errorText}`)
         }
 
         console.log(`✅ [EVOLUTION] Image sent successfully`)
@@ -149,6 +170,31 @@ export async function sendVideo(
     // Limpiar número (remover @s.whatsapp.net si existe)
     const cleanNumber = remoteJid.replace('@s.whatsapp.net', '')
 
+    // Extraer extensión para mimetype
+    const extension = videoUrl.split('.').pop()?.toLowerCase() || 'mp4'
+    const mimetypes: Record<string, string> = {
+        'mp4': 'video/mp4',
+        'mov': 'video/quicktime',
+        'avi': 'video/x-msvideo',
+        'webm': 'video/webm'
+    }
+    const mimetype = mimetypes[extension] || 'video/mp4'
+
+    // Delay aleatorio entre 1000-2000ms
+    const delayMs = Math.floor(Math.random() * 1000) + 1000
+
+    const payload = {
+        number: cleanNumber,
+        mediatype: 'video',
+        mimetype: mimetype,
+        caption: caption || '',
+        media: videoUrl,
+        fileName: `video.${extension}`,
+        delay: delayMs
+    }
+
+    console.log(`📤 [EVOLUTION] Payload:`, JSON.stringify(payload, null, 2))
+
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -156,16 +202,12 @@ export async function sendVideo(
                 'Content-Type': 'application/json',
                 'apikey': config.evolutionApiKey
             },
-            body: JSON.stringify({
-                number: cleanNumber,
-                mediatype: 'video',
-                media: videoUrl,
-                caption: caption || ''
-            })
+            body: JSON.stringify(payload)
         })
 
         if (!response.ok) {
-            throw new Error(`Evolution API error: ${response.status}`)
+            const errorText = await response.text()
+            throw new Error(`Evolution API error: ${response.status} - ${errorText}`)
         }
 
         console.log(`✅ [EVOLUTION] Video sent successfully`)
@@ -175,13 +217,3 @@ export async function sendVideo(
     }
 }
 
-function simulateTypingDelay(textLength: number): Promise<void> {
-    // Delay entre 800ms y 2000ms basado en longitud del texto
-    // ~40 caracteres por segundo (más lento que antes para parecer más humano)
-    const baseDelay = 800 // Mínimo 800ms
-    const variableDelay = Math.min(textLength * 25, 1200) // Máximo 1200ms adicionales
-    const delay = baseDelay + variableDelay // Total: 800-2000ms
-
-    console.log(`⏳ [EVOLUTION] Simulating typing delay: ${delay}ms`)
-    return new Promise(resolve => setTimeout(resolve, delay))
-}

@@ -116,6 +116,42 @@ serve(async (req) => {
       })
     }
 
+    // REUSABLE EMBEDDING GENERATOR
+    const generateEmbeddingForFile = async (file: any, type: string, source: string) => {
+      try {
+        console.log(`Generating embedding for ${type} file ${file.id}...`)
+        const embeddingResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-embedding-with-cache`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user ? (req.headers.get('Authorization') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) : Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            // We need to pass a valid key. The incoming request has user auth.
+            // But generate-embedding-with-cache checks for service role usually or just valid user. 
+            // Let's use service_role for internal calls to be safe if we can, or just forward auth.
+            // Better to use service role key for internal backend-to-backend calls if available in env.
+            // Actually, matching the existing code pattern: 
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          },
+          body: JSON.stringify({ text: file.extracted_text }),
+        });
+
+        if (embeddingResponse.ok) {
+          const { embedding } = await embeddingResponse.json();
+          await supabaseClient.from('knowledge_embeddings').insert({
+            file_id: file.id,
+            user_id: user.id,
+            content: file.extracted_text,
+            embedding: embedding,
+            metadata: { type, source }
+          });
+        } else {
+          console.error(`Failed embedding API call for ${file.id}: ${await embeddingResponse.text()}`);
+        }
+      } catch (err) {
+        console.error(`Failed embedding for file ${file.id}`, err);
+      }
+    };
+
     // HANDLE BATCH CHUNKS (RAG Optimization)
     if (reqData.type === 'batch_chunks') {
       const { chunks, docTitle } = reqData;
@@ -148,40 +184,109 @@ serve(async (req) => {
 
       if (insertError) throw insertError;
 
-      // 2. Generate Embeddings (Parallel with concurrency limit)
-      // We process them in the background ideally, but here we wait to ensure consistency
-      // To avoid timeout, we can process a few and let the rest be handled by a trigger if we had one,
-      // but simplistic approach for now is Promise.all with simple throttling if needed.
-      // Given the chunks are usually small (10-20), we can try all at once or in batches of 5.
+      // 2. Generate Embeddings
+      await Promise.all(insertedFiles.map(f => generateEmbeddingForFile(f, 'chunk', docTitle)));
 
-      const generateEmbeddingForFile = async (file: any) => {
-        try {
-          const embeddingResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-embedding-with-cache`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-            },
-            body: JSON.stringify({ text: file.extracted_text }),
-          });
+      return new Response(JSON.stringify({ success: true, count: insertedFiles.length }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
 
-          if (embeddingResponse.ok) {
-            const { embedding } = await embeddingResponse.json();
-            await supabaseClient.from('knowledge_embeddings').insert({
-              file_id: file.id,
-              user_id: user.id,
-              content: file.extracted_text,
-              embedding: embedding,
-              metadata: { type: 'chunk', source: docTitle }
-            });
-          }
-        } catch (err) {
-          console.error(`Failed embedding for file ${file.id}`, err);
+    // HANDLE BULK UPDATE
+    if (reqData.type === 'bulk_update') {
+      const { updates } = reqData; // Expecting array of { id, question, answer }
+
+      if (!updates || !Array.isArray(updates) || updates.length === 0) {
+        return new Response(JSON.stringify({ error: 'No updates provided' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+
+      console.log(`Processing bulk update for ${updates.length} FAQs for user ${user.id}...`);
+
+      const results = [];
+      for (const update of updates) {
+        const { id, question, answer } = update;
+        if (!id || !question || !answer) continue;
+
+        const extracted_text = `P: ${question}\nR: ${answer}`;
+
+        // 1. Update text in knowledge_files
+        const { error: updateError } = await supabaseClient
+          .from('knowledge_files')
+          .update({
+            extracted_text,
+            status: 'ready' // Ensure it's marked as ready
+          })
+          .eq('id', id)
+          .eq('user_id', user.id); // Security check
+
+        if (updateError) {
+          console.error(`Error updating FAQ ${id}:`, updateError);
+          results.push({ id, success: false, error: updateError.message });
+          continue;
         }
-      };
 
-      // Execute all embeddings
-      await Promise.all(insertedFiles.map(f => generateEmbeddingForFile(f)));
+        // 2. Delete old embeddings
+        await supabaseClient
+          .from('knowledge_embeddings')
+          .delete()
+          .eq('file_id', id);
+
+        // 3. Generate new embedding
+        // We reuse the extracted_text which now has the new Q&A
+        // We pass 'faq_updated' as type or just 'faq' to keep it consistent
+        await generateEmbeddingForFile({ id, extracted_text }, 'faq', 'bulk_update');
+
+        results.push({ id, success: true });
+      }
+
+      return new Response(JSON.stringify({ success: true, results }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
+    // HANDLE CSV IMPORT
+    if (reqData.type === 'csv_import') {
+      const { faqs } = reqData; // Expecting array of { question, answer }
+
+      if (!faqs || !Array.isArray(faqs) || faqs.length === 0) {
+        return new Response(JSON.stringify({ error: 'No FAQs provided' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+
+      console.log(`Importing ${faqs.length} FAQs from CSV for user ${user.id}...`);
+
+      const timestamp = Date.now();
+      const filesToInsert = faqs.map((item, index) => {
+        const extracted_text = `P: ${item.question}\nR: ${item.answer}`;
+        // Simple sanitization for filename
+        const safeQ = (item.question || 'faq').substring(0, 15).replace(/[^a-z0-9]/gi, '_');
+        return {
+          user_id: user.id,
+          filename: `faq_import_${index}_${safeQ}_${timestamp}.txt`,
+          file_path: `virtual://faq/import/${timestamp}/${index}`,
+          mime_type: 'text/plain',
+          file_size: extracted_text.length,
+          extracted_text,
+          status: 'ready'
+        };
+      });
+
+      const { data: insertedFiles, error: insertError } = await supabaseClient
+        .from('knowledge_files')
+        .insert(filesToInsert)
+        .select();
+
+      if (insertError) throw insertError;
+
+      // Generate Embeddings
+      await Promise.all(insertedFiles.map(f => generateEmbeddingForFile(f, 'faq', 'csv_import')));
 
       return new Response(JSON.stringify({ success: true, count: insertedFiles.length }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -271,11 +376,16 @@ ${rawText}
       }
     })
 
-    const { error: insertError } = await supabaseClient
+    const { data: insertedFiles, error: insertError } = await supabaseClient
       .from('knowledge_files')
       .insert(batchInsert)
+      .select()
 
     if (insertError) throw insertError
+
+    // FIX: Generate embeddings for auto-generated FAQs
+    console.log(`Generating embeddings for ${insertedFiles.length} auto-generated FAQs...`);
+    await Promise.all(insertedFiles.map(f => generateEmbeddingForFile(f, 'faq', 'auto_generated')));
 
     return new Response(JSON.stringify({ count: batchInsert.length, success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

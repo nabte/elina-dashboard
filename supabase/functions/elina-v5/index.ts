@@ -12,22 +12,15 @@ import { loadAccountConfig, validateAccountConfig } from './config/account-confi
 import { shouldIgnoreMessage } from './core/filters.ts'
 import { detectIntent, isCriticalIntent } from './intent/detector.ts'
 import { runConversationalAgent } from './agents/conversational.ts'
-import { sendMessage, sendImage, sendAudio, sendVideo, sendDocument } from './utils/evolution.ts'
+import { sendMessage, sendImage, sendAudio } from './utils/evolution.ts'
 import {
     getProfileByInstance,
     ensureContact,
     loadConversationContext,
     saveChatHistory
 } from './utils/context.ts'
-import { validateSubscription } from './utils/subscription-validator.ts'
-import { retrieveContext, formatContextForPrompt } from './utils/rag-system.ts'
-import { processAILabels } from './utils/ai-labels.ts'
-import { processSmartPromotions } from './utils/smart-promotions.ts'
-import { processAudioMessage, isAudioMessage, extractAudioMessage } from './utils/audio-processor.ts'
-import { processImageMessage, isImageMessage, extractImageMessage } from './utils/image-processor.ts'
-import { processTextToSpeech, isTTSEnabled, getTTSVoice } from './utils/tts-processor.ts'
 
-// console.log('🚀 ELINA V5 - Edge Function Started')
+console.log('🚀 ELINA V5 - Edge Function Started')
 
 serve(async (req) => {
     // Handle CORS preflight
@@ -39,29 +32,11 @@ serve(async (req) => {
 
     try {
         const supabase = createSupabaseAdminClient()
-
-        // Handle GET request for available voices
-        if (req.method === 'GET') {
-            const { listVoices } = await import('./utils/tts-processor.ts')
-            const voices = await listVoices()
-
-            // Map to essential data for frontend
-            const simplifiedVoices = voices.map((v: any) => ({
-                id: v.voice_id,
-                name: v.name,
-                previewUrl: v.preview_url,
-                category: v.category,
-                labels: v.labels
-            }))
-
-            return new Response(JSON.stringify(simplifiedVoices), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200
-            })
-        }
         const payload = await req.json()
 
-        // console.log('🔔 [WEBHOOK] New message received')
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        console.log('🔔 [WEBHOOK] New message received')
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
         // ========================================================================
         // 1. EXTRACT BASIC DATA
@@ -78,7 +53,7 @@ serve(async (req) => {
         const { key, message, pushName } = data
         let remoteJid = key?.remoteJid
 
-        // Handle. LID (Linked Devices)
+        // Handle LID (Linked Devices)
         if (remoteJid?.includes('@lid')) {
             remoteJid = key?.remoteJidAlt || remoteJid
         }
@@ -90,11 +65,10 @@ serve(async (req) => {
         const instanceName = payload?.instance
         const isSimulation = payload?.isSimulation === true
 
-        // console.log(`📋 [INFO] Instance: ${instanceName}`)
-        // console.log(`📋 [INFO] Remote JID: ${remoteJid}`)
-        // console.log(`📋 [INFO] Message ID: ${messageId}`)
-        // console.log(`📋 [INFO] Simulation: ${isSimulation}`)
-
+        console.log(`📋 [INFO] Instance: ${instanceName}`)
+        console.log(`📋 [INFO] Remote JID: ${remoteJid}`)
+        console.log(`📋 [INFO] Message ID: ${messageId}`)
+        console.log(`📋 [INFO] Simulation: ${isSimulation}`)
 
         // Validate required fields
         if (!remoteJid || !messageId || !instanceName) {
@@ -107,7 +81,7 @@ serve(async (req) => {
 
         // Ignore status broadcasts and own messages
         if (remoteJid === 'status@broadcast' || key?.fromMe) {
-            // console.log('⏭️ [INFO] Ignoring status broadcast or own message')
+            console.log('⏭️ [INFO] Ignoring status broadcast or own message')
             return new Response(JSON.stringify({ ignored: true }), {
                 headers: corsHeaders,
                 status: 200
@@ -117,82 +91,39 @@ serve(async (req) => {
         // ========================================================================
         // 2. LOAD ACCOUNT CONFIGURATION
         // ========================================================================
+        console.log(`\n📋 [CONFIG] Loading account configuration...`)
+
         const profile = await getProfileByInstance(supabase, instanceName)
         const config = await loadAccountConfig(supabase, profile.id)
 
         // Validate configuration
         const validation = validateAccountConfig(config)
-
-        // ========================================================================
-        // 2.5 VALIDATE SUBSCRIPTION
-        // ========================================================================
-        const subscriptionStatus = await validateSubscription(supabase, profile.id)
-
-        if (!subscriptionStatus.isValid) {
-            console.error(`❌ [SUBSCRIPTION] Invalid subscription: ${subscriptionStatus.status}`)
-
-            // Send notification to user about subscription issue
-            if (subscriptionStatus.message) {
-                await sendMessage(config, remoteJid, subscriptionStatus.message)
-            }
-
-            return new Response(JSON.stringify({
-                success: false,
-                reason: 'subscription_inactive',
-                status: subscriptionStatus.status
-            }), {
-                headers: corsHeaders,
-                status: 200
-            })
-        }
-
         if (!validation.valid) {
+            console.error(`❌ [CONFIG] Invalid configuration: ${validation.errors.join(', ')}`)
             return new Response(JSON.stringify({ error: 'Invalid account configuration', details: validation.errors }), {
                 headers: corsHeaders,
                 status: 500
             })
         }
 
+        console.log(`✅ [CONFIG] Configuration loaded for: ${config.companyName}`)
+
         // ========================================================================
         // 3. ENSURE CONTACT EXISTS
         // ========================================================================
+        console.log(`\n👤 [CONTACT] Ensuring contact exists...`)
+
         const contact = await ensureContact(supabase, profile.id, remoteJid, pushName)
-
-        // ========================================================================
-        // 3.5 RATE LIMITING (Prevent abuse)
-        // ========================================================================
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-        const { count: messageCount } = await supabase
-            .from('chat_history')
-            .select('id', { count: 'exact', head: true })
-            .eq('contact_id', contact.id)
-            .gte('created_at', oneHourAgo)
-
-        const MAX_MESSAGES_PER_HOUR = 40
-
-        if ((messageCount || 0) >= MAX_MESSAGES_PER_HOUR) {
-            console.warn(`⚠️ [RATE_LIMIT] Contact ${contact.id} exceeded ${MAX_MESSAGES_PER_HOUR} messages/hour`)
-
-            await sendMessage(config, remoteJid,
-                '⏸️ Has enviado muchos mensajes en poco tiempo. Por favor espera un momento.\n\nSi es urgente, puedes llamarnos directamente.'
-            )
-
-            return new Response(JSON.stringify({
-                success: true,
-                throttled: true,
-                message_count: messageCount
-            }), {
-                headers: corsHeaders,
-                status: 200
-            })
-        }
+        console.log(`✅ [CONTACT] Contact ID: ${contact.id}`)
 
         // ========================================================================
         // 4. CHECK FILTERS
         // ========================================================================
+        console.log(`\n🔍 [FILTER] Checking filters...`)
+
         const filterResult = await shouldIgnoreMessage(supabase, config, contact.id)
         if (filterResult.ignore) {
-            // console.log(`🚫 [FILTER] Message ignored: ${filterResult.reason}`)
+            console.log(`🚫 [FILTER] Message ignored: ${filterResult.reason}`)
             return new Response(JSON.stringify({
                 ignored: true,
                 reason: filterResult.reason
@@ -202,183 +133,51 @@ serve(async (req) => {
             })
         }
 
-        // Message will be processed
+        console.log(`✅ [FILTER] Message should be processed`)
 
         // ========================================================================
-        // 5. PROCESS MEDIA MESSAGES (Audio/Image)
+        // 5. EXTRACT MESSAGE TEXT
         // ========================================================================
-        let messageText = ''
-        let mediaContext = ''
-
-        // Check for audio message
-        if (isAudioMessage(message)) {
-            // console.log(`\n🎵 [MEDIA] Audio message detected`)
-            const audioMsg = extractAudioMessage(message)
-
-            try {
-                const audioResult = await processAudioMessage(
-                    supabase,
-                    audioMsg,
-                    config.evolutionApiKey,
-                    config.instanceName,
-                    config.serverUrl,
-                    messageId,
-                    'es'
-                )
-
-                messageText = audioResult.transcription
-                mediaContext = `[Audio transcrito: "${audioResult.transcription}"]`
-            } catch (error) {
-                console.error(`❌ [MEDIA] Error processing audio:`, error)
-                messageText = '[Audio no pudo ser transcrito]'
-            }
-        }
-        // Check for image message
-        else if (isImageMessage(message)) {
-            // console.log(`\n🖼️ [MEDIA] Image message detected`)
-            const imageMsg = extractImageMessage(message)
-
-            try {
-                const imageResult = await processImageMessage(
-                    supabase,
-                    imageMsg,
-                    config.evolutionApiKey,
-                    profile.id,
-                    contact.id.toString()
-                )
-
-                messageText = message.imageMessage?.caption || imageResult.description
-                mediaContext = `[Imagen recibida: ${imageResult.description}. URL: ${imageResult.cdnUrl}]`
-                // console.log(`✅ [MEDIA] Image processed successfully`)
-            } catch (error) {
-                console.error(`❌ [MEDIA] Error processing image:`, error)
-                messageText = message.imageMessage?.caption || '[Imagen recibida]'
-            }
-        }
-        else {
-            // Text message
-            messageText = message.conversation || message.extendedTextMessage?.text || ''
-        }
-        // Check for audio response trigger (Audio input OR explicit request)
-        const isAudioInput = isAudioMessage(message)
-        const explicitAudioRequest = /mándame (un )?audio|nota de voz|responde con audio/i.test(messageText)
-        const shouldRespondWithAudio = isAudioInput || explicitAudioRequest
-
-        if (shouldRespondWithAudio) {
-            // console.log(`🎤 [AUDIO_MODE] Audio response requested (Input: ${isAudioInput ? 'Audio' : 'Text request'})`)
-        }
+        let messageText = message.conversation ||
+            message.extendedTextMessage?.text ||
+            ''
 
         if (!messageText) {
+            console.log('⏭️ [INFO] No text message found (media only or unsupported type)')
             return new Response(JSON.stringify({ ignored: true, reason: 'No text content' }), {
                 headers: corsHeaders,
                 status: 200
             })
         }
 
-        // console.log(`\n💬 [MESSAGE] Text: "${messageText.substring(0, 100)}${messageText.length > 100 ? '...' : ''}"`)
-
-        // ========================================================================
-        // 5.3 CRITICAL SITUATION DETECTION (BEFORE BUFFERING)
-        // ========================================================================
-        // Detectar casos críticos lo más rápido posible
-        const { detectCriticalSituation, handleCriticalSituation } = await import('./core/critical-detection.ts')
-
-        // Construir contexto conversacional ligero (últimos 3 mensajes)
-        const { data: recentMsgs } = await supabase
-            .from('chat_history')
-            .select('message_type, content')
-            .eq('user_id', profile.id)
-            .eq('contact_id', contact.id)
-            .order('created_at', { ascending: false })
-            .limit(3)
-
-        const conversationContext = (recentMsgs || [])
-            .reverse()
-            .map((msg: any) => `${msg.message_type}: ${msg.content}`)
-            .join('\n')
-
-        const criticalResult = await detectCriticalSituation(
-            supabase,
-            profile.id,
-            messageText,
-            conversationContext
-        )
-
-        if (criticalResult.isCritical) {
-            console.log(`🚨 [CRITICAL] Critical situation detected: ${criticalResult.detectionType}`)
-
-            // Manejar situación crítica (aplicar etiqueta + notificar admin)
-            await handleCriticalSituation(supabase, config, contact, criticalResult)
-
-            // NO procesar el mensaje - un humano debe responder
-            return new Response(JSON.stringify({
-                success: true,
-                critical: true,
-                detection_type: criticalResult.detectionType,
-                reason: criticalResult.reason
-            }), {
-                headers: corsHeaders,
-                status: 200
-            })
-        }
+        console.log(`\n💬 [MESSAGE] Text: "${messageText.substring(0, 100)}${messageText.length > 100 ? '...' : ''}"`)
 
         // ========================================================================
         // 5.5 MESSAGE BUFFERING (Group rapid consecutive messages)
         // ========================================================================
         if (!isSimulation) {
-            // console.log(`\n⏳ [BUFFER] Checking for rapid consecutive messages...`)
+            console.log(`\n⏳ [BUFFER] Checking for rapid consecutive messages...`)
             const { bufferMessage } = await import('./utils/message-buffer.ts')
             const bufferResult = await bufferMessage(profile.id, contact.id, messageText)
 
             if (bufferResult.shouldProcess) {
                 messageText = bufferResult.combinedText
+                console.log(`✅ [BUFFER] Processing ${bufferResult.combinedText.split('\n').length} combined messages`)
             }
         }
 
         // ========================================================================
         // 6. CHECK AUTO RESPONSES
         // ========================================================================
+        console.log(`\n🤖 [AUTOMATION] Checking auto-responses...`)
         const { checkAutoResponses } = await import('./utils/automation.ts')
         const autoResponse = checkAutoResponses(messageText, config)
 
         if (autoResponse) {
-            // console.log(`✅ [AUTOMATION] Auto-response triggered: ${autoResponse.triggerText}`)
+            console.log(`✅ [AUTOMATION] Auto-response triggered: ${autoResponse.triggerText}`)
 
-            // Handle Media Response
-            if (autoResponse.mediaUrl) {
-                // console.log(`📎 [AUTOMATION] Sending media: ${autoResponse.mediaType} - ${autoResponse.mediaUrl}`)
-                try {
-                    switch (autoResponse.mediaType) {
-                        case 'image':
-                            await sendImage(config, remoteJid, autoResponse.mediaUrl, autoResponse.responseText)
-                            break
-                        case 'video':
-                            await sendVideo(config, remoteJid, autoResponse.mediaUrl, autoResponse.responseText)
-                            break
-                        case 'document':
-                            // Extract filename from URL or default
-                            const fileName = autoResponse.mediaUrl.split('/').pop() || 'document.pdf'
-                            await sendDocument(config, remoteJid, autoResponse.mediaUrl, fileName, autoResponse.responseText)
-                            break
-                        case 'audio':
-                            await sendAudio(config, remoteJid, autoResponse.mediaUrl)
-                            // If there is text, send it separately as audio usually doesn't have caption
-                            if (autoResponse.responseText) {
-                                await sendMessage(config, remoteJid, autoResponse.responseText)
-                            }
-                            break
-                        default:
-                            // Fallback to text + link if media type unknown or text-only
-                            const textWithLink = `${autoResponse.responseText}\n\n${autoResponse.mediaUrl}`
-                            await sendMessage(config, remoteJid, textWithLink)
-                    }
-                } catch (error) {
-                    console.error(`❌ [AUTOMATION] Error sending media, falling back to text: ${error}`)
-                    const textWithLink = `${autoResponse.responseText}\n\n(No se pudo cargar el archivo adjunto: ${autoResponse.mediaUrl})`
-                    await sendMessage(config, remoteJid, textWithLink)
-                }
-            } else {
-                // Text only
+            // 🔄 NUEVO: Solo enviar si NO es simulación
+            if (!isSimulation) {
                 await sendMessage(config, remoteJid, autoResponse.responseText)
             }
 
@@ -407,7 +206,7 @@ serve(async (req) => {
         // ========================================================================
         // 6. DETECT INTENT
         // ========================================================================
-        // console.log(`\n🎯 [INTENT] Detecting intent...`)
+        console.log(`\n🎯 [INTENT] Detecting intent...`)
 
         const conversationHistory = await loadConversationContext(
             supabase,
@@ -419,90 +218,20 @@ serve(async (req) => {
 
         const intent = await detectIntent(messageText, config, conversationHistory)
 
-        // console.log(`✅ [INTENT] Detected: ${intent.primary} (confidence: ${intent.confidence})`)
+        console.log(`✅ [INTENT] Detected: ${intent.primary}`)
+        console.log(`   - Confidence: ${intent.confidence}`)
+        console.log(`   - Sentiment: ${intent.sentiment.polarity} (${intent.sentiment.score})`)
 
-        // ========================================================================
-        // 6.5 HANDLE CRITICAL INTENTS
-        // ========================================================================
+        // Handle critical intents
         if (isCriticalIntent(intent.primary)) {
-            console.error(`🚨 [CRITICAL] Critical intent detected: ${intent.primary}`)
-
-            try {
-                // Call detect-critical-intent Edge Function
-                const criticalResponse = await fetch(
-                    `${Deno.env.get('SUPABASE_URL')}/functions/v1/detect-critical-intent`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            message_content: messageText,
-                            user_id: profile.id,
-                            contact_id: contact.id
-                        })
-                    }
-                )
-
-                if (criticalResponse.ok) {
-                    const criticalData = await criticalResponse.json()
-
-                    if (criticalData.is_critical || criticalData.critical_detected) {
-                        console.error(`🚨 [CRITICAL] Conversation paused, adding label and notifying owner`)
-
-                        // 1. Add "ignorar" label to contact (matching n8n V4)
-                        const currentLabels = contact.labels || []
-                        if (!currentLabels.includes('ignorar')) {
-                            await supabase.from('contacts').update({
-                                labels: [...currentLabels, 'ignorar'],
-                                razon_de_label_auto: criticalData.reason || `Intención crítica: ${criticalData.detection_type || intent.primary}`
-                            }).eq('id', contact.id)
-                            // console.log(`✅ [CRITICAL] Label "ignorar" added to contact`)
-                        }
-
-                        // 2. Pause active followups (matching n8n V4)
-                        await supabase.from('contacts').update({
-                            followup_status: 'paused'
-                        }).eq('id', contact.id).not('followup_status', 'is', null)
-
-                        // 3. Notify owner (matching n8n V4)
-                        if (profile.contact_phone) {
-                            const notificationMessage = `🚨 ATENCIÓN REQUERIDA\n\nContacto: ${contact.full_name || contact.phone_number}\nTipo: ${criticalData.detection_type || intent.primary}\nConfianza: ${Math.round((criticalData.confidence || intent.confidence || 0) * 100)}%\n\nMensaje:\n${messageText}\n\nMotivo: ${criticalData.reason || 'Requiere atención humana'}`
-
-                            try {
-                                await sendMessage(config, profile.contact_phone, notificationMessage)
-                                // console.log(`✅ [CRITICAL] Notification sent to owner: ${profile.contact_phone}`)
-                            } catch (notifError) {
-                                console.error(`❌ [CRITICAL] Failed to send notification:`, notifError)
-                            }
-                        }
-
-                        // 4. Send acknowledgment to customer
-                        await sendMessage(
-                            config,
-                            remoteJid,
-                            'Gracias por tu mensaje. Un miembro de nuestro equipo se pondrá en contacto contigo pronto.'
-                        )
-
-                        return new Response(JSON.stringify({
-                            success: true,
-                            critical_detected: true,
-                            paused: true,
-                            label_added: true,
-                            owner_notified: !!profile.contact_phone
-                        }), { headers: corsHeaders })
-                    }
-                }
-            } catch (error) {
-                console.error(`❌ [CRITICAL] Error processing critical intent:`, error)
-            }
+            console.log(`🚨 [CRITICAL] Critical intent detected: ${intent.primary}`)
+            // TODO: Notify account owner
         }
 
         // ========================================================================
-        // 7. LOAD FULL CONTEXT + RAG
+        // 7. LOAD FULL CONTEXT
         // ========================================================================
-        // console.log(`\n📚 [CONTEXT] Loading conversation context...`)
+        console.log(`\n📚 [CONTEXT] Loading conversation context...`)
 
         const context = await loadConversationContext(
             supabase,
@@ -512,80 +241,17 @@ serve(async (req) => {
             intent
         )
 
-        // console.log(`✅ [CONTEXT] Context loaded`)
-        // console.log(`   - User preferences: ${context.userPreferences?.length || 0}`)
+        console.log(`✅ [CONTEXT] Context loaded`)
+        console.log(`   - Recent messages: ${context.recentMessages.length}`)
+        console.log(`   - Account learnings: ${context.accountLearnings?.length || 0}`)
+        console.log(`   - User preferences: ${context.userPreferences?.length || 0}`)
 
         // ========================================================================
-        // 7.5 RAG: RETRIEVE SEMANTIC CONTEXT WITH CONVERSATIONAL ENRICHMENT
+        // 8. RUN CONVERSATIONAL AGENT
         // ========================================================================
-        // console.log(`\n🧠 [RAG] Retrieving semantic context...`)
+        console.log(`\n🤖 [AGENT] Running conversational agent...`)
 
-        // 🎯 QUERY EXPANSION: Enrich search with recent conversational context
-        // This helps RAG find relevant information when user uses references like "eso", "ese", "pásame"
-        let enrichedQuery = messageText + (mediaContext ? ' ' + mediaContext : '')
-
-        if (context.recentMessages.length > 0) {
-            // Take last 3 messages (excluding current) and limit to 100 chars each
-            const recentContext = context.recentMessages
-                .slice(-3)
-                .map(m => m.content.substring(0, 100))
-                .join(' | ')
-
-            // Ponderar: mensaje actual tiene más peso que contexto
-            // Formato: "MENSAJE_ACTUAL [Contexto: conversación reciente]"
-            if (recentContext.trim().length > 0) {
-                enrichedQuery = `${messageText}\n\n[Contexto reciente: ${recentContext}]`
-                console.log(`🔍 [RAG] Query enriched with ${context.recentMessages.slice(-3).length} recent messages`)
-            }
-        }
-
-        const ragContext = await retrieveContext(
-            supabase,
-            profile.id,
-            contact.id,
-            enrichedQuery
-        )
-
-        const ragContextText = formatContextForPrompt(ragContext)
-
-        // Connect RAG results to conversation context for the agent
-        context.ragContext = ragContextText
-
-        // console.log(`✅ [RAG] Semantic context retrieved`)
-
-        // ========================================================================
-        // 7.6 APPOINTMENT CONTEXT (if enabled)
-        // ========================================================================
-        let appointmentContext = ''
-
-        const { getAppointmentSettings, getAvailableSlots, formatAppointmentContext, detectAppointmentIntent } =
-            await import('./utils/appointment-manager.ts')
-
-        const appointmentSettings = await getAppointmentSettings(supabase, profile.id)
-
-        if (appointmentSettings?.is_enabled) {
-            const hasAppointmentIntent = detectAppointmentIntent(messageText)
-
-            if (hasAppointmentIntent) {
-                // console.log(`\n📅 [APPOINTMENT] Fetching available slots...`)
-                const slots = await getAvailableSlots(profile.id, appointmentSettings.max_days_ahead || 7)
-                appointmentContext = formatAppointmentContext(slots)
-                // console.log(`✅ [APPOINTMENT] ${slots.length} slots available`)
-            }
-        }
-
-        // Agregar appointment context al contexto general
-        if (appointmentContext) {
-            context.appointmentContext = appointmentContext
-        }
-
-
-        // ========================================================================
-        // 8. RUN CONVERSATIONAL AGENT & EXECUTE TOOL CALLS (ITERATIVE)
-        // ========================================================================
-        // console.log(`\n🤖 [AGENT] Running conversational agent...`)
-
-        let agentResponse = await runConversationalAgent(
+        const agentResponse = await runConversationalAgent(
             supabase,
             config,
             messageText,
@@ -593,13 +259,13 @@ serve(async (req) => {
             context
         )
 
-        const allToolResults: any[] = []
-        let currentLoop = 0
-        const MAX_TOOL_LOOPS = 3
+        // ========================================================================
+        // 8.5. EXECUTE TOOL CALLS (if any)
+        // ========================================================================
+        let executedToolResults: any[] = []  // 🔥 Guardar para recopilar media después
 
-        while (agentResponse.toolCalls && agentResponse.toolCalls.length > 0 && currentLoop < MAX_TOOL_LOOPS) {
-            currentLoop++
-            // console.log(`\n🔧 [TOOLS] Loop ${currentLoop}: Agent requested ${agentResponse.toolCalls.length} tool call(s)`)
+        if (agentResponse.toolCalls && agentResponse.toolCalls.length > 0) {
+            console.log(`\n🔧 [TOOLS] Agent requested ${agentResponse.toolCalls.length} tool call(s)`)
 
             const { executeToolCalls } = await import('./utils/tool-executor.ts')
 
@@ -607,59 +273,43 @@ serve(async (req) => {
                 supabase,
                 config,
                 contact.id,
-                agentResponse.toolCalls,
-                context.conversationState,
-                messageText // ← Pasar mensaje original para detección inteligente
+                agentResponse.toolCalls
             )
 
-            // Store for formatting later
-            allToolResults.push(...toolResults)
+            executedToolResults = toolResults  // 🔥 Guardar para usar después
 
-            // console.log(`✅ [TOOLS] Loop ${currentLoop} executed, re-calling agent with results`)
+            console.log(`✅ [TOOLS] Tool calls executed, re-calling agent with results`)
 
-            // Re-llamar al agente con los resultados (enviando los tool_calls y results de ESTE loop)
-            const nextAgentResponse = await runConversationalAgent(
+            // Re-llamar al agente con los resultados de las herramientas
+            const finalAgentResponse = await runConversationalAgent(
                 supabase,
                 config,
                 messageText,
                 intent,
                 context,
-                agentResponse.toolCalls,
-                toolResults
+                agentResponse.toolCalls,  // ← Pasar tool_calls originales
+                toolResults               // ← Pasar resultados
             )
 
-            // Update agent response for next iteration or final output
-            agentResponse = nextAgentResponse
+            // Usar la respuesta final
+            agentResponse.text = finalAgentResponse.text
+            agentResponse.metadata = finalAgentResponse.metadata
         }
-
-        // ========================================================================
-        // 8.6. FORMAT SERVICES IN CODE (if any services were found in tools)
-        // ========================================================================
-        const servicesFromTools = allToolResults
-            .map((tr: any) => tr.services || [])
-            .flat()
-
-        if (servicesFromTools.length > 0) {
-            // console.log(`🎨 [FORMAT] Formatting ${servicesFromTools.length} services in code`)
-            const formattedServices = servicesFromTools.map((s: any) =>
-                `🛍️ *${s.product_name}* — $${s.price}\n🔹 ${s.description || 'Sin descripción'}`
-            ).join('\n\n')
-
-            agentResponse.text = (agentResponse.text || '') + '\n\n' + formattedServices
-        }
-
 
         if (!agentResponse.text || agentResponse.text.trim() === '') {
             console.warn('⚠️ [AGENT] Empty response received. Using fallback.')
             agentResponse.text = 'Lo siento, tuve un problema procesando tu mensaje. ¿Podrías repetirlo?'
         }
 
-        // console.log(`✅ [AGENT] Response generated (${agentResponse.text.length} chars, ${agentResponse.metadata.duration?.toFixed(0)}ms)`)
+        console.log(`✅ [AGENT] Response generated`)
+        console.log(`   - Length: ${agentResponse.text.length} chars`)
+        console.log(`   - Tokens used: ${agentResponse.metadata.tokensUsed}`)
+        console.log(`   - Duration: ${agentResponse.metadata.duration?.toFixed(0)}ms`)
 
         // ========================================================================
         // 9. PROCESS PLACEHOLDERS & EXTRACT MEDIA
         // ========================================================================
-        // console.log(`\n🧩 [PLACEHOLDERS] Processing placeholders...`)
+        console.log(`\n🧩 [PLACEHOLDERS] Processing placeholders...`)
 
         const { processPlaceholders } = await import('./utils/placeholders.ts')
 
@@ -671,133 +321,121 @@ serve(async (req) => {
 
         let finalText = placeholderResult.finalText
 
-        // Procesar placeholder de calendario de citas
-        const { replaceAppointmentCalendarLink } = await import('./utils/placeholders.ts')
-        finalText = replaceAppointmentCalendarLink(finalText, config.slug)
+        // Variable to hold product media for later use
+        let productMediaForSending: Array<{ url: string, type: 'image' | 'video' }> = []
 
         // ========================================================================
-        // 9.5 PROCESS SMART PROMOTIONS
+        // 10. RECOPILAR MEDIA & CALCULATE TOTALS (CÓDIGO HACE EL TRABAJO)
         // ========================================================================
-        // console.log(`\n🎁 [PROMOTIONS] Processing smart promotions...`)
+        console.log(`\n🖼️ [MEDIA] Collecting media from products and text... (v2.0 - UPDATED)`)
 
-        const promotionResult = await processSmartPromotions(
-            supabase,
-            profile.id,
-            contact.id,
-            finalText
-        )
+        const mediaToSend: Array<{ url: string, type: 'image' | 'video', source: 'product' | 'text' }> = []
 
-        if (promotionResult.shouldInsert) {
-            let promoText = promotionResult.modifiedResponse || finalText
+        // --- A. PRIMERO: Media de productos (garantizada si el producto tiene media) ---
+        // Esto asegura que si un producto fue mencionado y tiene media, SE ENVÍA SIEMPRE
+        if (placeholderResult.productMedia && placeholderResult.productMedia.length > 0) {
+            console.log(`   - Found ${placeholderResult.productMedia.length} media from products (via placeholders)`)
 
-            // Clean up promo text (remove surrounding quotes and bolding if any)
-            promoText = promoText.replace(/^["']|["']$/g, '') // Remove start/end quotes
-            promoText = promoText.replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bolding
-
-            finalText = promoText
-        } else {
-
-        }
-
-        // ========================================================================
-        // 9.6 PROCESS AI LABELS
-        // ========================================================================
-        // console.log(`\n🏷️ [AI_LABELS] Processing AI labels...`)
-
-        // Build conversation context for AI labels
-        const conversationContextText = context.recentMessages
-            .map(msg => `${msg.role}: ${msg.content}`)
-            .join('\n')
-
-        const appliedLabels = await processAILabels(
-            supabase,
-            profile.id,
-            contact.id,
-            messageText,
-            conversationContextText
-        )
-
-        if (appliedLabels.length > 0) {
-            // console.log(`✅ [AI_LABELS] Applied labels: ${appliedLabels.join(', ')}`)
-        } else {
-
-        }
-
-        // ========================================================================
-        // 10. EXTRACT MEDIA URLs & CALCULATE TOTALS (LÓGICA n8n)
-        // ========================================================================
-        // console.log(`\n🖼️ [MEDIA] Extracting media URLs...`)
-
-        // REGEX EXACTO de n8n V4 (MUST BE IDENTICAL in all places)
-        const MEDIA_REGEX = /https?:\/\/[^\s"'<>]+\.(?:png|jpg|jpeg|gif|webp|mp4)/gi
-
-        // 1. Capture text BEFORE stripping URLs for caption distribution
-        let textForMediaDistribution = finalText
-
-        const imagesToSend: string[] = []
-        const videosToSend: string[] = []
-
-        // Add promotion images if available
-        if (promotionResult.shouldInsert && promotionResult.imageUrls && promotionResult.imageUrls.length > 0) {
-            // console.log(`   - Adding ${promotionResult.imageUrls.length} promotion image(s)`)
-            promotionResult.imageUrls.forEach(url => {
-                if (!imagesToSend.includes(url)) {
-                    imagesToSend.push(url)
-                }
+            placeholderResult.productMedia.forEach(media => {
+                mediaToSend.push({
+                    url: media.url,
+                    type: media.type,
+                    source: 'product'
+                })
             })
         }
 
-        // --- A. Extracción en ORDEN (Markdown primero, luego Raw) - USANDO REGEX DE n8n ---
+        // 🔥 FALLBACK: También buscar media en tool results (por si el LLM olvidó usar placeholders)
+        if (executedToolResults.length > 0) {
+            console.log(`   - Checking tool results for additional product media...`)
 
+            for (const toolResult of executedToolResults) {
+                if (toolResult.role === 'tool' && toolResult.content) {
+                    try {
+                        const content = JSON.parse(toolResult.content)
+
+                        // Si es resultado de buscar_productos
+                        if (content.products && Array.isArray(content.products)) {
+                            console.log(`   - Found ${content.products.length} products in tool result`)
+
+                            content.products.forEach((product: any) => {
+                                if (product.media_url && product.media_url.trim()) {
+                                    const isVideo = /\.(mp4|mov|avi|webm)$/i.test(product.media_url)
+
+                                    // Evitar duplicados (comparar URL)
+                                    if (!mediaToSend.find(m => m.url === product.media_url)) {
+                                        mediaToSend.push({
+                                            url: product.media_url,
+                                            type: isVideo ? 'video' : 'image',
+                                            source: 'product'
+                                        })
+                                        console.log(`   - Added media from product ID ${product.id}: ${product.media_url}`)
+                                    }
+                                }
+                            })
+                        }
+                    } catch (e) {
+                        // No es JSON válido, continuar
+                    }
+                }
+            }
+        }
+
+        // --- B. SEGUNDO: Extracción adicional del texto (por si el LLM agregó media extra) ---
         // 1. Detectar URLs de Markdown: ![alt](url)
-        const markdownRegex = /!\[([^\]]*)\]\((https?:\/\/[^\s"'<>]+\.(?:png|jpg|jpeg|gif|webp|mp4))\)/gi
+        const markdownRegex = /!\[([^\]]*)\]\((https:\/\/creativersezone\.b-cdn\.net\/[^\)]+\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|webm))\)/gi
         const markdownMatches = [...finalText.matchAll(markdownRegex)]
 
         for (const match of markdownMatches) {
             const url = match[2]
-            const isVideo = url.toLowerCase().endsWith('.mp4')
+            const isVideo = /\.(mp4|mov|avi|webm)$/i.test(url)
 
-            if (isVideo) {
-                if (!videosToSend.includes(url)) {
-                    videosToSend.push(url)
-                }
-            } else {
-                if (!imagesToSend.includes(url)) {
-                    imagesToSend.push(url)
-                }
+            // Solo agregar si no está ya en la lista (evitar duplicados con product media)
+            if (!mediaToSend.find(m => m.url === url)) {
+                mediaToSend.push({
+                    url: url,
+                    type: isVideo ? 'video' : 'image',
+                    source: 'text'
+                })
             }
         }
 
-        // 2. Detectar URLs puras (Raw) - USANDO REGEX DE n8n
-        let matches = finalText.match(MEDIA_REGEX)
+        // 2. Detectar URLs puras (Raw)
+        const mediaUrlRegex = /https:\/\/creativersezone\.b-cdn\.net\/[^\s\)]+\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|webm)/gi
+        let matches = finalText.match(mediaUrlRegex)
 
         if (matches) {
             for (const url of matches) {
-                const isVideo = url.toLowerCase().endsWith('.mp4')
+                const isVideo = /\.(mp4|mov|avi|webm)$/i.test(url)
 
-                if (isVideo) {
-                    if (!videosToSend.includes(url)) {
-                        videosToSend.push(url)
-                    }
-                } else {
-                    if (!imagesToSend.includes(url)) {
-                        imagesToSend.push(url)
-                    }
+                // Solo agregar si no está ya en la lista
+                if (!mediaToSend.find(m => m.url === url)) {
+                    mediaToSend.push({
+                        url: url,
+                        type: isVideo ? 'video' : 'image',
+                        source: 'text'
+                    })
                 }
             }
         }
 
-        // --- Limpieza de URLs y Markdown de Imagen (GLOBAL) ---
-
-        // 1. Remover markdown de imagen COMPLETO
+        // --- C. Limpieza de URLs y Markdown de Imagen del texto (GLOBAL) ---
+        // Remover markdown de imagen COMPLETO
         finalText = finalText.replace(markdownRegex, '')
 
-        // 2. Remover URLs sueltas globalmente usando el MISMO regex de n8n
-        finalText = finalText.replace(MEDIA_REGEX, '')
+        // Remover URLs sueltas globalmente
+        finalText = finalText.replace(mediaUrlRegex, '')
 
+        // --- D. Regla de Negocio: Máximo 3 media files ---
+        const MAX_MEDIA = 3
+        const finalMediaToSend = mediaToSend.slice(0, MAX_MEDIA)
+
+        if (mediaToSend.length > MAX_MEDIA) {
+            console.log(`   ⚠️ Limitando media: ${mediaToSend.length} encontrados -> enviando ${MAX_MEDIA}`)
+        }
 
         // --- C. Cálculos de Subtotales y Totales (Lógica n8n V4) ---
-        // console.log(`\n🧮 [CALCS] Running n8n-style calculations...`)
+        console.log(`\n🧮 [CALCS] Running n8n-style calculations...`)
 
         // Regex para detectar líneas de item y calcular subtotal
         // Ejemplo: "5 piezas Subtotal: $[subtotal_calculado]"
@@ -823,26 +461,8 @@ serve(async (req) => {
             return match // Si no se encuentra precio, dejar igual
         })
 
-        // Corregir formato de precios y moneda (User feedback: "pone $ y abajo el precio")
-        finalText = finalText
-            .replace(/\ba\s*\$\s*\n\s*(\d)/gi, '$$$1') // "a $ \n 100" -> "$100" (eliminar 'a' suspensiva)
-            .replace(/\$\s*\n\s*(\d)/g, '$$$1') // Unir $ solitario con el número abajo
-            .replace(/\$\s+(\d)/g, '$$$1')      // Unir $ con espacio y número
-            .replace(/\$\$/g, '$')              // Corregir doble $$
-
-        // Aplicar la misma limpieza a textForMediaDistribution
-        textForMediaDistribution = textForMediaDistribution
-            .replace(/\$\$\[TOTAL_CALCULADO\]/gi, "$" + totalAcumulado.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })) // Fix potential double $
-            .replace(/\$\[TOTAL_CALCULADO\]/gi, "$" + totalAcumulado.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
-            .replace(/\*\*([^*]+)\*\*/g, '*$1*')
-            .replace(/\[\s*\]\(\s*\)/g, '')
-            .replace(/\s{2,}/g, ' ')
-            .replace(/\n{3,}/g, '\n\n')
-            .replace(/\ba\s*\$\s*\n\s*(\d)/gi, '$$$1') // "a $ \n 100" -> "$100"
-            .replace(/\$\s*\n\s*(\d)/g, '$$$1')
-            .replace(/\$\s+(\d)/g, '$$$1')
-            .replace(/\$\$/g, '$')
-            .trim()
+        // Reemplazar placeholder de Total General
+        finalText = finalText.replace(/\$\[TOTAL_CALCULADO\]/gi, "$" + totalAcumulado.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
 
         // --- D. Formato de Texto (Limpieza) ---
         finalText = finalText
@@ -856,221 +476,127 @@ serve(async (req) => {
             .replace(/\n{3,}/g, '\n\n')
             .trim()
 
+        const productMediaCount = mediaToSend.filter(m => m.source === 'product').length
+        const textMediaCount = mediaToSend.filter(m => m.source === 'text').length
+
+        console.log(`   - Found ${mediaToSend.length} total media URL(s)`)
+        console.log(`     • ${productMediaCount} from products (guaranteed)`)
+        console.log(`     • ${textMediaCount} from text (LLM generated)`)
+        console.log(`   - Sending ${finalMediaToSend.length} media file(s)`)
+        console.log(`   - Cleaned text length: ${finalText.length}`)
+
+        // 🔥 CRITICAL: Save media for later use in sending section
+        productMediaForSending = finalMediaToSend.map(m => ({ url: m.url, type: m.type }))
+
         // ========================================================================
-        // 10.5 GENERATE TTS (ALWAYS ENABLED)
+        // 11. SEND RESPONSE WITH MEDIA (N8N V4 STYLE)
         // ========================================================================
-        // const ttsEnabled = await isTTSEnabled(supabase, profile.id) 
-        const ttsEnabled = false // Disabled by default to save costs and avoid errors
-        let audioSent = false
+        console.log(`\n📤 [SEND] Sending response...`)
 
-        if ((ttsEnabled || shouldRespondWithAudio) && finalText) {
-            try {
-                let textForAudio = finalText
+        // 🔄 NUEVO: Solo enviar mensajes reales si NO es simulación
+        if (!isSimulation) {
 
-                // CRITICAL: If audio response is forced (Audio Mode), SUMMARIZE textual content
-                // to max 2 sentences (~5-8 seconds) to save credits and be natural.
-                if (shouldRespondWithAudio) {
-                    // console.log(`🎙️ [AUDIO_SUMMARY] Summarizing text for audio response...`)
-                    try {
-                        const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                model: 'gpt-4o-mini',
-                                messages: [
-                                    {
-                                        role: 'system',
-                                        content: `Eres un asistente experto en síntesis de voz. 
-Tu tarea es convertir el siguiente texto en un guion de audio MUY BREVE y natural.
-Reglas:
-1. Máximo 2 oraciones.
-2. Duración aproximada de 5 a 8 segundos al hablarse.
-3. Mantén el tono amigable y la información clave.
-4. Elimina precios detallados, listas largas o URLs.
-5. Si es una pregunta, resume la pregunta.
-6. NO uses emojis ni markdown. Solo texto plano listo para hablar.`
-                                    },
-                                    {
-                                        role: 'user',
-                                        content: finalText
-                                    }
-                                ],
-                                temperature: 0.5,
-                                max_tokens: 100
-                            })
-                        })
+        if (finalMediaToSend.length > 0) {
+            console.log(`   - Sending ${finalMediaToSend.length} media message(s)`)
 
-                        if (summaryResponse.ok) {
-                            const summaryData = await summaryResponse.json()
-                            const summaryText = summaryData.choices[0]?.message?.content?.trim()
-                            if (summaryText) {
-                                textForAudio = summaryText
-                                console.log(`✅ [AUDIO_SUMMARY] Summary generated: "${textForAudio}"`)
-                            }
-                        }
-                    } catch (summaryError) {
-                        console.error(`❌ [AUDIO_SUMMARY] Error summarizing text:`, summaryError)
-                        // Fallback to original text (maybe truncated)
+            // ========================================================================
+            // DISTRIBUCIÓN INTELIGENTE DE TEXTO ENTRE CAPTIONS (n8n V4 logic)
+            // ========================================================================
+
+            // Si tenemos productMedia (productos garantizados), usar distribución inteligente
+            if (placeholderResult.productMedia && placeholderResult.productMedia.length > 0) {
+                console.log(`   - Using smart text distribution across product media`)
+
+                const { distributeTextAcrossProductMedia } = await import('./utils/text-formatter.ts')
+
+                const mediaWithCaptions = distributeTextAcrossProductMedia(
+                    finalText,
+                    placeholderResult.productMedia.slice(0, 3), // Max 3
+                    placeholderResult.productsMap,
+                    3
+                )
+
+                console.log(`   - Generated ${mediaWithCaptions.length} media with captions`)
+
+                // Enviar cada media con su caption
+                for (let i = 0; i < mediaWithCaptions.length; i++) {
+                    const item = mediaWithCaptions[i]
+
+                    console.log(`   - Sending media ${i + 1}/${mediaWithCaptions.length} (Product ID: ${item.productId})`)
+                    console.log(`     Caption length: ${item.caption.length} chars`)
+
+                    if (item.type === 'video') {
+                        const { sendVideo } = await import('./utils/evolution.ts')
+                        await sendVideo(config, remoteJid, item.url, item.caption)
+                    } else {
+                        await sendImage(config, remoteJid, item.url, item.caption)
+                    }
+
+                    // Delay entre mensajes
+                    if (i < mediaWithCaptions.length - 1) {
+                        await new Promise(r => setTimeout(r, 600))
                     }
                 }
 
-                const voice = await getTTSVoice(supabase, profile.id)
-                const ttsResult = await processTextToSpeech(
-                    supabase,
-                    textForAudio,
-                    profile.id,
-                    contact.id.toString(),
-                    voice
-                )
+            } else {
+                // ========================================================================
+                // FALLBACK: Media sin productos (media del texto LLM)
+                // ========================================================================
+                console.log(`   - Using fallback: media without product distribution`)
 
-                // Send audio in addition to text
-                await sendAudio(config, remoteJid, ttsResult.audioUrl)
-                audioSent = true
-                console.log(`✅ [TTS] Audio sent successfully: ${ttsResult.audioUrl}`)
-            } catch (error) {
-                console.error(`❌ [TTS] Error generating audio:`, error)
-                // Continue with text message on error
-            }
-        }
+                if (finalMediaToSend.length === 1) {
+                    // UNA SOLA MEDIA - Todo el texto como caption
+                    const media = finalMediaToSend[0]
+                    console.log(`   - Sending single media with full text as caption`)
 
-        // ========================================================================
-        // 10.8 VALIDATE RESPONSE (Anti-Hallucination)
-        // ========================================================================
-        const { validateResponse } = await import('./utils/response-validator.ts')
+                    if (media.type === 'video') {
+                        const { sendVideo } = await import('./utils/evolution.ts')
+                        await sendVideo(config, remoteJid, media.url, finalText)
+                    } else {
+                        await sendImage(config, remoteJid, media.url, finalText)
+                    }
 
-        const responseValidation = await validateResponse(
-            supabase,
-            profile.id,
-            finalText,
-            allToolResults
-        )
-
-        if (!responseValidation.valid) {
-            console.error(`⚠️ [VALIDATION] Response has ${responseValidation.issues.length} issue(s):`, responseValidation.issues)
-
-            // Use fallback response
-            finalText = responseValidation.fallbackMessage || finalText
-
-            // Log hallucination for analysis (non-blocking)
-            supabase.from('hallucination_logs').insert({
-                user_id: profile.id,
-                contact_id: contact.id,
-                user_message: messageText,
-                hallucinated_response: agentResponse.text,
-                final_response: finalText,
-                issues: responseValidation.issues,
-                tool_results: allToolResults.map(t => ({ name: t.name, content: t.content.substring(0, 200) }))
-            }).then(() => {
-                console.log(`📊 [ANALYTICS] Hallucination logged`)
-            }).catch((err: any) => {
-                console.error(`❌ [ANALYTICS] Failed to log hallucination:`, err)
-            })
-        }
-
-        // ========================================================================
-        // 11. SEND RESPONSE WITH MEDIA (LÓGICA n8n - SWITCH)
-        // ========================================================================
-        console.log(`\n📤 [SEND] Destination: ${remoteJid}`)
-        console.log(`📝 [SEND] Response preview: "${finalText.substring(0, 150)}${finalText.length > 150 ? '...' : ''}"`)
-
-        // SWITCH tipo de mensaje (como n8n V4)
-        const hasImages = imagesToSend.length > 0
-        const hasVideos = videosToSend.length > 0
-        const hasAudio = audioSent
-        const hasTextOnly = !hasImages && !hasVideos && !hasAudio
-
-        // PRIORITY: audio > imagen > video > texto (como n8n)
-        if (hasAudio) {
-            // Audio ya fue enviado arriba (línea ~842)
-            console.log(`🎤 [SEND] Audio already sent`)
-        }
-        else if (hasImages) {
-            // FLUJO DE IMÁGENES (igual que n8n: "IMG - Split a 3 envíos")
-            console.log(`🖼️ [SEND] Image flow: ${imagesToSend.length} image(s) detected`)
-
-            const { splitMediaIntoMessages } = await import('./utils/text-formatter.ts')
-
-            // Usar la función que replica EXACTAMENTE la lógica de n8n
-            const mediaMessages = splitMediaIntoMessages(textForMediaDistribution, 'image')
-
-            console.log(`   - Sending ${mediaMessages.length} image message(s)`)
-
-            // Enviar cada imagen con su caption
-            for (const item of mediaMessages) {
-                // Delay aleatorio antes de cada media (como n8n: 800-2200ms)
-                const randomDelay = Math.floor(Math.random() * (2200 - 800 + 1)) + 800
-                await new Promise(r => setTimeout(r, randomDelay))
-
-                await sendImage(config, remoteJid, item.media_url, item.caption)
-            }
-        }
-        else if (hasVideos) {
-            // FLUJO DE VIDEO (similar a imágenes pero para video)
-            console.log(`🎥 [SEND] Video flow: ${videosToSend.length} video(s) detected`)
-
-            // Para videos, enviamos el primero con el caption completo
-            const videoUrl = videosToSend[0]
-            const { formatTextForWhatsApp } = await import('./utils/text-formatter.ts')
-            const formattedCaption = formatTextForWhatsApp(finalText)
-
-            await sendVideo(config, remoteJid, videoUrl, formattedCaption)
-        }
-        else if (hasTextOnly) {
-            // FLUJO DE TEXTO PURO (sin media)
-            console.log(`📝 [SEND] Text-only flow`)
-
-            const { formatTextForWhatsApp } = await import('./utils/text-formatter.ts')
-            const formattedText = formatTextForWhatsApp(finalText)
-
-            // Enviar solo texto formateado
-            await sendMessage(config, remoteJid, formattedText, true)
-        }
-
-        // ========================================================================
-        // 10.6 QUOTE GENERATION (if applicable)
-        // ========================================================================
-        if (placeholderResult.productIds.length > 0) {
-            const { shouldGenerateQuote, generateAndSendQuote, detectQuoteIntent } =
-                await import('./utils/quote-generator.ts')
-
-            // Check if quotes are enabled for this profile
-            const quotesEnabled = profile.quotes_enabled || false
-            const isExplicitRequest = detectQuoteIntent(messageText)
-
-            if (shouldGenerateQuote(finalText, placeholderResult.productIds, isExplicitRequest, quotesEnabled)) {
-                console.log(`\n📄 [QUOTE] Generating quote...`)
-
-                const { sendDocument } = await import('./utils/evolution.ts')
-
-                const quoteResult = await generateAndSendQuote(
-                    supabase,
-                    {
-                        userId: profile.id,
-                        contactId: contact.id,
-                        productIds: placeholderResult.productIds,
-                        remoteJid
-                    },
-                    (jid: string, url: string, filename: string, caption?: string) =>
-                        sendDocument(config, jid, url, filename, caption),
-                    (jid: string, text: string) =>
-                        sendMessage(config, jid, text, true),
-                    true // notifyOwner
-                )
-
-                if (quoteResult.success) {
-                    console.log(`✅ [QUOTE] Quote ${quoteResult.cached ? 'cached' : 'generated'} and sent`)
-                    placeholderResult.shouldGenerateQuote = true
                 } else {
-                    console.error(`❌ [QUOTE] Failed to generate quote: ${quoteResult.error}`)
+                    // MÚLTIPLES MEDIA - Sin caption, texto al final
+                    console.log(`   - Sending multiple media, text will be sent after`)
+
+                    for (let i = 0; i < finalMediaToSend.length; i++) {
+                        const media = finalMediaToSend[i]
+
+                        if (media.type === 'video') {
+                            const { sendVideo } = await import('./utils/evolution.ts')
+                            await sendVideo(config, remoteJid, media.url, '')
+                        } else {
+                            await sendImage(config, remoteJid, media.url, '')
+                        }
+
+                        if (i < finalMediaToSend.length - 1) {
+                            await new Promise(r => setTimeout(r, 600))
+                        }
+                    }
+
+                    // Texto al final
+                    if (finalText.length > 0) {
+                        await new Promise(r => setTimeout(r, 600))
+                        await sendMessage(config, remoteJid, finalText, true)
+                    }
                 }
             }
+
+        } else {
+            // Sin media - Enviar solo texto
+            await sendMessage(config, remoteJid, finalText, true)
         }
 
+        // Si se requiere cotización PDF
+        if (placeholderResult.shouldGenerateQuote) {
+            console.log(`📄 [QUOTE] Generating quote PDF...`)
+            // TODO: Implementar generación real de PDF
+        }
 
-        console.log(`✅ [SEND] Response sent successfully`)
+        } // 🔄 FIN: Cierre de if (!isSimulation)
+
+        console.log(`✅ [SEND] Response sent successfully${isSimulation ? ' (simulation mode - no messages sent)' : ''}`)
 
         // ========================================================================
         // 11. SAVE TO HISTORY
@@ -1089,77 +615,14 @@ Reglas:
         console.log(`✅ [HISTORY] Saved successfully`)
 
         // ========================================================================
-        // 11.5 SAVE CONVERSATION STATE (for contextual references)
-        // ========================================================================
-        if (placeholderResult.productIds.length > 0) {
-            console.log(`\n🧠 [STATE] Saving conversation state...`)
-
-            const { saveConversationState, extractMentionedProducts } =
-                await import('./utils/conversation-state.ts')
-
-            const mentionedProducts = extractMentionedProducts(
-                agentResponse.text, // Use the text property from AgentResponse
-                placeholderResult.productsMap
-            )
-
-            if (mentionedProducts.length > 0) {
-                await saveConversationState(supabase, contact.id.toString(), {
-                    lastProductsMentioned: mentionedProducts,
-                    lastIntent: intent.primary,
-                    lastAgentResponse: finalText
-                })
-                console.log(`✅ [STATE] Saved ${mentionedProducts.length} mentioned products`)
-            }
-        }
-
-        // ========================================================================
-        // 11.5 CONVERSATION QUALITY ANALYSIS
-        // ========================================================================
-        try {
-            const { analyzeConversationQuality, saveConversationQuality, notifyErrorsIfNeeded } =
-                await import('./utils/conversation-quality.ts')
-
-            const qualityAnalysis = await analyzeConversationQuality({
-                userId: profile.id,
-                contactId: contact.id,
-                messageText,
-                aiResponse: finalText,
-                toolCalls: agentResponse.toolCalls || [],
-                toolResults: allToolResults || [],
-                validationResult: responseValidation
-            })
-
-            // Guardar análisis en BD
-            await saveConversationQuality(
-                supabase,
-                profile.id,
-                contact.id,
-                qualityAnalysis,
-                messageText,
-                finalText
-            )
-
-            // Notificar si hay errores críticos
-            await notifyErrorsIfNeeded(supabase, profile.id, qualityAnalysis)
-
-            if (qualityAnalysis.hasErrors) {
-                console.log(`⚠️ [QUALITY] Issues detected: ${qualityAnalysis.errorTypes.join(', ')} (score: ${qualityAnalysis.qualityScore.toFixed(2)})`)
-            }
-
-        } catch (qualityError) {
-            console.error(`❌ [QUALITY] Error analyzing conversation quality:`, qualityError)
-            // No lanzar error - no queremos que falle la respuesta por esto
-        }
-
-        // ========================================================================
         // 12. FINAL METRICS
         // ========================================================================
         const totalDuration = performance.now() - startTime
 
-        // console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-        console.log(`✅ [SUCCESS] Method processed successfully (${totalDuration.toFixed(0)}ms)`)
-        // console.log(`⏱️  Total duration: ${totalDuration.toFixed(0)}ms`)
-        // console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
+        console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        console.log(`✅ [SUCCESS] Message processed successfully`)
+        console.log(`⏱️  Total duration: ${totalDuration.toFixed(0)}ms`)
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
 
         return new Response(JSON.stringify({
             success: true,
@@ -1178,11 +641,11 @@ Reglas:
         })
 
     } catch (error) {
-        // console.error('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        console.error('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
         console.error('❌ [ERROR] Fatal error processing message')
         console.error(`   Message: ${error.message}`)
         console.error(`   Stack: ${error.stack}`)
-        // console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
 
         return new Response(JSON.stringify({
             error: error.message,

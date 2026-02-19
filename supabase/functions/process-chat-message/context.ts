@@ -580,7 +580,7 @@ export async function recordMetric(supabase: SupabaseClient, metric: any) {
 }
 
 // Stub for RabbitMQ/Buffer - Simplified
-export async function getMessageBuffer(id: string) { return null }
+export async function getMessageBuffer(id: string): Promise<string[]> { return [] }
 export async function pushMessageBuffer(id: string, msg: any) { }
 
 // Stub for BunnyCDN

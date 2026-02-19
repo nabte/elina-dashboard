@@ -1,4 +1,17 @@
 /* ========================================
+   GLOBAL RESET & FULL HEIGHT
+   ======================================== */
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    /* Prevent scroll on body, let inner containers scroll */
+    width: 100%;
+}
+
+/* ========================================
    SIDEBAR STYLES
    ======================================== */
 
@@ -176,7 +189,11 @@ input[type="time"]:focus {
 }
 
 .content-panel.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    /* Let internal content scroll if needed */
 }
 
 /* ========================================
@@ -310,10 +327,13 @@ input[type="time"]:focus {
    ======================================== */
 
 @keyframes animate-pulse-slow {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
         transform: scale(1);
     }
+
     50% {
         opacity: 0.95;
         transform: scale(1.02);

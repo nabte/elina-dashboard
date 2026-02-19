@@ -163,11 +163,26 @@ export interface ConversationContext {
     activePromotions?: Promotion[]
     appointmentSlots?: AppointmentSlot[]
 
+    // Recently Mentioned Products (with FAQs for follow-up questions)
+    recentlyMentionedProducts?: ProductWithFAQs[]
+
     // User Preferences
     userPreferences?: UserPreference[]
 
     // Account Learnings
     accountLearnings?: AccountLearning[]
+}
+
+export interface ProductWithFAQs {
+    id: number
+    productName: string
+    price: number
+    description?: string
+    enhanced_description?: string
+    faq?: Array<{ question: string; answer: string }>
+    benefits?: string
+    usage_instructions?: string
+    mentionedAt: Date
 }
 
 export interface Message {
@@ -194,9 +209,13 @@ export interface Product {
     price: number
     stock: number
     description?: string
+    enhanced_description?: string
     mediaUrl?: string
     productType: 'physical' | 'service'
     serviceDurationMinutes?: number
+    faq?: Array<{ question: string; answer: string }>
+    benefits?: string
+    usage_instructions?: string
 }
 
 export interface Promotion {
@@ -361,6 +380,11 @@ export interface PlaceholderResult {
     productsMap: Record<string, Product>
     shouldGenerateQuote: boolean
     quoteItems: QuoteItem[]
+    productMedia: Array<{
+        productId: number
+        url: string
+        type: 'image' | 'video'
+    }>
 }
 
 // ============================================================================

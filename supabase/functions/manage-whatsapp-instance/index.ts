@@ -202,7 +202,19 @@ serve(async (req) => {
                     token: user_id,
                     qrcode: true,
                     base64: true,
-                    integration: "WHATSAPP-BAILEYS" // REQUERIDO: tipo de integración
+                    integration: "WHATSAPP-BAILEYS", // REQUERIDO: tipo de integración
+                    // Configurar webhook durante la creación
+                    webhook: {
+                        url: 'https://mytvwfbijlgbihlegmfg.supabase.co/functions/v1/message-router',
+                        byEvents: false,
+                        base64: true,
+                        events: [
+                            "CHATS_UPSERT",
+                            "MESSAGES_UPSERT",
+                            "MESSAGES_UPDATE",
+                            "CONNECTION_UPDATE"
+                        ]
+                    }
                 };
 
                 // Solo incluir número si está disponible (como Vocco)
@@ -242,30 +254,32 @@ serve(async (req) => {
                     })
                     .eq('id', user_id);
                 console.log(`[CREATE] evolution_api_key guardada exitosamente`);
-            }
-
-            // C. Configurar Webhook
-            try {
-                await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': EVOLUTION_API_KEY!,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        enabled: true,
-                        url: 'https://mytvwfbijlgbihlegmfg.supabase.co/functions/v1/message-router',
-                        webhook_by_events: false,
-                        events: [
-                            "CHATS_UPSERT",
-                            "MESSAGES_UPSERT",
-                            "MESSAGES_UPDATE",
-                            "CONNECTION_UPDATE"
-                        ]
-                    })
-                });
-            } catch (e: any) {
-                console.error(`[ERROR WEBHOOK] ${e.message}`);
+            } else {
+                // C. Si la instancia ya existe, configurar/actualizar webhook por separado
+                try {
+                    console.log(`[WEBHOOK] Configurando webhook para instancia existente: ${instanceName}`);
+                    await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': EVOLUTION_API_KEY!,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            enabled: true,
+                            url: 'https://mytvwfbijlgbihlegmfg.supabase.co/functions/v1/message-router',
+                            webhook_by_events: false,
+                            webhook_base64: true,
+                            events: [
+                                "CHATS_UPSERT",
+                                "MESSAGES_UPSERT",
+                                "MESSAGES_UPDATE",
+                                "CONNECTION_UPDATE"
+                            ]
+                        })
+                    });
+                } catch (e: any) {
+                    console.error(`[ERROR WEBHOOK] ${e.message}`);
+                }
             }
 
             // D. Configurar Settings

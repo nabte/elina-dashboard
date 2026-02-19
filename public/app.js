@@ -2097,8 +2097,14 @@ class DashboardApp {
                                 <div class="text-5xl font-black text-purple-700 tracking-wider mb-3 font-mono whitespace-nowrap">
                                     ${formattedCode}
                                 </div>
-                                <p class="font-bold text-slate-800">Código de Emparejamiento</p>
+                                <p class="font-bold text-slate-800">Código de Emparejamiento (PIN)</p>
                                 <p class="text-sm text-slate-600 mt-2">Ingresa este código en WhatsApp</p>
+                                <div class="mt-3 px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                    <p class="text-xs text-yellow-800 text-center">
+                                        <i data-lucide="alert-triangle" class="w-3 h-3 inline mr-1"></i>
+                                        Entrar por "Vincular con el número de teléfono". Este método puede fallar
+                                    </p>
+                                </div>
                             </div>
                         `;
                         console.log('✅ DOM ACTUALIZADO DIRECTAMENTE con código:', formattedCode);
@@ -2230,10 +2236,16 @@ class DashboardApp {
                         <div class="text-6xl font-black text-purple-700 tracking-widest mb-4 font-mono">
                             ${formattedCode}
                         </div>
-                        <p class="font-bold text-slate-800">Código de Emparejamiento</p>
+                        <p class="font-bold text-slate-800">Código de Emparejamiento (PIN)</p>
                         <p class="text-sm text-slate-600 mt-2 text-center">
                             Ingresa este código en WhatsApp > Dispositivos Vinculados > Vincular con número de teléfono
                         </p>
+                        <div class="mt-3 px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p class="text-xs text-yellow-800 text-center">
+                                <i data-lucide="alert-triangle" class="w-3 h-3 inline mr-1"></i>
+                                Entrar por "Vincular con el número de teléfono". Este método puede fallar
+                            </p>
+                        </div>
                     </div>`;
                 if (connectButton) connectButton.style.display = 'block';
                 if (disconnectButton) disconnectButton.style.display = 'none';

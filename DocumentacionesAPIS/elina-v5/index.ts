@@ -258,6 +258,8 @@ serve(async (req) => {
         // ========================================================================
         // 8.5. EXECUTE TOOL CALLS (if any)
         // ========================================================================
+        let executedToolResults: any[] = []  // 🔥 Guardar para recopilar media después
+
         if (agentResponse.toolCalls && agentResponse.toolCalls.length > 0) {
             console.log(`\n🔧 [TOOLS] Agent requested ${agentResponse.toolCalls.length} tool call(s)`)
 
@@ -269,6 +271,8 @@ serve(async (req) => {
                 contact.id,
                 agentResponse.toolCalls
             )
+
+            executedToolResults = toolResults  // 🔥 Guardar para usar después
 
             console.log(`✅ [TOOLS] Tool calls executed, re-calling agent with results`)
 
@@ -313,17 +317,68 @@ serve(async (req) => {
 
         let finalText = placeholderResult.finalText
 
+        // Variable to hold product media for later use
+        let productMediaForSending: Array<{ url: string, type: 'image' | 'video' }> = []
+
         // ========================================================================
-        // 10. EXTRACT MEDIA URLs & CALCULATE TOTALS (CÓDIGO HACE EL TRABAJO)
+        // 10. RECOPILAR MEDIA & CALCULATE TOTALS (CÓDIGO HACE EL TRABAJO)
         // ========================================================================
-        console.log(`\n🖼️ [MEDIA] Extracting media URLs from processed text...`)
+        console.log(`\n🖼️ [MEDIA] Collecting media from products and text... (v2.0 - UPDATED)`)
 
-        const mediaToSend: Array<{ url: string, type: 'image' | 'video' }> = []
+        const mediaToSend: Array<{ url: string, type: 'image' | 'video', source: 'product' | 'text' }> = []
 
-        // --- A. Extracción en ORDEN (Markdown primero, luego Raw) ---
+        // --- A. PRIMERO: Media de productos (garantizada si el producto tiene media) ---
+        // Esto asegura que si un producto fue mencionado y tiene media, SE ENVÍA SIEMPRE
+        if (placeholderResult.productMedia && placeholderResult.productMedia.length > 0) {
+            console.log(`   - Found ${placeholderResult.productMedia.length} media from products (via placeholders)`)
 
+            placeholderResult.productMedia.forEach(media => {
+                mediaToSend.push({
+                    url: media.url,
+                    type: media.type,
+                    source: 'product'
+                })
+            })
+        }
+
+        // 🔥 FALLBACK: También buscar media en tool results (por si el LLM olvidó usar placeholders)
+        if (executedToolResults.length > 0) {
+            console.log(`   - Checking tool results for additional product media...`)
+
+            for (const toolResult of executedToolResults) {
+                if (toolResult.role === 'tool' && toolResult.content) {
+                    try {
+                        const content = JSON.parse(toolResult.content)
+
+                        // Si es resultado de buscar_productos
+                        if (content.products && Array.isArray(content.products)) {
+                            console.log(`   - Found ${content.products.length} products in tool result`)
+
+                            content.products.forEach((product: any) => {
+                                if (product.media_url && product.media_url.trim()) {
+                                    const isVideo = /\.(mp4|mov|avi|webm)$/i.test(product.media_url)
+
+                                    // Evitar duplicados (comparar URL)
+                                    if (!mediaToSend.find(m => m.url === product.media_url)) {
+                                        mediaToSend.push({
+                                            url: product.media_url,
+                                            type: isVideo ? 'video' : 'image',
+                                            source: 'product'
+                                        })
+                                        console.log(`   - Added media from product ID ${product.id}: ${product.media_url}`)
+                                    }
+                                }
+                            })
+                        }
+                    } catch (e) {
+                        // No es JSON válido, continuar
+                    }
+                }
+            }
+        }
+
+        // --- B. SEGUNDO: Extracción adicional del texto (por si el LLM agregó media extra) ---
         // 1. Detectar URLs de Markdown: ![alt](url)
-        // Regex para detectar URLs de Bunny CDN dentro de markdown
         const markdownRegex = /!\[([^\]]*)\]\((https:\/\/creativersezone\.b-cdn\.net\/[^\)]+\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|webm))\)/gi
         const markdownMatches = [...finalText.matchAll(markdownRegex)]
 
@@ -331,17 +386,17 @@ serve(async (req) => {
             const url = match[2]
             const isVideo = /\.(mp4|mov|avi|webm)$/i.test(url)
 
-            // Solo agregar si no está ya en la lista
+            // Solo agregar si no está ya en la lista (evitar duplicados con product media)
             if (!mediaToSend.find(m => m.url === url)) {
                 mediaToSend.push({
                     url: url,
-                    type: isVideo ? 'video' : 'image'
+                    type: isVideo ? 'video' : 'image',
+                    source: 'text'
                 })
             }
         }
 
         // 2. Detectar URLs puras (Raw)
-        // Regex para detectar URLs de Bunny CDN sueltas
         const mediaUrlRegex = /https:\/\/creativersezone\.b-cdn\.net\/[^\s\)]+\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|webm)/gi
         let matches = finalText.match(mediaUrlRegex)
 
@@ -349,25 +404,25 @@ serve(async (req) => {
             for (const url of matches) {
                 const isVideo = /\.(mp4|mov|avi|webm)$/i.test(url)
 
-                // Solo agregar si no está ya en la lista (evitar duplicados si el markdown ya lo capturó, aunque el markdown se removerá abajo, es mejor prevenir)
+                // Solo agregar si no está ya en la lista
                 if (!mediaToSend.find(m => m.url === url)) {
                     mediaToSend.push({
                         url: url,
-                        type: isVideo ? 'video' : 'image'
+                        type: isVideo ? 'video' : 'image',
+                        source: 'text'
                     })
                 }
             }
         }
 
-        // --- Limpieza de URLs y Markdown de Imagen (GLOBAL) ---
-
-        // 1. Remover markdown de imagen COMPLETO
+        // --- C. Limpieza de URLs y Markdown de Imagen del texto (GLOBAL) ---
+        // Remover markdown de imagen COMPLETO
         finalText = finalText.replace(markdownRegex, '')
 
-        // 2. Remover URLs sueltas globalmente
+        // Remover URLs sueltas globalmente
         finalText = finalText.replace(mediaUrlRegex, '')
 
-        // --- B. Regla de Negocio: Máximo 3 media files ---
+        // --- D. Regla de Negocio: Máximo 3 media files ---
         const MAX_MEDIA = 3
         const finalMediaToSend = mediaToSend.slice(0, MAX_MEDIA)
 
@@ -417,37 +472,112 @@ serve(async (req) => {
             .replace(/\n{3,}/g, '\n\n')
             .trim()
 
-        console.log(`   - Found ${mediaToSend.length} media URL(s)`)
+        const productMediaCount = mediaToSend.filter(m => m.source === 'product').length
+        const textMediaCount = mediaToSend.filter(m => m.source === 'text').length
+
+        console.log(`   - Found ${mediaToSend.length} total media URL(s)`)
+        console.log(`     • ${productMediaCount} from products (guaranteed)`)
+        console.log(`     • ${textMediaCount} from text (LLM generated)`)
         console.log(`   - Sending ${finalMediaToSend.length} media file(s)`)
         console.log(`   - Cleaned text length: ${finalText.length}`)
 
+        // 🔥 CRITICAL: Save media for later use in sending section
+        const productMediaForSending = finalMediaToSend.map(m => ({ url: m.url, type: m.type }))
+
         // ========================================================================
-        // 11. SEND RESPONSE WITH MEDIA
+        // 11. SEND RESPONSE WITH MEDIA (N8N V4 STYLE)
         // ========================================================================
         console.log(`\n📤 [SEND] Sending response...`)
 
         if (finalMediaToSend.length > 0) {
-            // Enviar cada media como mensaje separado
             console.log(`   - Sending ${finalMediaToSend.length} media message(s)`)
 
-            for (const media of finalMediaToSend) {
-                if (media.type === 'video') {
-                    const { sendVideo } = await import('./utils/evolution.ts')
-                    await sendVideo(config, remoteJid, media.url, '') // Sin caption
-                } else {
-                    await sendImage(config, remoteJid, media.url, '') // Sin caption
-                }
-                // Pequeño delay entre medias para asegurar orden
-                await new Promise(r => setTimeout(r, 600))
-            }
+            // ========================================================================
+            // DISTRIBUCIÓN INTELIGENTE DE TEXTO ENTRE CAPTIONS (n8n V4 logic)
+            // ========================================================================
 
-            // Finalmente enviar el texto formateado y limpio
-            if (finalText.length > 0) {
-                await sendMessage(config, remoteJid, finalText, true)
+            // Si tenemos productMedia (productos garantizados), usar distribución inteligente
+            if (placeholderResult.productMedia && placeholderResult.productMedia.length > 0) {
+                console.log(`   - Using smart text distribution across product media`)
+
+                const { distributeTextAcrossProductMedia } = await import('./utils/text-formatter.ts')
+
+                const mediaWithCaptions = distributeTextAcrossProductMedia(
+                    finalText,
+                    placeholderResult.productMedia.slice(0, 3), // Max 3
+                    placeholderResult.productsMap,
+                    3
+                )
+
+                console.log(`   - Generated ${mediaWithCaptions.length} media with captions`)
+
+                // Enviar cada media con su caption
+                for (let i = 0; i < mediaWithCaptions.length; i++) {
+                    const item = mediaWithCaptions[i]
+
+                    console.log(`   - Sending media ${i + 1}/${mediaWithCaptions.length} (Product ID: ${item.productId})`)
+                    console.log(`     Caption length: ${item.caption.length} chars`)
+
+                    if (item.type === 'video') {
+                        const { sendVideo } = await import('./utils/evolution.ts')
+                        await sendVideo(config, remoteJid, item.url, item.caption)
+                    } else {
+                        await sendImage(config, remoteJid, item.url, item.caption)
+                    }
+
+                    // Delay entre mensajes
+                    if (i < mediaWithCaptions.length - 1) {
+                        await new Promise(r => setTimeout(r, 600))
+                    }
+                }
+
+            } else {
+                // ========================================================================
+                // FALLBACK: Media sin productos (media del texto LLM)
+                // ========================================================================
+                console.log(`   - Using fallback: media without product distribution`)
+
+                if (finalMediaToSend.length === 1) {
+                    // UNA SOLA MEDIA - Todo el texto como caption
+                    const media = finalMediaToSend[0]
+                    console.log(`   - Sending single media with full text as caption`)
+
+                    if (media.type === 'video') {
+                        const { sendVideo } = await import('./utils/evolution.ts')
+                        await sendVideo(config, remoteJid, media.url, finalText)
+                    } else {
+                        await sendImage(config, remoteJid, media.url, finalText)
+                    }
+
+                } else {
+                    // MÚLTIPLES MEDIA - Sin caption, texto al final
+                    console.log(`   - Sending multiple media, text will be sent after`)
+
+                    for (let i = 0; i < finalMediaToSend.length; i++) {
+                        const media = finalMediaToSend[i]
+
+                        if (media.type === 'video') {
+                            const { sendVideo } = await import('./utils/evolution.ts')
+                            await sendVideo(config, remoteJid, media.url, '')
+                        } else {
+                            await sendImage(config, remoteJid, media.url, '')
+                        }
+
+                        if (i < finalMediaToSend.length - 1) {
+                            await new Promise(r => setTimeout(r, 600))
+                        }
+                    }
+
+                    // Texto al final
+                    if (finalText.length > 0) {
+                        await new Promise(r => setTimeout(r, 600))
+                        await sendMessage(config, remoteJid, finalText, true)
+                    }
+                }
             }
 
         } else {
-            // Enviar solo texto
+            // Sin media - Enviar solo texto
             await sendMessage(config, remoteJid, finalText, true)
         }
 

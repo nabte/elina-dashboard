@@ -309,6 +309,11 @@ export async function buscarProductos(
                 price: r.price,
                 stock: r.stock,
                 description: r.description,
+                media_url: r.media_url, // ✅ ADDED: Include media_url for automatic media sending
+                enhanced_description: r.enhanced_description,
+                faq: r.faq,
+                benefits: r.benefits,
+                usage_instructions: r.usage_instructions,
                 formatting_hint: `🛍️ *${r.product_name}* — $${r.price}${urgencyNote}\n🔹 ${r.description || ''}\n\n`
             }
         }),

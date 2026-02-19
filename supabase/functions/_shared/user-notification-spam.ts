@@ -1,6 +1,6 @@
 /**
  * USER NOTIFICATION ANTI-SPAM SYSTEM
- * Previene enviar demasiados mensajes al contact_phone del USUARIO sin que este responda
+ * Previene enviar demasiados mensajes al contact_phone del USUARIO sin que responda por WhatsApp
  */
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -9,53 +9,39 @@ const MAX_NOTIFICATIONS_WITHOUT_RESPONSE = 3
 
 /**
  * Verifica si podemos enviar una notificación al usuario
- * Cuenta mensajes en los últimos 3 días y verifica actividad del usuario
+ * Revisa el contador de mensajes enviados sin respuesta
  */
 export async function canSendUserNotification(
     supabase: SupabaseClient,
     userId: string
-): Promise<{ canSend: boolean; reason?: string }> {
+): Promise<{ canSend: boolean; reason?: string; currentCount?: number }> {
     try {
-        // Obtener última actividad del usuario (login)
-        const { data: authData } = await supabase.auth.admin.getUserById(userId)
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('notification_messages_sent')
+            .eq('id', userId)
+            .single()
 
-        if (!authData?.user) {
-            return { canSend: false, reason: 'User not found' }
+        if (!profile) {
+            return { canSend: false, reason: 'User profile not found' }
         }
 
-        const lastSignIn = authData.user.last_sign_in_at
+        const messagesSent = profile.notification_messages_sent || 0
 
-        if (!lastSignIn) {
-            // Si nunca ha hecho login, permitir (es nuevo)
-            return { canSend: true }
-        }
+        console.log(`📊 [ANTI_SPAM] User ${userId}: ${messagesSent} notifications sent without response`)
 
-        // Contar notificaciones enviadas desde el último login
-        const lastSignInDate = new Date(lastSignIn)
-
-        // Buscar en daily_summaries (resúmenes enviados)
-        const { count: summariesCount } = await supabase
-            .from('daily_summaries')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId)
-            .not('sent_at', 'is', null)
-            .gte('sent_at', lastSignInDate.toISOString())
-
-        // TODO: Cuando exista task_reminders, también contar esos
-        // const { count: remindersCount } = await supabase...
-
-        const totalNotifications = summariesCount || 0
-
-        console.log(`📊 [ANTI_SPAM] User ${userId}: ${totalNotifications} notifications since last login (${lastSignIn})`)
-
-        if (totalNotifications >= MAX_NOTIFICATIONS_WITHOUT_RESPONSE) {
+        if (messagesSent >= MAX_NOTIFICATIONS_WITHOUT_RESPONSE) {
             return {
                 canSend: false,
-                reason: `User has ${totalNotifications} unresponded notifications since last login`
+                reason: `User has ${messagesSent} unresponded notifications (max: ${MAX_NOTIFICATIONS_WITHOUT_RESPONSE})`,
+                currentCount: messagesSent
             }
         }
 
-        return { canSend: true }
+        return {
+            canSend: true,
+            currentCount: messagesSent
+        }
 
     } catch (error) {
         console.error('❌ [ANTI_SPAM] Error checking notification spam:', error)
@@ -65,31 +51,70 @@ export async function canSendUserNotification(
 }
 
 /**
- * Registra que se envió una notificación al usuario
- * Esto ya se hace automáticamente al guardar en daily_summaries
+ * Incrementa el contador de notificaciones enviadas
+ * Se llama DESPUÉS de enviar exitosamente un mensaje
  */
-export function recordNotificationSent() {
-    // No necesitamos hacer nada adicional
-    // El simple hecho de guardar en daily_summaries con sent_at ya lo registra
+export async function incrementNotificationCounter(
+    supabase: SupabaseClient,
+    userId: string
+): Promise<void> {
+    try {
+        const { error } = await supabase.rpc('increment_notification_counter', {
+            user_id: userId
+        })
+
+        if (error) {
+            console.error('❌ [ANTI_SPAM] Error incrementing counter:', error)
+        } else {
+            console.log(`✅ [ANTI_SPAM] Notification counter incremented for user ${userId}`)
+        }
+    } catch (error) {
+        console.error('❌ [ANTI_SPAM] Error in incrementNotificationCounter:', error)
+    }
 }
 
 /**
- * Verifica la última actividad del usuario
+ * Resetea el contador cuando el usuario responde por WhatsApp
+ * Se llama desde el webhook de ElinaHead
  */
-export async function getUserLastActivity(
+export async function resetNotificationCounter(
     supabase: SupabaseClient,
-    userId: string
-): Promise<Date | null> {
+    contactPhone: string
+): Promise<void> {
     try {
-        const { data: authData } = await supabase.auth.admin.getUserById(userId)
+        // Buscar usuario por contact_phone
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, full_name, notification_messages_sent')
+            .eq('contact_phone', contactPhone)
+            .single()
 
-        if (authData?.user?.last_sign_in_at) {
-            return new Date(authData.user.last_sign_in_at)
+        if (!profile) {
+            console.log(`⚠️ [ANTI_SPAM] No user found with contact_phone: ${contactPhone}`)
+            return
         }
 
-        return null
+        if (profile.notification_messages_sent === 0) {
+            console.log(`ℹ️ [ANTI_SPAM] User ${profile.full_name} already has counter at 0`)
+            return
+        }
+
+        // Resetear contador
+        const { error } = await supabase
+            .from('profiles')
+            .update({
+                notification_messages_sent: 0,
+                notification_last_acknowledged_at: new Date().toISOString()
+            })
+            .eq('id', profile.id)
+
+        if (error) {
+            console.error('❌ [ANTI_SPAM] Error resetting counter:', error)
+        } else {
+            console.log(`✅ [ANTI_SPAM] Counter reset for user ${profile.full_name} (${contactPhone})`)
+        }
+
     } catch (error) {
-        console.error('❌ [ANTI_SPAM] Error getting user activity:', error)
-        return null
+        console.error('❌ [ANTI_SPAM] Error in resetNotificationCounter:', error)
     }
 }

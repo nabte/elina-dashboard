@@ -79,7 +79,7 @@
         </div>
     </div>
 
-    <div class="flex h-screen overflow-hidden">
+    <div class="flex h-full w-full overflow-hidden">
         <!-- Barra lateral de navegación (se ocultará en móvil) -->
         <aside id="main-sidebar" class="main-sidebar w-64 bg-slate-900 text-white flex flex-col p-4 overflow-y-auto">
             <div class="flex items-center justify-between gap-3 mb-8">
@@ -93,7 +93,7 @@
                     </div>
                 </div>
                 <!-- Botón para cerrar el menú en móvil -->
-                <button id="close-sidebar-btn" class="md:hidden p-1 rounded-full hover:bg-slate-700">
+                <button id="close-sidebar-btn" class="lg:hidden p-1 rounded-full hover:bg-slate-700">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
@@ -191,7 +191,8 @@
                 <!-- Enlace Quality Dashboard (Solo para Super Admin) -->
                 <a href="/quality-dashboard.html" id="quality-dashboard-link"
                     class="hidden nav-link text-sm flex items-center gap-3 px-4 py-2 rounded-md hover:bg-slate-700 transition-colors"><i
-                        data-lucide="chart-line" class="w-4 h-4 flex-shrink-0"></i><span class="sidebar-text">Análisis de Calidad</span></a>
+                        data-lucide="chart-line" class="w-4 h-4 flex-shrink-0"></i><span class="sidebar-text">Análisis
+                        de Calidad</span></a>
 
                 <!-- Enlace Panel de Afiliados (Oculto por defecto) -->
                 <a href="#" id="affiliate-link"
@@ -215,7 +216,7 @@
 
         <!-- Contenido principal -->
         <div id="main-content-area"
-            class="flex-1 transition-all duration-300 ease-in-out flex flex-col h-full overflow-hidden">
+            class="flex-1 transition-all duration-300 ease-in-out flex flex-col h-full overflow-hidden relative">
             <!-- Mobile Header -->
             <div
                 class="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between shadow-sm z-30 flex-shrink-0">
@@ -230,7 +231,7 @@
                 </button>
             </div>
 
-            <main class="p-4 sm:p-5 lg:p-6 flex-1 overflow-y-auto pb-24">
+            <main class="p-4 sm:p-5 lg:p-6 flex-1 flex flex-col h-full overflow-hidden w-full relative">
                 <!-- Botón para colapsar/expandir el sidebar (visible solo en desktop/tablet) -->
                 <button id="toggle-sidebar-collapse-btn"
                     class="hidden lg:block fixed top-5 z-50 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-md hover:bg-slate-100 transition-all duration-300 ease-in-out">
@@ -238,8 +239,8 @@
                 </button>
 
                 <!-- Panel del Dashboard (activo por defecto) -->
-                <div id="dashboard" class="content-panel active">
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div id="dashboard" class="content-panel active overflow-y-auto h-full rounded-2xl">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         <!-- Columna principal (Métricas y Tutoriales) -->
                         <div class="lg:col-span-2 space-y-8 order-1">
                             <div>
@@ -653,7 +654,7 @@
                 </div>
 
                 <!-- Panel de Contactos -->
-                <div id="contacts" class="content-panel">
+                <div id="contacts" class="content-panel overflow-y-auto h-full">
                     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
                         <div class="space-y-1">
                             <div class="flex items-center gap-3">
@@ -882,7 +883,8 @@
                 </div>
 
                 <!-- Panel de Marketing / Envío Masivo -->
-                <div id="bulk-sending" class="content-panel max-w-6xl mx-auto px-4 sm:px-6" data-placeholder="true">
+                <div id="bulk-sending" class="content-panel overflow-y-auto h-full max-w-full mx-auto px-4 sm:px-6"
+                    data-placeholder="true">
                     <div class="flex flex-col lg:flex-row gap-10">
                         <!-- Columna Principal: Creación de Campaña -->
                         <div class="lg:col-span-2 flex-grow space-y-8">
@@ -1171,7 +1173,7 @@
                 </div>
 
                 <!-- Panel de Afiliados (Nuevo) -->
-                <div id="affiliate-panel" class="content-panel max-w-6xl mx-auto">
+                <div id="affiliate-panel" class="content-panel max-w-full mx-auto">
                     <header class="mb-8">
                         <h2 class="text-3xl font-bold text-slate-800">Panel de Afiliado</h2>
                         <p class="text-slate-500">Gestiona tus referidos y visualiza tus ganancias.</p>
@@ -1249,7 +1251,8 @@
                 </div>
 
                 <!-- Contenedor para el panel de Etiquetas IA. Se cargará dinámicamente. -->
-                <div id="smart-labels" class="content-panel max-w-[1600px] mx-auto" data-placeholder="true"></div>
+                <div id="smart-labels" class="content-panel max-w-full mx-auto overflow-y-auto h-full"
+                    data-placeholder="true"></div>
 
                 <!-- Panel Kanban -->
                 <div id="kanban" class="content-panel flex flex-col h-full">
@@ -1271,7 +1274,7 @@
                 </div>
 
                 <!-- Contenedor para el panel de Seguimientos. Se cargará dinámicamente. -->
-                <div id="follow-ups" class="content-panel max-w-5xl mx-auto">
+                <div id="follow-ups" class="content-panel max-w-full mx-auto overflow-y-auto h-full">
                     <!-- Contenido de follow-ups.html -->
                     <div id="follow-ups-access-denied" class="hidden bg-white rounded-xl shadow-md p-8 text-center">
                         <i data-lucide="lock" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
@@ -1389,36 +1392,37 @@
                 </div>
 
                 <!-- Panel de Respuestas Programadas (NUEVO) -->
-                <div id="auto-responses" class="content-panel max-w-5xl mx-auto">
+                <div id="auto-responses" class="content-panel max-w-full mx-auto overflow-y-auto h-full">
                     <div id="auto-responses-content">
                         <!-- Se cargará dinámicamente desde auto-responses.js -->
                     </div>
                 </div>
 
                 <!-- Panel de Entrenamiento de Prompt (NUEVO) -->
-                <div id="prompt-training" class="content-panel max-w-7xl mx-auto">
-                    <div id="prompt-training-content">
+                <div id="prompt-training" class="content-panel max-w-full mx-auto h-full">
+                    <div id="prompt-training-content" class="h-full">
                         <!-- Se cargará dinámicamente desde prompt-training.js -->
                     </div>
                 </div>
 
                 <!-- Panel de Memoria / Asistente IA (NUEVO) -->
-                <div id="ai-memory" class="content-panel max-w-7xl mx-auto">
-                    <div id="ai-memory-content">
+                <div id="ai-memory" class="content-panel max-w-full mx-auto h-full">
+                    <div id="ai-memory-content" class="h-full">
                         <!-- Se cargará dinámicamente desde prompt-training.js -->
                     </div>
                 </div>
 
                 <!-- Panel de Flujos Personalizados (NUEVO) -->
-                <div id="ai-flows" class="content-panel max-w-7xl mx-auto">
-                    <div id="ai-flows-content">
+                <div id="ai-flows" class="content-panel max-w-full mx-auto h-full">
+                    <div id="ai-flows-content" class="h-full">
                         <!-- Se cargará dinámicamente desde prompt-training.js o flow-builder.js -->
                     </div>
                 </div>
 
                 <!-- Panel de Contexto de Ventas (NUEVO) -->
                 <!-- Panel Contexto de Ventas -->
-                <div id="sales-context" class="content-panel hidden max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div id="sales-context"
+                    class="content-panel hidden max-w-full mx-auto px-4 sm:px-6 lg:px-8 overflow-y-auto h-full">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                         <div>
                             <p class="text-sm uppercase font-semibold text-slate-400">Promociones & scripts</p>
@@ -1557,7 +1561,7 @@
                 </div>
 
                 <!-- Contenedor para el panel de Plantillas. Se cargará dinámicamente. -->
-                <div id="templates" class="content-panel max-w-5xl mx-auto">
+                <div id="templates" class="content-panel max-w-full mx-auto">
                     <!-- Contenido de templates.html -->
                     <h2 class="text-2xl sm:text-3xl font-bold mb-6">Plantillas de Mensajes</h2>
                     <div class="space-y-8">
@@ -1595,7 +1599,7 @@
                 </div>
 
                 <!-- Panel de Cotizaciones -->
-                <div id="quotes" class="content-panel max-w-7xl mx-auto">
+                <div id="quotes" class="content-panel max-w-full mx-auto">
                     <!-- Contenido de Cotizaciones -->
                     <div class="flex flex-col gap-4 mb-6">
                         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -1678,7 +1682,7 @@
                 </div>
 
                 <!-- Contenedor para el panel de Productos. Se cargará dinámicamente. -->
-                <div id="products" class="content-panel max-w-6xl mx-auto">
+                <div id="products" class="content-panel max-w-full mx-auto overflow-y-auto h-full">
                     <!-- Contenido de products.html -->
                     <div class="flex flex-col gap-4 mb-6">
                         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -1745,7 +1749,7 @@
 
 
                 <!-- Panel Smart Promotions -->
-                <div id="smart-promotions" class="content-panel max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div id="smart-promotions" class="content-panel max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                         <div>
                             <h2 class="text-3xl font-black text-slate-900 tracking-tight">Smart Promotions</h2>
@@ -2142,341 +2146,170 @@
                     </div>
                 </div>
 
-                <!-- Panel Contexto de Ventas -->
-                <div id="sales-context" class="content-panel hidden max-w-4xl mx-auto">
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                            <div>
-                                <p class="text-sm uppercase font-semibold text-slate-400">Promociones & scripts</p>
-                                <h2 class="text-3xl font-bold text-slate-900">Contexto Comercial</h2>
-                                <p class="text-sm text-slate-500 max-w-2xl">
-                                    Describe la oferta, objeciones y ganchos prioritarios para que la IA los use
-                                    automáticamente en ventas. No necesitas procesos adicionales en n8n.
-                                </p>
-                            </div>
-                        </div>
 
 
-                        <form id="sales-context-form" class="space-y-5">
-                            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-                                <p class="text-sm text-blue-800">
-                                    <strong>💡 ¿Qué es el Contexto de Ventas?</strong><br>
-                                    Configura cómo la IA debe responder a objeciones comunes de tus clientes.
-                                    La IA detectará automáticamente estas objeciones y usará las respuestas que
-                                    configures aquí.
-                                </p>
-                            </div>
-
-
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">
-                                    Objeciones detectadas automáticamente
-                                </label>
-                                <div id="sales-context-detected-objections"
-                                    class="bg-slate-50 border border-slate-200 rounded-xl p-4 min-h-[100px]">
-                                    <p class="text-sm text-slate-600 mb-3">
-                                        <i data-lucide="info" class="w-4 h-4 inline mr-2"></i>
-                                        La IA detectará automáticamente objeciones comunes como:
-                                    </p>
-                                    <div id="objections-list" class="space-y-2">
-                                        <!-- Las objeciones se cargarán dinámicamente aquí -->
-                                    </div>
-                                    <button type="button" id="add-objection-btn"
-                                        class="mt-3 text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2">
-                                        <i data-lucide="plus" class="w-4 h-4"></i>
-                                        Agregar objeción personalizada
-                                    </button>
+                <form id="sales-context-form" class="space-y-5">
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                        <p class="text-sm text-blue-800">
+                            <strong>💡 ¿Qué es el Contexto de Ventas?</strong><br>
+                            Configura cómo la IA debe responder a objeciones comunes de tus clientes.
+                            La IA detectará automáticamente estas objeciones y usará las respuestas que
+                            <!-- Panel de Citas y Calendario -->
+                        <div id="appointments" class="content-panel max-w-full mx-auto overflow-y-auto h-full">
+                            <!-- Calendario -->
+                            <div id="appointments-container" class="bg-white rounded-xl shadow-md p-3">
+                                <div id="appointments-loader" class="text-center text-slate-500 p-8">
+                                    <i data-lucide="loader" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
+                                    <p>Cargando citas...</p>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-1">
-                                    <strong>¿Cómo funciona?</strong> La IA detecta automáticamente cuando un cliente
-                                    dice estas objeciones y usa las respuestas que configuraste.
-                                    Puedes editar haciendo clic en el ícono de lápiz ✏️, generar respuestas automáticas
-                                    con el botón de IA 🤖, o eliminar con la X.
-                                    Las promociones específicas están en "Promociones Inteligentes" y se insertan
-                                    automáticamente cuando es relevante.
-                                </p>
-                            </div>
-
-                            <!-- Mensajes Críticos -->
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">
-                                    🚨 Mensajes Críticos
-                                </label>
-                                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-3">
-                                    <p class="text-sm text-amber-800">
-                                        <strong>¿Qué son los mensajes críticos?</strong><br>
-                                        Cuando un cliente envía un mensaje crítico, la conversación se pausa
-                                        automáticamente y recibes una notificación.
-                                        Un humano debe responder en lugar de la IA.
-                                    </p>
-                                </div>
-
-                                <!-- Críticos Predefinidos -->
-                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4">
-                                    <h4 class="text-sm font-semibold text-slate-700 mb-3">Críticos Predefinidos</h4>
-                                    <div id="predefined-critical-rules" class="space-y-2">
-                                        <!-- Se cargarán dinámicamente -->
-                                    </div>
-                                </div>
-
-                                <!-- Críticos Personalizados -->
-                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                                    <div class="flex items-center justify-between mb-3">
-                                        <h4 class="text-sm font-semibold text-slate-700">Críticos Personalizados</h4>
-                                        <button type="button" id="add-critical-rule-btn"
-                                            class="text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2">
-                                            <i data-lucide="plus" class="w-4 h-4"></i> Agregar crítico
-                                        </button>
-                                    </div>
-                                    <div id="custom-critical-rules" class="space-y-2">
-                                        <!-- Se cargarán dinámicamente -->
-                                    </div>
-                                </div>
-                                <p class="text-xs text-slate-500 mt-2">
-                                    Puedes agregar palabras clave simples o patrones (expresiones regulares) para
-                                    detectar mensajes críticos específicos de tu negocio.
-                                </p>
-                            </div>
-
-                            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-4">
-                                <!-- Switch 1: Activo -->
-                                <div id="sales-context-active-switch"
-                                    class="flex items-start gap-3 cursor-pointer group" data-active="true">
-                                    <!-- Switch Track -->
-                                    <div
-                                        class="switch-track relative w-11 h-6 flex-shrink-0 bg-slate-200 rounded-full transition-colors duration-200 flex items-center">
-                                        <!-- Switch Thumb -->
-                                        <div
-                                            class="switch-thumb absolute left-[2px] w-5 h-5 bg-white border border-slate-300 rounded-full transition-transform duration-200 shadow-sm">
+                                <!-- Vista Mensual -->
+                                <div id="calendar-month-view" class="hidden">
+                                    <!-- Header compacto con controles integrados -->
+                                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+                                        <div class="flex items-center gap-3">
+                                            <button id="calendar-prev-month"
+                                                class="p-1.5 rounded-lg hover:bg-slate-100">
+                                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                                            </button>
+                                            <h3 id="calendar-month-title" class="text-base font-bold text-slate-800">
+                                            </h3>
+                                            <button id="calendar-next-month"
+                                                class="p-1.5 rounded-lg hover:bg-slate-100">
+                                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                            </button>
                                         </div>
-                                    </div>
-                                    <div class="flex-1">
                                         <div class="flex items-center gap-2">
-                                            <span class="text-sm font-semibold text-slate-700 select-none">Marcar como
-                                                activo</span>
-                                            <!-- Tooltip -->
-                                            <div class="relative group/tooltip inline-flex">
-                                                <i data-lucide="help-circle"
-                                                    class="w-4 h-4 text-slate-400 hover:text-blue-500 cursor-help transition-colors"></i>
-                                                <div
-                                                    class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-800 text-white text-xs p-2 rounded-lg shadow-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 pointer-events-none">
-                                                    Si activas esto, la IA usará este contexto comercial en TODAS tus
-                                                    conversaciones para vender y responder objeciones.
-                                                    <div
-                                                        class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-800">
-                                                    </div>
-                                                </div>
+                                            <label
+                                                class="text-xs font-medium text-slate-600 whitespace-nowrap">Filtrar:</label>
+                                            <select id="appointments-filter-status"
+                                                class="form-input border-slate-300 rounded-lg text-xs py-1 px-2 min-w-[100px]">
+                                                <option value="all">Todas</option>
+                                                <option value="pending">Pendientes</option>
+                                                <option value="confirmed">Confirmadas</option>
+                                                <option value="completed">Completadas</option>
+                                                <option value="cancelled">Canceladas</option>
+                                            </select>
+                                            <div
+                                                class="relative inline-flex items-center bg-slate-200 rounded-lg p-0.5">
+                                                <button id="calendar-view-month-btn"
+                                                    class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 bg-green-600 text-white shadow-sm">
+                                                    <i data-lucide="calendar" class="w-3 h-3"></i> Mes
+                                                </button>
+                                                <button id="calendar-view-week-btn"
+                                                    class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 text-slate-700 hover:text-slate-900">
+                                                    <i data-lucide="calendar-days" class="w-3 h-3"></i> Sem
+                                                </button>
                                             </div>
+                                            <button id="new-appointment-btn"
+                                                class="bg-green-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-green-700 flex items-center gap-1.5 text-xs">
+                                                <i data-lucide="plus" class="w-3 h-3"></i> Nueva
+                                            </button>
+                                            <button id="appointments-config-btn"
+                                                class="bg-slate-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-1.5 text-xs"
+                                                title="Configurar citas">
+                                                <i data-lucide="settings" class="w-3 h-3"></i>
+                                            </button>
                                         </div>
-                                        <p class="text-xs text-slate-500 mt-0.5">La IA lo usará en todas las
-                                            conversaciones</p>
+                                    </div>
+                                    <div id="calendar-month-grid" class="grid grid-cols-7 gap-1.5">
+                                        <!-- Los días del mes se renderizarán aquí -->
                                     </div>
                                 </div>
-
-                                <!-- Switch 2: Auto Generar -->
-                                <div id="sales-context-auto-generate-switch"
-                                    class="flex items-start gap-3 cursor-pointer group" data-active="true">
-                                    <!-- Switch Track -->
-                                    <div
-                                        class="switch-track relative w-11 h-6 flex-shrink-0 bg-slate-200 rounded-full transition-colors duration-200 flex items-center">
-                                        <!-- Switch Thumb -->
-                                        <div
-                                            class="switch-thumb absolute left-[2px] w-5 h-5 bg-white border border-slate-300 rounded-full transition-transform duration-200 shadow-sm">
+                                <!-- Vista Semanal -->
+                                <div id="calendar-week-view" class="hidden">
+                                    <!-- Header compacto con controles integrados -->
+                                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+                                        <div class="flex items-center gap-3">
+                                            <button id="calendar-prev-week" class="p-1.5 rounded-lg hover:bg-slate-100">
+                                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                                            </button>
+                                            <h3 id="calendar-week-title" class="text-base font-bold text-slate-800">
+                                            </h3>
+                                            <button id="calendar-next-week" class="p-1.5 rounded-lg hover:bg-slate-100">
+                                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                            </button>
                                         </div>
-                                    </div>
-                                    <div class="flex-1">
                                         <div class="flex items-center gap-2">
-                                            <span class="text-sm font-semibold text-slate-700 select-none">Generar
-                                                respuestas automáticamente</span>
-                                            <!-- Tooltip -->
-                                            <div class="relative group/tooltip inline-flex">
-                                                <i data-lucide="help-circle"
-                                                    class="w-4 h-4 text-slate-400 hover:text-blue-500 cursor-help transition-colors"></i>
-                                                <div
-                                                    class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-800 text-white text-xs p-2 rounded-lg shadow-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-10 pointer-events-none">
-                                                    Cuando haces clic en el botón mágico 🤖 de una objeción, la IA usará
-                                                    los datos de tu empresa (web, descripción) para redactar la mejor
-                                                    respuesta posible.
-                                                    <div
-                                                        class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-800">
-                                                    </div>
-                                                </div>
+                                            <label
+                                                class="text-xs font-medium text-slate-600 whitespace-nowrap">Filtrar:</label>
+                                            <select id="appointments-filter-status-week"
+                                                class="form-input border-slate-300 rounded-lg text-xs py-1 px-2 min-w-[100px]">
+                                                <option value="all">Todas</option>
+                                                <option value="pending">Pendientes</option>
+                                                <option value="confirmed">Confirmadas</option>
+                                                <option value="completed">Completadas</option>
+                                                <option value="cancelled">Canceladas</option>
+                                            </select>
+                                            <div
+                                                class="relative inline-flex items-center bg-slate-200 rounded-lg p-0.5">
+                                                <button id="calendar-view-month-btn-week"
+                                                    class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 text-slate-700 hover:text-slate-900">
+                                                    <i data-lucide="calendar" class="w-3 h-3"></i> Mes
+                                                </button>
+                                                <button id="calendar-view-week-btn-week"
+                                                    class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 bg-green-600 text-white shadow-sm">
+                                                    <i data-lucide="calendar-days" class="w-3 h-3"></i> Sem
+                                                </button>
                                             </div>
+                                            <button id="new-appointment-btn-week"
+                                                class="bg-green-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-green-700 flex items-center gap-1.5 text-xs">
+                                                <i data-lucide="plus" class="w-3 h-3"></i> Nueva
+                                            </button>
+                                            <button id="appointments-config-btn-week"
+                                                class="bg-slate-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-1.5 text-xs"
+                                                title="Configurar citas">
+                                                <i data-lucide="settings" class="w-3 h-3"></i>
+                                            </button>
                                         </div>
-                                        <p class="text-xs text-slate-500 mt-0.5">Usando datos de mi empresa</p>
+                                    </div>
+                                    <div id="calendar-week-grid" class="grid grid-cols-8 gap-2">
+                                        <!-- Los días de la semana con horas se renderizarán aquí -->
                                     </div>
                                 </div>
-                                <p class="text-xs text-slate-500 border-t pt-2 mt-2">
-                                    <i data-lucide="zap" class="w-3 h-3 inline mr-1 text-amber-500"></i>
-                                    <strong>Tip:</strong> Mantén ambas opciones activas para aprovechar al máximo la
-                                    automatización.
-                                </p>
-                            </div>
-                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                <p class="text-xs text-slate-500">Cada guardado desactiva versiones anteriores para
-                                    mantener un solo contexto vigente.</p>
-                                <div class="flex flex-wrap items-center gap-3">
-                                    <button type="button" id="sales-context-clear"
-                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-                                        <i data-lucide="eraser" class="w-4 h-4"></i> Limpiar campos
-                                    </button>
-                                    <button type="submit"
-                                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
-                                        <i data-lucide="save" class="w-4 h-4"></i> Guardar contexto
-                                    </button>
+                                <!-- Lista de Citas (fallback) -->
+                                <div id="appointments-list" class="hidden space-y-3"></div>
+                                <div id="appointments-empty" class="hidden bg-slate-50 rounded-xl p-12 text-center">
+                                    <i data-lucide="calendar-x" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
+                                    <h3 class="text-xl font-bold text-slate-700">No hay citas agendadas</h3>
+                                    <p class="text-slate-500 mt-2">Las citas que la IA agende aparecerán aquí.</p>
+                                    <p class="text-sm text-slate-400 mt-4">Activa el sistema de citas en Configuración
+                                        para
+                                        comenzar.</p>
                                 </div>
                             </div>
-                        </form>
-                    </div>
-                </div>
+                        </div>
 
-                <!-- Panel de Citas y Calendario -->
-                <div id="appointments" class="content-panel max-w-7xl mx-auto">
-                    <!-- Calendario -->
-                    <div id="appointments-container" class="bg-white rounded-xl shadow-md p-3">
-                        <div id="appointments-loader" class="text-center text-slate-500 p-8">
-                            <i data-lucide="loader" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
-                            <p>Cargando citas...</p>
-                        </div>
-                        <!-- Vista Mensual -->
-                        <div id="calendar-month-view" class="hidden">
-                            <!-- Header compacto con controles integrados -->
-                            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
-                                <div class="flex items-center gap-3">
-                                    <button id="calendar-prev-month" class="p-1.5 rounded-lg hover:bg-slate-100">
-                                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                                    </button>
-                                    <h3 id="calendar-month-title" class="text-base font-bold text-slate-800"></h3>
-                                    <button id="calendar-next-month" class="p-1.5 rounded-lg hover:bg-slate-100">
-                                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                                    </button>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <label class="text-xs font-medium text-slate-600 whitespace-nowrap">Filtrar:</label>
-                                    <select id="appointments-filter-status"
-                                        class="form-input border-slate-300 rounded-lg text-xs py-1 px-2 min-w-[100px]">
-                                        <option value="all">Todas</option>
-                                        <option value="pending">Pendientes</option>
-                                        <option value="confirmed">Confirmadas</option>
-                                        <option value="completed">Completadas</option>
-                                        <option value="cancelled">Canceladas</option>
-                                    </select>
-                                    <div class="relative inline-flex items-center bg-slate-200 rounded-lg p-0.5">
-                                        <button id="calendar-view-month-btn"
-                                            class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 bg-green-600 text-white shadow-sm">
-                                            <i data-lucide="calendar" class="w-3 h-3"></i> Mes
-                                        </button>
-                                        <button id="calendar-view-week-btn"
-                                            class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 text-slate-700 hover:text-slate-900">
-                                            <i data-lucide="calendar-days" class="w-3 h-3"></i> Sem
-                                        </button>
-                                    </div>
-                                    <button id="new-appointment-btn"
-                                        class="bg-green-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-green-700 flex items-center gap-1.5 text-xs">
-                                        <i data-lucide="plus" class="w-3 h-3"></i> Nueva
-                                    </button>
-                                    <button id="appointments-config-btn"
-                                        class="bg-slate-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-1.5 text-xs"
-                                        title="Configurar citas">
-                                        <i data-lucide="settings" class="w-3 h-3"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="calendar-month-grid" class="grid grid-cols-7 gap-1.5">
-                                <!-- Los días del mes se renderizarán aquí -->
+                        <div id="community-manager" class="content-panel">
+                            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Community Manager IA</h2>
+                            <div class="bg-white rounded-xl shadow-md p-6 text-center">
+                                <i data-lucide="construction" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
+                                <h3 class="text-xl font-bold">Próximamente</h3>
+                                <p class="text-slate-500 mt-2">Automatiza la creación y publicación de contenido en tus
+                                    redes
+                                    sociales.</p>
                             </div>
                         </div>
-                        <!-- Vista Semanal -->
-                        <div id="calendar-week-view" class="hidden">
-                            <!-- Header compacto con controles integrados -->
-                            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
-                                <div class="flex items-center gap-3">
-                                    <button id="calendar-prev-week" class="p-1.5 rounded-lg hover:bg-slate-100">
-                                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                                    </button>
-                                    <h3 id="calendar-week-title" class="text-base font-bold text-slate-800"></h3>
-                                    <button id="calendar-next-week" class="p-1.5 rounded-lg hover:bg-slate-100">
-                                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                                    </button>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <label class="text-xs font-medium text-slate-600 whitespace-nowrap">Filtrar:</label>
-                                    <select id="appointments-filter-status-week"
-                                        class="form-input border-slate-300 rounded-lg text-xs py-1 px-2 min-w-[100px]">
-                                        <option value="all">Todas</option>
-                                        <option value="pending">Pendientes</option>
-                                        <option value="confirmed">Confirmadas</option>
-                                        <option value="completed">Completadas</option>
-                                        <option value="cancelled">Canceladas</option>
-                                    </select>
-                                    <div class="relative inline-flex items-center bg-slate-200 rounded-lg p-0.5">
-                                        <button id="calendar-view-month-btn-week"
-                                            class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 text-slate-700 hover:text-slate-900">
-                                            <i data-lucide="calendar" class="w-3 h-3"></i> Mes
-                                        </button>
-                                        <button id="calendar-view-week-btn-week"
-                                            class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 bg-green-600 text-white shadow-sm">
-                                            <i data-lucide="calendar-days" class="w-3 h-3"></i> Sem
-                                        </button>
-                                    </div>
-                                    <button id="new-appointment-btn-week"
-                                        class="bg-green-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-green-700 flex items-center gap-1.5 text-xs">
-                                        <i data-lucide="plus" class="w-3 h-3"></i> Nueva
-                                    </button>
-                                    <button id="appointments-config-btn-week"
-                                        class="bg-slate-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-1.5 text-xs"
-                                        title="Configurar citas">
-                                        <i data-lucide="settings" class="w-3 h-3"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="calendar-week-grid" class="grid grid-cols-8 gap-2">
-                                <!-- Los días de la semana con horas se renderizarán aquí -->
-                            </div>
+
+                        <div id="designer-ai" class="content-panel pb-16" data-placeholder="true">
+                            <!-- Contenido cargado dinámicamente desde designer-ai.html -->
                         </div>
-                        <!-- Lista de Citas (fallback) -->
-                        <div id="appointments-list" class="hidden space-y-3"></div>
-                        <div id="appointments-empty" class="hidden bg-slate-50 rounded-xl p-12 text-center">
-                            <i data-lucide="calendar-x" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
-                            <h3 class="text-xl font-bold text-slate-700">No hay citas agendadas</h3>
-                            <p class="text-slate-500 mt-2">Las citas que la IA agende aparecerán aquí.</p>
-                            <p class="text-sm text-slate-400 mt-4">Activa el sistema de citas en Configuración para
-                                comenzar.</p>
+
+
+                        <div id="video-ai" class="content-panel pb-16" data-placeholder="true">
+                            <!-- Contenido cargado dinámicamente desde video-ai.html -->
+                        </div>
+
+                        <div id="ia-mind" class="content-panel pb-16" data-placeholder="true">
+                            <!-- Contenido cargado dinámicamente desde personal-tasks.html -->
+                        </div>
+
+
+                        <div id="settings" class="content-panel" data-placeholder="true">
+                            <!-- Contenido cargado dinámicamente desde settings.html -->
                         </div>
                     </div>
-                </div>
-
-                <div id="community-manager" class="content-panel">
-                    <h2 class="text-2xl sm:text-3xl font-bold mb-6">Community Manager IA</h2>
-                    <div class="bg-white rounded-xl shadow-md p-6 text-center">
-                        <i data-lucide="construction" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
-                        <h3 class="text-xl font-bold">Próximamente</h3>
-                        <p class="text-slate-500 mt-2">Automatiza la creación y publicación de contenido en tus
-                            redes
-                            sociales.</p>
-                    </div>
-                </div>
-
-                <div id="designer-ai" class="content-panel pb-16" data-placeholder="true">
-                    <!-- Contenido cargado dinámicamente desde designer-ai.html -->
-                </div>
-
-
-                <div id="video-ai" class="content-panel pb-16" data-placeholder="true">
-                    <!-- Contenido cargado dinámicamente desde video-ai.html -->
-                </div>
-
-                <div id="ia-mind" class="content-panel pb-16" data-placeholder="true">
-                    <!-- Contenido cargado dinámicamente desde personal-tasks.html -->
-                </div>
-
-
-                <div id="settings" class="content-panel" data-placeholder="true">
-                    <!-- Contenido cargado dinámicamente desde settings.html -->
-                </div>
+            </main>
         </div>
-        </main>
-    </div>
     </div>
 
     <!-- Modal para Editar Etiquetas (inicialmente oculto) -->
@@ -2716,14 +2549,16 @@
                                         <input type="checkbox" id="product-is-bookable" checked
                                             class="w-4 h-4 text-blue-600 rounded">
                                         <div class="flex-1">
-                                            <span class="text-sm font-bold text-slate-600 group-hover:text-blue-600 transition-colors">
+                                            <span
+                                                class="text-sm font-bold text-slate-600 group-hover:text-blue-600 transition-colors">
                                                 Disponible para Reservas Públicas
                                             </span>
                                             <p class="text-xs text-slate-400 mt-0.5">
                                                 Permitir que clientes puedan agendar este servicio desde el sitio web
                                             </p>
                                         </div>
-                                        <i data-lucide="calendar-check" class="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors"></i>
+                                        <i data-lucide="calendar-check"
+                                            class="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors"></i>
                                     </label>
                                 </div>
                             </div>
@@ -3843,7 +3678,7 @@
         console.log('[Dashboard] Inicializando window.appModal...');
         window.appModal = window.appModal || {
             _initialized: false,
-            confirm: async function(message, title) {
+            confirm: async function (message, title) {
                 // Si aún no está completamente inicializado, esperar un momento
                 if (!this._initialized) {
                     console.warn('[appModal] Esperando inicialización completa...');
@@ -3960,7 +3795,6 @@
     <!-- Script para sistema de modales -->
     <script>
         // Sistema de Modales Personalizados (Reemplazo de alert/prompt/confirm)
-        console.log('[Dashboard] Definiendo window.appModal completo...');
         window.appModal = {
             _initialized: false, // Se marcará true al final
             // Confirmación (reemplaza confirm())
@@ -3974,13 +3808,7 @@
 
                     // Validar que todos los elementos existan
                     if (!modal || !titleEl || !messageEl || !okBtn || !cancelBtn) {
-                        console.error('[appModal] Elementos del modal no encontrados:', {
-                            modal: !!modal,
-                            titleEl: !!titleEl,
-                            messageEl: !!messageEl,
-                            okBtn: !!okBtn,
-                            cancelBtn: !!cancelBtn
-                        });
+                        console.error('[appModal] Elementos del modal no encontrados - usando confirm nativo');
                         // Fallback a confirm nativo
                         resolve(confirm(message));
                         return;
@@ -3989,10 +3817,17 @@
                     titleEl.textContent = title;
                     messageEl.textContent = message;
                     modal.classList.remove('hidden');
+                    modal.style.display = 'flex'; // Forzar display flex
+                    modal.style.zIndex = '99999'; // Forzar z-index máximo
 
                     // Limpiar listeners anteriores
                     const newOkBtn = okBtn.cloneNode(true);
                     const newCancelBtn = cancelBtn.cloneNode(true);
+
+                    // CRÍTICO: Remover onclick inline del HTML que interfiere
+                    newOkBtn.removeAttribute('onclick');
+                    newCancelBtn.removeAttribute('onclick');
+
                     okBtn.parentNode.replaceChild(newOkBtn, okBtn);
                     cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
 
@@ -4014,6 +3849,7 @@
             closeConfirm: function () {
                 const modal = document.getElementById('app-confirm-modal');
                 modal.classList.add('hidden');
+                modal.style.display = 'none'; // Asegurar ocultamiento
             },
 
             confirmOk: function () {
@@ -4919,36 +4755,33 @@
 
                     // Si el botón de desconectar está visible (= estamos conectados)
                     // PERO el botón de verificar NO existe, crearlo
-                    if (disconnectBtn && disconnectBtn.style.display === 'block' && !verifyBtn) {
-                        console.log('🔧 [HACK] Detectado estado conectado SIN botón de verificar. Creándolo...');
+                    if (disconnectBtn && disconnectBtn.style.display === 'block') {
+                        // Solo agregar si el botón no existe ya
+                        let newBtn = document.getElementById('verify-wa-status-btn');
+                        if (!newBtn) {
+                            newBtn = document.createElement('button');
+                            newBtn.id = 'verify-wa-status-btn';
+                            newBtn.className = 'flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors border border-slate-200 shadow-sm';
+                            newBtn.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4"></i> Verificar Estado';
 
-                        // Crear el botón
-                        const newBtn = document.createElement('button');
-                        newBtn.id = 'verify-whatsapp-status-btn';
-                        newBtn.className = 'w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2';
-                        newBtn.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4"></i> Verificar Estado';
+                            // Insertar ANTES del botón de desconectar
+                            disconnectBtn.parentNode.insertBefore(newBtn, disconnectBtn);
 
-                        // Insertar ANTES del botón de desconectar
-                        disconnectBtn.parentNode.insertBefore(newBtn, disconnectBtn);
+                            // Agregar event listener
+                            newBtn.addEventListener('click', async function () {
+                                if (!window.app || !window.app.verifyWhatsappStatus) {
+                                    console.error('app.verifyWhatsappStatus no disponible');
+                                    return;
+                                }
 
-                        // Agregar event listener
-                        newBtn.addEventListener('click', async function () {
-                            console.log('[HACK] Botón Verificar Estado clickeado');
+                                await window.app.verifyWhatsappStatus();
+                            });
 
-                            if (!window.app || !window.app.verifyWhatsappStatus) {
-                                console.error('[HACK] app.verifyWhatsappStatus no disponible');
-                                return;
+                            // Actualizar iconos de lucide
+                            if (window.lucide) {
+                                window.lucide.createIcons();
                             }
-
-                            await window.app.verifyWhatsappStatus();
-                        });
-
-                        // Actualizar iconos de lucide
-                        if (window.lucide) {
-                            window.lucide.createIcons();
                         }
-
-                        console.log('✅ [HACK] Botón de Verificar Estado creado exitosamente');
                     }
                 }
 
@@ -4977,6 +4810,31 @@
 
         <!-- Main Application Module - Entry Point -->
         <script type="module" src="./app.js?v=2.1.2"></script>
+        <!-- Delete Confirmation Modal (Appended Global) -->
+        <div id="delete-product-modal"
+            class="hidden fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+                <div class="flex flex-col items-center text-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                        <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800">¿Eliminar producto?</h3>
+                    <p class="text-slate-600">
+                        Esta acción eliminará el producto de forma permanente. No se puede deshacer.
+                    </p>
+                    <div class="flex gap-3 w-full mt-2">
+                        <button id="cancel-delete-btn"
+                            class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium transition-colors">
+                            Cancelar
+                        </button>
+                        <button id="confirm-delete-btn"
+                            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors shadow-lg shadow-red-200">
+                            Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 </body>
 
 </html>

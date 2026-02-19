@@ -3965,6 +3965,7 @@
             _initialized: false, // Se marcará true al final
             // Confirmación (reemplaza confirm())
             confirm: function (message, title = 'Confirmar') {
+                console.log('[appModal.confirm] Llamado con mensaje:', message, 'título:', title);
                 return new Promise((resolve) => {
                     const modal = document.getElementById('app-confirm-modal');
                     const titleEl = document.getElementById('app-confirm-title');
@@ -3972,42 +3973,55 @@
                     const okBtn = document.getElementById('app-confirm-ok');
                     const cancelBtn = document.getElementById('app-confirm-cancel');
 
+                    console.log('[appModal.confirm] Elementos encontrados:', {
+                        modal: !!modal,
+                        titleEl: !!titleEl,
+                        messageEl: !!messageEl,
+                        okBtn: !!okBtn,
+                        cancelBtn: !!cancelBtn
+                    });
+
                     // Validar que todos los elementos existan
                     if (!modal || !titleEl || !messageEl || !okBtn || !cancelBtn) {
-                        console.error('[appModal] Elementos del modal no encontrados:', {
-                            modal: !!modal,
-                            titleEl: !!titleEl,
-                            messageEl: !!messageEl,
-                            okBtn: !!okBtn,
-                            cancelBtn: !!cancelBtn
-                        });
+                        console.error('[appModal] Elementos del modal no encontrados - usando confirm nativo');
                         // Fallback a confirm nativo
                         resolve(confirm(message));
                         return;
                     }
 
+                    console.log('[appModal.confirm] Configurando modal...');
                     titleEl.textContent = title;
                     messageEl.textContent = message;
+                    console.log('[appModal.confirm] Mostrando modal (removiendo clase hidden)...');
                     modal.classList.remove('hidden');
 
                     // Limpiar listeners anteriores
                     const newOkBtn = okBtn.cloneNode(true);
                     const newCancelBtn = cancelBtn.cloneNode(true);
+
+                    // CRÍTICO: Remover onclick inline del HTML que interfiere
+                    newOkBtn.removeAttribute('onclick');
+                    newCancelBtn.removeAttribute('onclick');
+
                     okBtn.parentNode.replaceChild(newOkBtn, okBtn);
                     cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
 
                     newOkBtn.onclick = () => {
+                        console.log('[appModal.confirm] Usuario hizo click en CONFIRMAR');
                         modal.classList.add('hidden');
                         resolve(true);
                     };
                     newCancelBtn.onclick = () => {
+                        console.log('[appModal.confirm] Usuario hizo click en CANCELAR');
                         modal.classList.add('hidden');
                         resolve(false);
                     };
 
+                    console.log('[appModal.confirm] Event listeners configurados');
                     if (window.lucide?.createIcons) {
                         window.lucide.createIcons({ root: modal });
                     }
+                    console.log('[appModal.confirm] Modal completamente configurado y visible');
                 });
             },
 

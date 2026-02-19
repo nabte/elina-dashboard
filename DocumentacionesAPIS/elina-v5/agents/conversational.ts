@@ -200,6 +200,13 @@ Usa esta fecha como referencia absoluta para "mañana", "lunes", etc.
         })
     }
 
+    // 🔥 PRODUCTOS MENCIONADOS RECIENTEMENTE (con FAQs para follow-up questions)
+    if (context.recentlyMentionedProducts && context.recentlyMentionedProducts.length > 0) {
+        const { formatCachedProductsForPrompt } = await import('../utils/product-cache.ts')
+        prompt += formatCachedProductsForPrompt(context.recentlyMentionedProducts)
+        prompt += `\n**IMPORTANTE:** Si el cliente hace preguntas sobre estos productos (ej: "¿cómo funciona?", "¿es compatible?"), usa la información de FAQs arriba. NO necesitas buscar de nuevo.\n`
+    }
+
     // Instrucciones específicas según intención
     if (intent.primary === 'product_inquiry') {
         prompt += `\n## 🎯 ACCIÓN REQUERIDA: CONSULTA DE PRODUCTOS
@@ -209,24 +216,35 @@ Usa esta fecha como referencia absoluta para "mañana", "lunes", etc.
 - Si pregunta por algo específico (ej: "migraña", "665", "105X"): usa ese término como query
 
 **PASO 2:** Basándote SOLO en los resultados de la herramienta:
-- Si encontraste productos: menciónalos usando placeholders:
-  * Nombre: [PRODUCT_NAME:ID]
-  * Precio: [PRODUCT_PRICE:ID]
-  * **IMPORTANTE - MEDIA**: Si el producto tiene imagen/video, usa [PRODUCT_MEDIA:ID] (esto enviará la imagen/video real al usuario)
+- Si encontraste productos: menciona usando placeholders (OPCIONAL):
+  * Nombre: [PRODUCT_NAME:ID] o el nombre directamente
+  * Precio: [PRODUCT_PRICE:ID] o el precio directamente
   * Stock: [PRODUCT_STOCK:ID]
   * Descripción: [PRODUCT_DESC:ID]
 - Si NO encontraste nada (0 resultados): di "No manejo esa marca/modelo actualmente."
+- **🖼️ MEDIA**: NO necesitas mencionar [PRODUCT_MEDIA:ID] - el sistema envía imágenes/videos automáticamente si el producto las tiene
 
-**EJEMPLO CORRECTO**:
-Usuario: "tienes el cartucho 665?"
-Respuesta: "Sí, tenemos el [PRODUCT_NAME:9527] por [PRODUCT_PRICE:9527]. [PRODUCT_MEDIA:9527]"
+**EJEMPLOS:**
+```
+"Sí, tengo el [PRODUCT_NAME:123] por [PRODUCT_PRICE:123]"
+O simplemente:
+"Sí, tengo el HP 665 por $350. Hay 10 en stock"
+```
+→ Si el producto tiene media_url, se enviará automáticamente como imagen con tu texto como caption
+
+**🔎 USO DE FAQs DE PRODUCTOS:**
+- La herramienta buscar_productos devuelve FAQs (preguntas frecuentes) para cada producto
+- Las FAQs contienen respuestas verificadas y específicas sobre características, compatibilidad, uso, etc.
+- Si el cliente pregunta algo que está en las FAQs del producto, usa esa información para responder
+- Las FAQs son información CONFIABLE y REAL del producto
+- Ejemplo: Cliente: "¿Es compatible con Windows?" → Si hay FAQ que lo responde, úsala
 
 **PROHIBIDO:**
 ❌ Responder sin usar la herramienta primero
 ❌ Inventar productos basándote en la descripción de la empresa
 ❌ Decir "ofrecemos servicios en..." sin verificar productos reales
 ❌ Asumir que vendes algo solo porque suena lógico
-❌ Enviar URLs de imágenes como texto (usa [PRODUCT_MEDIA:ID] en su lugar)
+❌ Enviar URLs de imágenes manualmente (el sistema las envía automáticamente)
 `
     }
 
