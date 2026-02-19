@@ -3079,3 +3079,17 @@ function closeAnalysisModal() {
         modal.remove();
     }
 }
+
+// ============================================================================
+// EXPOSE FUNCTIONS TO WINDOW FOR ONCLICK HANDLERS
+// ============================================================================
+window.improvePromptWithAI = improvePromptWithAI;
+window.savePrompt = savePrompt;
+window.saveDraftManual = saveDraftManual;
+window.resetPrompt = resetPrompt;
+window.analyzeAndImprovePrompt = analyzeAndImprovePrompt;
+window.toggleSessionsDropdown = toggleSessionsDropdown;
+window.startNewSession = startNewSession;
+window.sendSuggestionToDeveloper = sendSuggestionToDeveloper;
+window.loadSession = loadSession;
+window.closeAnalysisModal = closeAnalysisModal;

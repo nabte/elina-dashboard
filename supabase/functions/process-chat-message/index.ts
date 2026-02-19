@@ -1,9 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createSupabaseAdminClient } from "./supabase-client.ts"
 import { corsHeaders } from "./cors.ts"
-import { getProfileByInstance, ensureContact, getChatHistory, getSimulationHistory, getSubscription, hasIgnoreTag, getActivePromotion, formatPromotionText, getAppointmentSettings, getAvailableSlots, formatAppointmentContext, detectAppointmentIntent, detectCriticalIntent, detectProductIntent, detectSimpleGreeting, detectQuoteIntent, analyzeSentiment, type SentimentAnalysis, getUserPreferences, saveUserPreference, formatPreferencesContext, getEdgeConfig, getDefaultEdgeConfig, recordMetric, getMessageBuffer, pushMessageBuffer, uploadToBunnyCDN, getAvailableServices, checkPresetResponse, handleAppointmentIntent, getBusinessCapabilities, MessageIntent, detectMessageIntent, getTopProducts, formatTopProductsContext, getRecentMessages, addRecentMessage, formatRecentMessagesContext, getConversationSummary, truncateContext } from "./context.ts"
+import { getProfileByInstance, ensureContact, getChatHistory, getSimulationHistory, getSubscription, hasIgnoreTag, getActivePromotion, formatPromotionText, getAppointmentSettings, getAvailableSlots, formatAppointmentContext, detectAppointmentIntent, detectCriticalIntent, detectProductIntent, detectSimpleGreeting, detectQuoteIntent, analyzeSentiment, type SentimentAnalysis, getUserPreferences, saveUserPreference, formatPreferencesContext, getEdgeConfig, getDefaultEdgeConfig, recordMetric, getMessageBuffer, pushMessageBuffer, uploadToBunnyCDN, getAvailableServices, checkPresetResponse, handleAppointmentIntent, getBusinessCapabilities, MessageIntent, detectMessageIntent, getTopProducts, getTopProductsByPopularity, formatProductListForCustomer, formatTopProductsContext, getRecentMessages, addRecentMessage, formatRecentMessagesContext, getConversationSummary, truncateContext } from "./context.ts"
 import { getRagContext, detectObjections } from "./rag.ts"
 import { runConversationalAgent, type AgentConfig } from "./agent.ts"
+import { loadActivePersonality, mergePersonalityConfig, loadPersonalityExtensions } from "./personality-loader.ts"
 import { extractTaskFromMessage } from "./llm.ts"
 import { processPlaceholders, shouldGenerateQuote, createAndSendQuote } from "./logic.ts"
 import { sendMessage, sendImage, sendVideo, sendAudio, getMediaUrl, EVOLUTION_API_URL } from "./evolution-client.ts"
@@ -122,20 +123,38 @@ serve(async (req) => {
             console.log(`+++ [SEGURIDAD] Usando Evolution API Key desde base de datos (termina en ...${evolutionApiKey.slice(-4)})`)
         }
 
-        // 4. Ensure Contact
-        console.log(`... [PASO 2] Buscando/Creando contacto: ${pushName || remoteJid}`)
-        const contact = await ensureContact(supabase, profile.id, remoteJid, pushName)
-        if (!contact) {
-            console.error('!!! [ERROR] Falló la creación/obtención del contacto')
-            return new Response(JSON.stringify({ error: 'Contact error' }), { status: 500 })
-        }
-        console.log(`+++ [EXITO] Contacto ID: ${contact.id}`)
+        // 4. Ensure Contact (skip in simulation mode - use virtual contact)
+        let contact: any;
 
-        // Record metric: message_received
-        await recordMetric(supabase, profile.id, contact.id, 'message_received', {
-            message_id: messageId,
-            remote_jid: remoteJid
-        })
+        if (isSimulation) {
+            console.log(`🧪 [SIMULACIÓN] Usando contacto virtual (no se crea en BD)`)
+            // Create a virtual contact object for simulation
+            contact = {
+                id: `sim_contact_${profile.id}`,
+                user_id: profile.id,
+                phone_number: remoteJid,
+                full_name: pushName || 'Usuario Simulado',
+                labels: [],
+                created_at: new Date().toISOString(),
+                last_interaction_at: new Date().toISOString()
+            }
+        } else {
+            console.log(`... [PASO 2] Buscando/Creando contacto: ${pushName || remoteJid}`)
+            contact = await ensureContact(supabase, remoteJid, pushName, profile.id)
+            if (!contact) {
+                console.error('!!! [ERROR] Falló la creación/obtención del contacto')
+                return new Response(JSON.stringify({ error: 'Contact error' }), { status: 500 })
+            }
+            console.log(`+++ [EXITO] Contacto ID: ${contact.id}`)
+        }
+
+        // Record metric: message_received (skip in simulation)
+        if (!isSimulation) {
+            await recordMetric(supabase, profile.id, contact.id, 'message_received', {
+                message_id: messageId,
+                remote_jid: remoteJid
+            })
+        }
 
         // 4.1. Check if contact has "ignorar" tag (skip in simulation mode)
         if (!isSimulation && hasIgnoreTag(contact)) {
@@ -168,7 +187,7 @@ serve(async (req) => {
 
         // 5. Process Content & Media
         let text = ""
-        let originalType = "text"
+        let originalType: "text" | "audio" | "image" | "video" | "document" = "text"
 
         // Evolution API logic for content extraction
         if (message?.conversation) {
@@ -821,8 +840,12 @@ Instrucciones especiales:
             // This is just for logging consistency
         }
 
-        // Prepare agent configuration
-        const agentConfig: AgentConfig = {
+        // 8.5 Load active personality (if any)
+        console.log('... [PERSONALITY] Verificando personalidad activa...')
+        const activePersonality = await loadActivePersonality(supabase, profile.id)
+
+        // Prepare base agent configuration
+        let agentConfig: AgentConfig = {
             userId: profile.id,
             contactId: contact.id.toString(), // Convert to string
             sessionId: messageId, // Use message ID as session ID
@@ -848,6 +871,12 @@ Instrucciones especiales:
             // Enabled tools
             enabledTools: ['buscar_productos', 'consultar_historial', 'agendar_cita']
         }
+
+        // Apply personality configuration if active
+        if (activePersonality) {
+            agentConfig = mergePersonalityConfig(agentConfig, activePersonality, systemPrompt) as AgentConfig
+        }
+
         const agentResponse = await runConversationalAgent(supabase, agentConfig, text)
 
         // Save to memory (NEW - Fase 3) - DB Based
@@ -867,8 +896,38 @@ Instrucciones especiales:
 
         // 9. Logic (Placeholders)
         console.log("... [PASO 5] Procesando placeholders...")
-        const { finalText: aiResponseProcessed, productIds, productsMap } = await processPlaceholders(aiResponseRaw, supabase, profile.id)
+        let { finalText: aiResponseProcessed, productIds, productsMap } = await processPlaceholders(aiResponseRaw, supabase, profile.id)
         if (productIds.length > 0) console.log(`+++ [PLACEHOLDERS] IDs encontrados: ${productIds.join(', ')}`)
+
+        // 9.5. POST-PROCESAMIENTO: Auto-sugerir productos si no hay promos
+        console.log("... [POST-PROCESS] Verificando si necesita sugerencias de productos...")
+        const mentionsNoPromo = /no (tengo|hay|tenemos) (promos|promociones|ofertas|descuentos)/i.test(aiResponseProcessed)
+        const mentionsProducts = /(producto|disponible|tenemos|ofrezco|mira estos)/i.test(aiResponseProcessed)
+
+        if (mentionsNoPromo && !mentionsProducts) {
+            console.log("... [AUTO-PRODUCTOS] Detectado 'no hay promos' sin alternativa, inyectando top productos...")
+
+            // Buscar productos más populares (mencionados en conversaciones)
+            const topProducts = await getTopProductsByPopularity(supabase, profile.id, 3)
+
+            if (topProducts.length > 0) {
+                const productList = formatProductListForCustomer(topProducts)
+
+                aiResponseProcessed += `\n\nPero mira estos productos que sí tengo disponibles y que a otros clientes les han encantado:\n\n${productList}\n\n¿Cuál te interesa?`
+
+                console.log(`+++ [AUTO-PRODUCTOS] Inyectados ${topProducts.length} productos populares`)
+            } else {
+                // Fallback: usar top productos por stock si no hay menciones
+                console.log("... [AUTO-PRODUCTOS] No hay productos mencionados, usando top por stock...")
+                const topByStock = await getTopProducts(supabase, profile.id, 3)
+
+                if (topByStock.length > 0) {
+                    const productList = formatProductListForCustomer(topByStock)
+                    aiResponseProcessed += `\n\nPero mira estos productos que sí tengo disponibles:\n\n${productList}\n\n¿Cuál te interesa?`
+                    console.log(`+++ [AUTO-PRODUCTOS] Inyectados ${topByStock.length} productos (fallback por stock)`)
+                }
+            }
+        }
 
         // 10. Detect and Send Media (Images/Videos)
         console.log(`... [PASO 6] Detectando media en respuesta...`)

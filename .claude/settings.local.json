@@ -37,7 +37,9 @@
       "Bash(psql:*)",
       "Bash(wc -l:*)",
       "Bash(node:*)",
-      "Bash(npx supabase db push:*)"
+      "Bash(npx supabase db push:*)",
+      "Bash(npx supabase migration repair:*)",
+      "Bash(npx supabase db remote exec:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

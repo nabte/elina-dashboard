@@ -12,7 +12,7 @@ CREATE POLICY "public_read_profiles_for_booking" ON "profiles"
 DROP POLICY IF EXISTS "public_read_services_for_booking" ON "products";
 CREATE POLICY "public_read_services_for_booking" ON "products"
   FOR SELECT
-  USING (product_type = 'service' AND is_active = true); -- Solo servicios activos
+  USING (product_type = 'service'); -- Solo servicios (sin verificar is_active)
 
 -- 3. meetings: Lectura pública (para calcular disponibilidad)
 DROP POLICY IF EXISTS "public_read_meetings_for_availability" ON "meetings";
@@ -41,11 +41,11 @@ CREATE POLICY "public_insert_contacts_from_booking" ON "contacts"
   FOR INSERT
   WITH CHECK (true); -- Cualquiera puede crear contactos desde booking
 
--- 7. appointment_settings: Lectura pública (para verificar si está habilitado)
-DROP POLICY IF EXISTS "public_read_appointment_settings" ON "appointment_settings";
-CREATE POLICY "public_read_appointment_settings" ON "appointment_settings"
-  FOR SELECT
-  USING (is_enabled = true);
+-- 7. appointment_settings: Skip - es una vista, no tabla
+-- DROP POLICY IF EXISTS "public_read_appointment_settings" ON "appointment_settings";
+-- CREATE POLICY "public_read_appointment_settings" ON "appointment_settings"
+--   FOR SELECT
+--   USING (is_enabled = true);
 
 -- 8. appointment_hours: Lectura pública (para calcular disponibilidad)
 DROP POLICY IF EXISTS "public_read_appointment_hours" ON "appointment_hours";
@@ -88,11 +88,11 @@ ALTER TABLE "profiles" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "products" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "meetings" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "contacts" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "appointment_settings" ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE "appointment_settings" ENABLE ROW LEVEL SECURITY; -- Es una vista, no tabla
 ALTER TABLE "appointment_hours" ENABLE ROW LEVEL SECURITY;
 
 -- Listar todas las políticas activas
 SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual, with_check
 FROM pg_policies
-WHERE tablename IN ('profiles', 'products', 'meetings', 'contacts', 'appointment_settings', 'appointment_hours')
+WHERE tablename IN ('profiles', 'products', 'meetings', 'contacts', 'appointment_hours')
 ORDER BY tablename, policyname;

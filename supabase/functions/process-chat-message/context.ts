@@ -81,15 +81,22 @@ export async function ensureContact(
     pushName: string,
     userId: string
 ): Promise<Contact> {
+    console.log(`[ensureContact] Input - phone: "${phoneNumber}", pushName: "${pushName}", userId: "${userId}"`)
+
     // 1. Check if contact exists
     const { data: existing, error } = await supabase
         .from('contacts')
         .select('*')
         .eq('phone_number', phoneNumber)
-        //.eq('user_id', userId) // Removed to handle global contacts? Or keep per user? Keep strict per user if needed. Currently schema might be loose.
+        .eq('user_id', userId) // FIXED: Re-enabled to avoid cross-user conflicts
         .maybeSingle()
 
+    if (error) {
+        console.error('[ensureContact] Error checking existing contact:', error)
+    }
+
     if (existing) {
+        console.log(`[ensureContact] Found existing contact: ${existing.id}`)
         // Update name if changed
         if (pushName && existing.full_name !== pushName) {
             await supabase
@@ -101,6 +108,7 @@ export async function ensureContact(
     }
 
     // 2. Create new contact
+    console.log(`[ensureContact] Creating new contact...`)
     const { data: newContact, error: createError } = await supabase
         .from('contacts')
         .insert({
@@ -113,10 +121,20 @@ export async function ensureContact(
         .single()
 
     if (createError || !newContact) {
-        console.error('Error creating contact:', createError)
-        throw new Error('Failed to create contact')
+        console.error('[ensureContact] Error creating contact - FULL DETAILS:', {
+            error: createError,
+            code: createError?.code,
+            message: createError?.message,
+            details: createError?.details,
+            hint: createError?.hint,
+            phoneNumber,
+            pushName,
+            userId
+        })
+        throw new Error(`Failed to create contact: ${createError?.message || 'Unknown error'}`)
     }
 
+    console.log(`[ensureContact] Successfully created contact: ${newContact.id}`)
     return newContact as Contact
 }
 
@@ -481,6 +499,71 @@ export async function getTopProducts(
     }
 }
 
+/**
+ * Obtiene productos más populares basándose en menciones en conversaciones
+ * Criterio: Productos más mencionados por los clientes en chat_history
+ */
+export async function getTopProductsByPopularity(
+    supabase: SupabaseClient,
+    userId: string,
+    limit: number = 10
+): Promise<any[]> {
+    try {
+        // 1. Obtener historial reciente de mensajes de clientes
+        const { data: history } = await supabase
+            .from('chat_history')
+            .select('content')
+            .eq('user_id', userId)
+            .eq('message_type', 'human') // Solo mensajes de clientes
+            .order('created_at', { ascending: false })
+            .limit(500) // Últimos 500 mensajes
+
+        // 2. Obtener todos los productos físicos del usuario
+        const { data: products } = await supabase
+            .from('products')
+            .select('id, product_name, price, stock, product_type, description')
+            .eq('user_id', userId)
+            .eq('product_type', 'physical')
+
+        if (!products || !history) {
+            console.warn('!!! [TOP_PRODUCTS_POPULARITY] No products or history found')
+            return []
+        }
+
+        // 3. Contar menciones de cada producto en conversaciones
+        const productMentions = products.map((product: any) => {
+            const mentions = history.filter((msg: any) => {
+                const content = msg.content.toLowerCase()
+                const productName = product.product_name.toLowerCase()
+
+                // Buscar nombre completo o palabras clave del nombre
+                const keywords = productName.split(' ').filter((w: string) => w.length > 3)
+                return keywords.some((keyword: string) => content.includes(keyword))
+            }).length
+
+            return {
+                ...product,
+                mention_count: mentions
+            }
+        })
+
+        // 4. Ordenar por menciones (más mencionados primero) y filtrar los que tienen al menos 1 mención
+        const topProducts = productMentions
+            .filter((p: any) => p.mention_count > 0) // Solo productos mencionados
+            .sort((a: any, b: any) => b.mention_count - a.mention_count)
+            .slice(0, limit)
+
+        console.log(`+++ [TOP_PRODUCTS_POPULARITY] Top ${topProducts.length} productos por popularidad:`,
+            topProducts.map((p: any) => `${p.product_name} (${p.mention_count} menciones)`))
+
+        return topProducts
+
+    } catch (e) {
+        console.error('!!! [TOP_PRODUCTS_POPULARITY] Exception:', e)
+        return []
+    }
+}
+
 export function formatTopProductsContext(products: any[]): string {
     if (products.length === 0) return ""
 
@@ -492,6 +575,19 @@ export function formatTopProductsContext(products: any[]): string {
     context += "\n💡 **IMPORTANTE:** Para buscar otros productos o información detallada, usa la herramienta 'search_products'\n"
 
     return context
+}
+
+/**
+ * Formatea productos para mostrar al cliente (sin IDs técnicos)
+ * Usado en respuestas directas al cliente
+ */
+export function formatProductListForCustomer(products: any[]): string {
+    if (products.length === 0) return ""
+
+    return products.map((p, idx) => {
+        const price = p.price ? `$${Number(p.price).toFixed(2)}` : 'Precio a consultar'
+        return `${idx + 1}. *${p.product_name}* - ${price}`
+    }).join('\n')
 }
 
 // ==================== FASE 3: SISTEMA DE MEMORIA (DB ONLY) ====================

@@ -18,6 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="flow-builder-animations.css">
+    <link rel="stylesheet" href="personality-wizard.css">
     <style>
         /* Forzar ancho completo para intl-tel-input */
         .iti {
@@ -133,6 +134,15 @@
                             data-target="prompt-training" data-group="ai-behavior" data-tab="prompt-training">
                             <i data-lucide="brain" class="w-4 h-4 flex-shrink-0"></i>
                             <span class="sidebar-text font-semibold">IA Mind</span>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#"
+                            class="nav-link text-sm flex items-center gap-3 px-4 py-2 rounded-md hover:bg-green-500 hover:text-white transition-colors"
+                            data-target="personalities">
+                            <i data-lucide="user-cog" class="w-4 h-4 flex-shrink-0"></i>
+                            <span class="sidebar-text">Personalidades</span>
                         </a>
                     </li>
 
@@ -2303,6 +2313,30 @@
                             <!-- Contenido cargado dinámicamente desde personal-tasks.html -->
                         </div>
 
+                        <!-- Personalidades Section -->
+                        <div id="personalities" class="content-panel px-6 py-8 overflow-y-auto">
+                            <div class="max-w-6xl mx-auto">
+                                <div class="mb-8">
+                                    <h2 class="text-3xl font-bold text-slate-800 mb-2">🤖 Personalidades de Agente</h2>
+                                    <p class="text-slate-600">Configura cómo tu agente IA interactúa con los clientes según tu tipo de negocio.</p>
+                                </div>
+
+                                <!-- Existing Personalities List Container -->
+                                <div id="existing-personalities-list" class="mb-8">
+                                    <!-- Rendered by personality-wizard.js -->
+                                </div>
+
+                                <!-- Empty State (shown when no personalities) -->
+                                <div id="personalities-empty-state" class="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+                                    <div class="text-6xl mb-4">🤖</div>
+                                    <h3 class="text-xl font-bold text-slate-800 mb-2">Sin Personalidad Configurada</h3>
+                                    <p class="text-slate-600 mb-6">Configura una personalidad para que tu agente se adapte a tu negocio</p>
+                                    <button onclick="openPersonalityWizard()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition">
+                                        ✨ Configurar Primera Personalidad
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
                         <div id="settings" class="content-panel" data-placeholder="true">
                             <!-- Contenido cargado dinámicamente desde settings.html -->
@@ -4806,6 +4840,35 @@
                     }
                 }, 1000);
             })();
+        </script>
+
+        <!-- Personality Wizard Module -->
+        <script src="./personality-wizard.js"></script>
+
+        <!-- Personality Wizard Initialization -->
+        <script>
+            // Initialize personality wizard when section loads
+            document.addEventListener('DOMContentLoaded', function() {
+                // Listen for section changes
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.attributeName === 'class') {
+                            const personalitiesSection = document.getElementById('personalities');
+                            if (personalitiesSection && !personalitiesSection.classList.contains('hidden')) {
+                                // Section is now visible, initialize wizard
+                                if (window.initPersonalityWizard) {
+                                    window.initPersonalityWizard();
+                                }
+                            }
+                        }
+                    });
+                });
+
+                const personalitiesSection = document.getElementById('personalities');
+                if (personalitiesSection) {
+                    observer.observe(personalitiesSection, { attributes: true });
+                }
+            });
         </script>
 
         <!-- Main Application Module - Entry Point -->
