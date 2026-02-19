@@ -154,24 +154,14 @@ serve(async (req) => {
 
         // ========================================================================
         // 5.5 MESSAGE BUFFERING (Group rapid consecutive messages)
-        // Uses Supabase table to coordinate between independent requests
         // ========================================================================
         if (!isSimulation) {
             console.log(`\n⏳ [BUFFER] Checking for rapid consecutive messages...`)
             const { bufferMessage } = await import('./utils/message-buffer.ts')
-            const bufferResult = await bufferMessage(supabase, profile.id, contact.id, messageText)
+            const bufferResult = await bufferMessage(profile.id, contact.id, messageText)
 
-            if (!bufferResult.shouldProcess) {
-                // A newer message arrived — this request should NOT process
-                console.log(`⏭️ [BUFFER] Deferring to newer message, this request ends here`)
-                return new Response(JSON.stringify({ buffered: true, reason: 'Deferred to newer message' }), {
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    status: 200
-                })
-            }
-
-            messageText = bufferResult.combinedText
-            if (bufferResult.combinedText.includes('\n')) {
+            if (bufferResult.shouldProcess) {
+                messageText = bufferResult.combinedText
                 console.log(`✅ [BUFFER] Processing ${bufferResult.combinedText.split('\n').length} combined messages`)
             }
         }

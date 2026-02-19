@@ -11,8 +11,8 @@
     let userBranding = null;
     let isLoading = false;
     const IMAGE_GENERATION_SETTINGS = {
-        provider: 'gemini', // Solo Gemini
-        model: 'google/nano-banana', // Para Gemini
+        provider: 'kie', // Kie.ai como único proveedor
+        model: 'google/nano-banana-edit', // Único modelo
         aspectRatio: 'auto',
         outputFormat: 'png'
     };
@@ -405,6 +405,12 @@
             return;
         }
 
+        if (event.target.closest('.view-large-btn')) {
+            event.preventDefault();
+            if (activeImage) openImageInViewer(activeImage, 'Diseño generado', 'elina-design.png');
+            return;
+        }
+
         if (event.target.closest('.download-btn')) {
             event.preventDefault();
             if (activeImage) handleDownload(activeImage);
@@ -575,8 +581,8 @@
                 throw new Error(usageCheck?.message || usageError?.message || 'Error al verificar el uso.');
             }
 
-            // Generación con Gemini (síncrona)
-            await generateWithGemini(userId, prompt, usageCheck);
+            // Generación con KIE (único proveedor)
+            await generateWithKIE(userId, prompt, usageCheck);
         } catch (err) {
             console.error('Designer AI generation error:', err);
             const message = err?.message || 'Ocurrió un error al generar la imagen.';
@@ -737,125 +743,36 @@ Render the image using a ${aspectRatio} aspect ratio.`;
         return finalPrompt;
     }
 
-    async function generateWithKIE(userId, prompt, usageCheck) {
-        const providerValue = IMAGE_GENERATION_SETTINGS.provider;
-        let model, body;
+    // Mapeo de aspect ratio a formato Seedream V4
+    function mapAspectToSeedream(ratio) {
+        const map = {
+            'auto': 'square_hd',
+            '1:1': 'square_hd',
+            '16:9': 'landscape_16_9',
+            '9:16': 'portrait_16_9',
+            '4:3': 'landscape_4_3',
+            '3:4': 'portrait_4_3',
+            '4:5': 'portrait_4_3', // closest match
+            '3:2': 'landscape_3_2',
+            '2:3': 'portrait_3_2',
+            '21:9': 'landscape_21_9'
+        };
+        return map[ratio] || 'square_hd';
+    }
 
-        // Construir prompt enriquecido (replicando lógica de Gemini)
-        const enrichedPrompt = buildKIEPrompt(prompt);
+    // Polling genérico para consultar estado de una tarea en KIE
+    async function pollKieTask(taskId, maxAttempts = 60, pollInterval = 5000) {
+        const supabaseUrl = window.auth.sb.supabaseUrl;
+        const functionsUrl = supabaseUrl.replace('/rest/v1', '') + '/functions/v1';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MTg5OTAsImV4cCI6MjA2OTk5NDk5MH0.eFL6N7pR4nmpOLywRwxZS_sEWwSbq5WGAnY0zBMreDE';
 
-        // Determinar aspect ratio correcto según el formato seleccionado
-        let aspectRatio = IMAGE_GENERATION_SETTINGS.aspectRatio;
-        if (aspectRatio === 'auto') {
-            // Para 'auto', usar 1:1 por defecto (cuadrado) para todos los modelos KIE
-            aspectRatio = '1:1';
-        }
-
-        if (providerValue === 'kie') {
-            // Imagen4 Fast (Gemini desde KIE)
-            model = 'google/imagen4-fast';
-            body = {
-                model,
-                prompt: enrichedPrompt,
-                aspect_ratio: aspectRatio,
-                num_images: '1',
-                negative_prompt: '' // Se puede mejorar con negative prompts específicos
-            };
-        } else if (providerValue === 'kie-flux-text') {
-            // Flux 2 Pro Text-to-Image
-            model = 'flux-2/pro-text-to-image';
-            body = {
-                model,
-                prompt: enrichedPrompt,
-                aspect_ratio: aspectRatio,
-                resolution: IMAGE_GENERATION_SETTINGS.resolution || '1K'
-            };
-        } else if (providerValue === 'kie-flux-image') {
-            // Flux 2 Pro Image-to-Image - necesita imágenes de referencia
-            model = 'flux-2/pro-image-to-image';
-
-            // Obtener TODAS las imágenes según la herramienta activa (productos + referencia)
-            let imageFiles = [];
-            if (activeTool === 'flyer') {
-                const images = flyerState.images || {};
-                // Incluir imágenes de productos/elementos (hasta 3 primeras)
-                if (images.background) imageFiles.push(images.background);
-                if (images.product) imageFiles.push(images.product);
-                if (images.logo) imageFiles.push(images.logo);
-                // Incluir imágenes de referencia de estilo (hasta 3)
-                if (images.ref1) imageFiles.push(images.ref1);
-                if (images.ref2) imageFiles.push(images.ref2);
-                if (images.ref3) imageFiles.push(images.ref3);
-            } else if (activeTool === 'product') {
-                const images = productState.images || {};
-                // Imágenes de productos (hasta 3)
-                if (images.main) imageFiles.push(images.main);
-                if (images.opt1) imageFiles.push(images.opt1);
-                if (images.opt2) imageFiles.push(images.opt2);
-            } else if (activeTool === 'headshot') {
-                const images = headshotState.images || {};
-                // Imágenes de referencia (hasta 3)
-                if (images.ref1) imageFiles.push(images.ref1);
-                if (images.ref2) imageFiles.push(images.ref2);
-                if (images.ref3) imageFiles.push(images.ref3);
-            }
-
-            if (imageFiles.length === 0) {
-                throw new Error('Flux 2 Pro Image-to-Image requiere al menos una imagen de referencia. Sube imágenes en la sección correspondiente.');
-            }
-
-            // Convertir imágenes base64 a URLs (subir a Bunny.net)
-            window.showToast('Subiendo imágenes de referencia...', 'info');
-            const uploadPromises = imageFiles.map(img => uploadImageFileToBunny(img, userId, 'ELINA'));
-            const inputUrls = await Promise.all(uploadPromises);
-            const validUrls = inputUrls.filter(url => url !== null);
-
-            if (validUrls.length === 0) {
-                throw new Error('No se pudieron subir las imágenes de referencia. Intenta de nuevo.');
-            }
-
-            body = {
-                model,
-                prompt: enrichedPrompt,
-                input_urls: validUrls, // Array de strings (URLs)
-                aspect_ratio: aspectRatio,
-                resolution: IMAGE_GENERATION_SETTINGS.resolution || '1K'
-            };
-        } else {
-            throw new Error(`Proveedor no soportado: ${providerValue}`);
-        }
-
-        // Crear tarea en KIE
-        const { data: createData, error: createError } = await window.auth.invokeFunction('kie-image-proxy', {
-            body
-        });
-
-        if (createError) throw createError;
-        if (createData?.code !== 200 || !createData?.data?.taskId) {
-            throw new Error(createData?.msg || 'Error al crear la tarea en KIE');
-        }
-
-        const taskId = createData.data.taskId;
-        window.showToast('Tarea creada. Esperando generación...', 'info');
-
-        // Polling para obtener el resultado
         let attempts = 0;
-        const maxAttempts = 60; // 5 minutos máximo (5 segundos * 60)
-        const pollInterval = 5000; // 5 segundos
-
         while (attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, pollInterval));
             attempts++;
 
-            // Hacer GET request con query parameters usando invokeFunction helper
-            // Necesitamos construir la URL manualmente para GET con query params
-            const supabaseUrl = window.auth.sb.supabaseUrl;
-            const functionsUrl = supabaseUrl.replace('/rest/v1', '') + '/functions/v1';
             const { data: sessionData } = await window.auth.sb.auth.getSession();
             const accessToken = sessionData?.session?.access_token;
-
-            // Obtener la clave desde el contexto (usar el mismo método que invokeFunction)
-            const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MTg5OTAsImV4cCI6MjA2OTk5NDk5MH0.eFL6N7pR4nmpOLywRwxZS_sEWwSbq5WGAnY0zBMreDE';
 
             const queryResponse = await fetch(`${functionsUrl}/kie-image-proxy?taskId=${encodeURIComponent(taskId)}`, {
                 method: 'GET',
@@ -868,86 +785,186 @@ Render the image using a ${aspectRatio} aspect ratio.`;
 
             const queryText = await queryResponse.text();
             const queryData = queryText ? JSON.parse(queryText) : {};
-            const queryError = queryResponse.ok ? null : { message: queryData?.error || 'Error al consultar estado' };
 
-            if (queryError) {
-                console.warn('Error al consultar estado:', queryError);
+            if (!queryResponse.ok) {
+                console.warn(`[KIE Poll] Error consultando ${taskId}:`, queryData);
                 continue;
             }
 
             if (queryData?.code === 200 && queryData?.data) {
                 const state = queryData.data.state;
-
                 if (state === 'success') {
                     const resultJson = JSON.parse(queryData.data.resultJson || '{}');
-                    const resultUrls = resultJson.resultUrls || [];
-
-                    if (resultUrls.length === 0) {
-                        throw new Error('KIE no devolvió ninguna imagen.');
-                    }
-
-                    // Descargar y procesar las imágenes
-                    const imagePromises = resultUrls.map(async (url) => {
-                        const response = await fetch(url);
-                        const blob = await response.blob();
-                        return new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onload = () => resolve(reader.result);
-                            reader.readAsDataURL(blob);
-                        });
-                    });
-
-                    const base64Results = await Promise.all(imagePromises);
-
-                    const newLocalItems = base64Results.map((src) => ({
-                        id: crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
-                        src
-                    }));
-                    localGallery.unshift(...newLocalItems);
-                    activeImage = newLocalItems[0]?.src || activeImage;
-
-                    // Subir a Bunny.net
-                    const uploadResults = await Promise.allSettled(
-                        base64Results.map((b64String) =>
-                            window.auth.invokeFunction('smart-worker', {
-                                body: {
-                                    userId,
-                                    b64_json: (b64String.includes(',') ? b64String.split(',')[1] : b64String),
-                                    subfolder: 'ELINA'
-                                }
-                            })
-                        )
-                    );
-
-                    const uploadedUrls = uploadResults
-                        .filter((result) => result.status === 'fulfilled')
-                        .map((result) => result.value?.data?.cdnUrl)
-                        .filter(Boolean);
-
-                    if (uploadedUrls.length) {
-                        const newItems = uploadedUrls.map((url) => ({ id: url, src: url }));
-                        globalGallery.unshift(...newItems);
-                        try {
-                            const galleryToSave = globalGallery.map((item) => item.src);
-                            await window.auth.sb.from('profiles').update({ gallery_images: galleryToSave }).eq('id', userId);
-                        } catch (saveError) {
-                            console.error('No se pudo guardar la galería en el perfil:', saveError);
-                        }
-                    }
-
-                    usageInfo.used = usageCheck.used || usageInfo.used + 1;
-                    refreshUsageDisplay();
-                    window.showToast('Imágenes generadas correctamente.', 'success');
-                    render();
-                    return;
+                    return resultJson.resultUrls || [];
                 } else if (state === 'fail') {
-                    throw new Error(queryData.data.failMsg || 'La generación falló en KIE');
+                    throw new Error(queryData.data.failMsg || 'La generación falló');
                 }
-                // Si está 'waiting', 'queuing' o 'generating', continuar polling
+                // waiting/queuing/generating → seguir polling
+            }
+        }
+        throw new Error('Tiempo de espera agotado.');
+    }
+
+    async function generateWithKIE(userId, prompt, usageCheck) {
+        // Construir prompt enriquecido
+        const enrichedPrompt = buildKIEPrompt(prompt);
+
+        // Aspect ratio
+        const aspectRatio = IMAGE_GENERATION_SETTINGS.aspectRatio || 'auto';
+
+        // Recolectar imágenes del tool activo (hasta 10)
+        let imageFiles = [];
+        if (activeTool === 'flyer') {
+            const images = flyerState.images || {};
+            if (images.logo) imageFiles.push(images.logo);
+            if (images.product) imageFiles.push(images.product);
+            if (images.background) imageFiles.push(images.background);
+            if (images.ref1) imageFiles.push(images.ref1);
+            if (images.ref2) imageFiles.push(images.ref2);
+            if (images.ref3) imageFiles.push(images.ref3);
+        } else if (activeTool === 'product') {
+            const images = productState.images || {};
+            if (images.main) imageFiles.push(images.main);
+            if (images.opt1) imageFiles.push(images.opt1);
+            if (images.opt2) imageFiles.push(images.opt2);
+        } else if (activeTool === 'headshot') {
+            const images = headshotState.images || {};
+            if (images.ref1) imageFiles.push(images.ref1);
+            if (images.ref2) imageFiles.push(images.ref2);
+            if (images.ref3) imageFiles.push(images.ref3);
+        }
+
+        // Subir imágenes a Bunny CDN (ambos modelos requieren URLs)
+        let imageUrls = [];
+        if (imageFiles.length > 0) {
+            window.showToast('Subiendo imágenes...', 'info');
+            const uploadPromises = imageFiles.map(img => uploadImageFileToBunny(img, userId, 'ELINA'));
+            const uploadedUrls = await Promise.all(uploadPromises);
+            imageUrls = uploadedUrls.filter(url => url !== null);
+        }
+
+        if (imageUrls.length === 0) {
+            throw new Error('Se requiere al menos una imagen. Sube imágenes en la sección correspondiente.');
+        }
+
+        // Preparar bodies para ambos modelos
+        const nanoBananaBody = {
+            model: 'google/nano-banana-edit',
+            prompt: enrichedPrompt,
+            image_urls: imageUrls,
+            image_size: aspectRatio,
+            output_format: IMAGE_GENERATION_SETTINGS.outputFormat || 'png'
+        };
+
+        const seedreamBody = {
+            model: 'bytedance/seedream-v4-edit',
+            prompt: enrichedPrompt,
+            image_urls: imageUrls,
+            image_size: mapAspectToSeedream(aspectRatio),
+            image_resolution: '1K',
+            max_images: 1
+        };
+
+        // Enviar ambas tareas en PARALELO
+        window.showToast('Generando con 2 motores de IA...', 'info');
+
+        const [nanoBananaResult, seedreamResult] = await Promise.allSettled([
+            window.auth.invokeFunction('kie-image-proxy', { body: nanoBananaBody }),
+            window.auth.invokeFunction('kie-image-proxy', { body: seedreamBody })
+        ]);
+
+        // Extraer taskIds de las tareas creadas
+        const tasks = [];
+        if (nanoBananaResult.status === 'fulfilled' && nanoBananaResult.value?.data?.code === 200) {
+            tasks.push({ taskId: nanoBananaResult.value.data.data.taskId, model: 'Nano Banana' });
+        } else {
+            console.warn('[Nano Banana] Error al crear tarea:', nanoBananaResult);
+        }
+        if (seedreamResult.status === 'fulfilled' && seedreamResult.value?.data?.code === 200) {
+            tasks.push({ taskId: seedreamResult.value.data.data.taskId, model: 'Seedream V4' });
+        } else {
+            console.warn('[Seedream V4] Error al crear tarea:', seedreamResult);
+        }
+
+        if (tasks.length === 0) {
+            throw new Error('No se pudieron crear las tareas de generación.');
+        }
+
+        window.showToast(`Esperando ${tasks.length} resultado${tasks.length > 1 ? 's' : ''}...`, 'info');
+
+        // Polling en paralelo para ambas tareas
+        const pollResults = await Promise.allSettled(
+            tasks.map(t => pollKieTask(t.taskId))
+        );
+
+        // Recolectar todas las URLs de resultado
+        let allResultUrls = [];
+        pollResults.forEach((result, i) => {
+            if (result.status === 'fulfilled' && result.value.length > 0) {
+                allResultUrls.push(...result.value);
+            } else if (result.status === 'rejected') {
+                console.warn(`[${tasks[i]?.model}] Falló:`, result.reason?.message);
+            }
+        });
+
+        if (allResultUrls.length === 0) {
+            throw new Error('Ningún motor generó resultados. Intenta de nuevo.');
+        }
+
+        // Descargar y procesar las imágenes
+        const imagePromises = allResultUrls.map(async (url) => {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        });
+
+        const base64Results = await Promise.all(imagePromises);
+
+        const newLocalItems = base64Results.map((src) => ({
+            id: crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
+            src
+        }));
+        localGallery.unshift(...newLocalItems);
+        activeImage = newLocalItems[0]?.src || activeImage;
+
+        // Subir resultados a Bunny.net para galería permanente
+        const uploadResults = await Promise.allSettled(
+            base64Results.map((b64String) =>
+                window.auth.invokeFunction('smart-worker', {
+                    body: {
+                        userId,
+                        b64_json: (b64String.includes(',') ? b64String.split(',')[1] : b64String),
+                        subfolder: 'ELINA'
+                    }
+                })
+            )
+        );
+
+        const cdnUrls = uploadResults
+            .filter((result) => result.status === 'fulfilled')
+            .map((result) => result.value?.data?.cdnUrl)
+            .filter(Boolean);
+
+        if (cdnUrls.length) {
+            const newItems = cdnUrls.map((url) => ({ id: url, src: url }));
+            globalGallery.unshift(...newItems);
+            try {
+                const galleryToSave = globalGallery.map((item) => item.src);
+                await window.auth.sb.from('profiles').update({ gallery_images: galleryToSave }).eq('id', userId);
+            } catch (saveError) {
+                console.error('No se pudo guardar la galería en el perfil:', saveError);
             }
         }
 
-        throw new Error('Tiempo de espera agotado. La generación está tomando más tiempo del esperado.');
+        usageInfo.used = usageCheck.used || usageInfo.used + 1;
+        refreshUsageDisplay();
+        const successCount = allResultUrls.length;
+        window.showToast(`${successCount} imagen${successCount > 1 ? 'es generadas' : ' generada'} correctamente.`, 'success');
+        render();
     }
 
     function buildGeminiParts(prompt) {
@@ -1070,55 +1087,7 @@ Render the image using a ${aspectRatio} aspect ratio.`;
         if (activeTool !== 'home') attachImageUploadListeners();
 
         // Event listener para selector de proveedor
-        const providerSelect = panel.querySelector('#image-provider-select');
-        if (providerSelect) {
-            // Establecer valor según el proveedor actual
-            const currentProvider = IMAGE_GENERATION_SETTINGS.provider || 'gemini';
-            const currentKieModel = IMAGE_GENERATION_SETTINGS.kieModel || 'google/imagen4-fast';
-            let selectValue = currentProvider;
-            if (currentProvider === 'kie') {
-                if (currentKieModel === 'google/imagen4-fast') selectValue = 'kie';
-                else if (currentKieModel === 'flux-2/pro-text-to-image') selectValue = 'kie-flux-text';
-                else if (currentKieModel === 'flux-2/pro-image-to-image') selectValue = 'kie-flux-image';
-            }
-            providerSelect.value = selectValue;
-
-            providerSelect.addEventListener('change', (event) => {
-                const value = event.target.value;
-                if (value === 'gemini') {
-                    IMAGE_GENERATION_SETTINGS.provider = 'gemini';
-                } else if (value === 'kie') {
-                    IMAGE_GENERATION_SETTINGS.provider = 'kie';
-                    IMAGE_GENERATION_SETTINGS.kieModel = 'google/imagen4-fast';
-                } else if (value === 'kie-flux-text') {
-                    IMAGE_GENERATION_SETTINGS.provider = 'kie-flux-text';
-                    IMAGE_GENERATION_SETTINGS.kieModel = 'flux-2/pro-text-to-image';
-                } else if (value === 'kie-flux-image') {
-                    IMAGE_GENERATION_SETTINGS.provider = 'kie-flux-image';
-                    IMAGE_GENERATION_SETTINGS.kieModel = 'flux-2/pro-image-to-image';
-                }
-
-                // Mostrar/ocultar configuraciones específicas de KIE
-                const kieSettings = panel.querySelector('#kie-model-settings');
-                const fluxResolution = panel.querySelector('#flux-resolution-setting');
-                if (kieSettings) {
-                    kieSettings.classList.toggle('hidden', value === 'gemini');
-                }
-                if (fluxResolution) {
-                    fluxResolution.classList.toggle('hidden', value !== 'kie-flux-text' && value !== 'kie-flux-image');
-                }
-            });
-
-            // Mostrar/ocultar configuraciones según el proveedor inicial
-            const kieSettings = panel.querySelector('#kie-model-settings');
-            const fluxResolution = panel.querySelector('#flux-resolution-setting');
-            if (kieSettings) {
-                kieSettings.classList.toggle('hidden', selectValue === 'gemini');
-            }
-            if (fluxResolution) {
-                fluxResolution.classList.toggle('hidden', selectValue !== 'kie-flux-text' && selectValue !== 'kie-flux-image');
-            }
-        }
+        // Provider is fixed to google/nano-banana-edit via KIE - no dropdown needed
 
         // Event listener para resolución de Flux
         const resolutionSelect = panel.querySelector('#kie-resolution-select');
@@ -1289,8 +1258,12 @@ Render the image using a ${aspectRatio} aspect ratio.`;
                                     ${!isLoading && activeImage ? `
                                         <div class="relative w-full h-full group">
                                             <img src="${activeImage}" alt="Artistic Result" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <button class="download-btn bg-white text-slate-900 font-black px-6 py-3 rounded-2xl flex items-center gap-2 shadow-2xl active:scale-95 transition-all">
+                                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                                <button class="view-large-btn bg-white text-slate-900 font-black px-5 py-3 rounded-2xl flex items-center gap-2 shadow-2xl active:scale-95 transition-all">
+                                                    <i data-lucide="maximize-2" class="w-4 h-4"></i>
+                                                    VER GRANDE
+                                                </button>
+                                                <button class="download-btn bg-emerald-500 text-white font-black px-5 py-3 rounded-2xl flex items-center gap-2 shadow-2xl active:scale-95 transition-all">
                                                     <i data-lucide="download" class="w-4 h-4"></i>
                                                     DESCARGAR
                                                 </button>
@@ -1315,14 +1288,25 @@ Render the image using a ${aspectRatio} aspect ratio.`;
                                     </div>
                                     
                                     <div class="space-y-1.5">
+                                        <label class="text-[9px] font-bold text-slate-500 uppercase ml-1">Motores IA</label>
+                                        <div class="px-3 py-2 bg-slate-50 rounded-xl text-[10px] font-bold text-slate-500 border border-slate-100 space-y-0.5">
+                                            <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>Nano Banana Edit</div>
+                                            <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>Seedream V4 Edit</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-1.5">
                                         <label class="text-[9px] font-bold text-slate-500 uppercase ml-1">Formato</label>
                                         <div class="relative">
                                             <select id="image-aspect-ratio-select" class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-[11px] font-bold text-slate-700 appearance-none cursor-pointer focus:ring-4 focus:ring-indigo-50/50 focus:border-indigo-400 transition-all">
-                                                <option value="auto">🔥 Auto (Recomendado)</option>
-                                                <option value="1:1">🟦 Cuadrado (1:1)</option>
-                                                <option value="16:9">📺 Horizontal (16:9)</option>
-                                                <option value="9:16">📱 Vertical (9:16)</option>
-                                                <option value="4:5">📸 Retrato (4:5)</option>
+                                                <option value="auto">Auto (Recomendado)</option>
+                                                <option value="1:1">Cuadrado (1:1)</option>
+                                                <option value="16:9">Horizontal (16:9)</option>
+                                                <option value="9:16">Vertical (9:16)</option>
+                                                <option value="4:5">Retrato (4:5)</option>
+                                                <option value="4:3">Paisaje (4:3)</option>
+                                                <option value="3:4">Retrato largo (3:4)</option>
+                                                <option value="21:9">Ultra ancho (21:9)</option>
                                             </select>
                                             <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none"></i>
                                         </div>

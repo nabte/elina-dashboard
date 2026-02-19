@@ -359,9 +359,10 @@ function injectPromptStyles() {
                 color: #cbd5e1;
             }
             
-            /* Chat container with fixed height */
+            /* Chat container with flex height */
             .simulator-chat-container {
-                height: 520px;
+                flex: 1;
+                min-height: 0;
                 display: flex;
                 flex-direction: column;
             }
@@ -481,10 +482,10 @@ function renderPromptEditorUI(container) {
     injectPromptStyles();
 
     container.innerHTML = `
-        <div class="space-y-6 prompt-training-container lg:h-full lg:flex lg:flex-col pb-6">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:flex-1 lg:min-h-0">
+        <div class="space-y-6 prompt-training-container lg:h-[calc(100vh-140px)] lg:flex lg:flex-col lg:space-y-0 lg:pb-0 pb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:flex-1 h-full">
                 <!-- Panel izquierdo: Editor de Prompt -->
-                <div class="flex flex-col bg-white rounded-xl shadow-lg p-6 border border-slate-100 overflow-hidden h-full min-h-[600px] lg:min-h-0">
+                <div class="flex flex-col bg-white rounded-xl shadow-lg p-6 border border-slate-100 overflow-hidden h-full">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-3">
                             <h3 class="text-xl font-bold">Entrenamiento Prompt</h3>
@@ -556,7 +557,7 @@ function renderPromptEditorUI(container) {
                 </div>
 
                 <!-- Panel derecho: Chat de Simulación -->
-                <div class="flex flex-col simulator-dark-theme p-6 overflow-hidden h-full min-h-[600px] lg:min-h-0">
+                <div class="flex flex-col simulator-dark-theme p-6 overflow-hidden h-full">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-3">
                             <h3 class="text-xl font-bold flex items-center gap-2 text-white">

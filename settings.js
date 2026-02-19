@@ -2464,26 +2464,49 @@
 
     async function handleNewReferenceImage(files) {
         const container = document.getElementById('reference-images-container');
-        if (!container) return;
+        const addSlot = document.getElementById('add-ref-image-slot');
+        if (!container || !addSlot) return;
 
-        for (const file of files) {
+        // Guardar estado original
+        const originalContent = addSlot.innerHTML;
+        const originalPointerEvents = addSlot.style.pointerEvents;
+
+        // Mostrar Loader
+        addSlot.innerHTML = `<div class="flex flex-col items-center justify-center animate-pulse"><i data-lucide="loader-2" class="w-8 h-8 text-blue-500 animate-spin mb-1"></i><span class="text-[10px] text-blue-500 font-bold">Subiendo...</span></div>`;
+        addSlot.style.pointerEvents = 'none';
+        if (window.lucide) lucide.createIcons();
+
+        try {
+            for (const file of files) {
+                if (container.querySelectorAll('.ref-image-item').length >= 3) {
+                    window.showToast?.('Puedes subir un máximo de 3 imágenes de referencia.', 'warning');
+                    break;
+                }
+                // Asegurarnos de que appInstance está disponible
+                if (!window.appInstance) throw new Error("La instancia de la aplicación no está lista.");
+
+                const newUrl = await window.appInstance.uploadAsset(file, 'reference_images'); // Usamos la función global
+
+                if (newUrl) {
+                    addSlot.insertAdjacentHTML('beforebegin', createReferenceImageItem(newUrl));
+                    // Renderizar iconos para el nuevo elemento
+                    if (window.lucide) lucide.createIcons();
+                }
+            }
+        } catch (error) {
+            console.error('[Settings] Error uploading reference image:', error);
+            window.showToast?.('Error al subir la imagen.', 'error');
+        } finally {
+            // Restaurar slot
+            addSlot.innerHTML = originalContent;
+            addSlot.style.pointerEvents = originalPointerEvents;
+            if (window.lucide) lucide.createIcons();
+
+            document.getElementById('reference-image-input').value = '';
+            // Ocultar el slot si se alcanzó el límite
             if (container.querySelectorAll('.ref-image-item').length >= 3) {
-                window.showToast?.('Puedes subir un máximo de 3 imágenes de referencia.', 'warning');
-                break;
+                addSlot.style.display = 'none';
             }
-            // Asegurarnos de que appInstance está disponible
-            if (!window.appInstance) throw new Error("La instancia de la aplicación no está lista.");
-            const newUrl = await window.appInstance.uploadAsset(file, 'reference_images'); // Usamos la función global
-            if (newUrl) {
-                const addSlot = document.getElementById('add-ref-image-slot');
-                addSlot.insertAdjacentHTML('beforebegin', createReferenceImageItem(newUrl));
-                lucide.createIcons();
-            }
-        }
-        document.getElementById('reference-image-input').value = '';
-        // Ocultar el slot si se alcanzó el límite
-        if (container.querySelectorAll('.ref-image-item').length >= 3) {
-            document.getElementById('add-ref-image-slot').style.display = 'none';
         }
     }
 
@@ -3305,7 +3328,7 @@
     // --- FIN: Funciones de Utilidad para Voces ---
 
     // --- INICIO: Función de Tabs ---
-    window.switchSettingsTab = function(tabName) {
+    window.switchSettingsTab = function (tabName) {
         // console.log('[Settings] Cambiando a tab:', tabName);
 
         // Ocultar todos los contenidos de tabs

@@ -71,25 +71,26 @@ export async function ensureContact(
 
 /**
  * Obtiene el historial de chat reciente
- * 
- * IMPORTANTE: Filtra datos transaccionales antiguos (> 30 min)
- * para evitar asumir cantidades/precios de cotizaciones pasadas
+ *
+ * Ventana de 4 horas para mantener continuidad en conversaciones largas.
+ * El filtro transaccional en context-filter.ts se encarga de limpiar
+ * datos de precios obsoletos cuando hay una nueva solicitud.
  */
 export async function getChatHistory(
     supabase: SupabaseClient,
     userId: string,
     contactId: number,
-    limit: number = 10
+    limit: number = 20
 ): Promise<Message[]> {
-    // Calcular timestamp de hace 30 minutos
-    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    // Ventana de 4 horas — suficiente para mantener contexto de conversación
+    const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
 
     const { data, error } = await supabase
         .from('chat_history')
         .select('message_type, content, created_at')
         .eq('user_id', userId)
         .eq('contact_id', contactId)
-        .gte('created_at', thirtyMinutesAgo) // FILTRO TEMPORAL: solo últimos 30 min
+        .gte('created_at', fourHoursAgo)
         .order('created_at', { ascending: false })
         .limit(limit)
 
@@ -99,7 +100,7 @@ export async function getChatHistory(
     }
 
     const messageCount = data?.length || 0;
-    console.log(`📚 [CONTEXT] Loaded ${messageCount} messages from last 30 minutes`);
+    console.log(`📚 [CONTEXT] Loaded ${messageCount} messages from last 4 hours`);
 
     // Convertir a formato Message y revertir orden (más antiguo primero)
     return (data || [])
@@ -171,7 +172,7 @@ export async function loadConversationContext(
         topProducts,
         conversationState
     ] = await Promise.all([
-        getChatHistory(supabase, config.userId, contact.id, 10),
+        getChatHistory(supabase, config.userId, contact.id, 20),
         getRelevantLearnings(supabase, config.userId, currentMessage, 5),
         getUserPreferences(supabase, contact.id),
         config.hasProducts ? getTopProducts(supabase, config.userId, 5) : Promise.resolve([]),

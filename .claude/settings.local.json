@@ -39,7 +39,12 @@
       "Bash(node:*)",
       "Bash(npx supabase db push:*)",
       "Bash(npx supabase migration repair:*)",
-      "Bash(npx supabase db remote exec:*)"
+      "Bash(npx supabase db remote exec:*)",
+      "Bash(npx vite build:*)",
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npx supabase:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

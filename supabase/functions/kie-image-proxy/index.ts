@@ -160,9 +160,38 @@ serve(async (req) => {
         output_format: payload.output_format || "png", // png or jpeg
         image_size: payload.image_size || "1:1", // 1:1, 9:16, 16:9, 3:4, 4:3, 3:2, 2:3, 5:4, 4:5, 21:9, auto
       };
+    } else if (model === "bytedance/seedream-v4-edit") {
+      // Seedream V4 Edit - Image editing with up to 10 images
+      if (!payload.prompt) {
+        return jsonResponse(
+          { error: "Missing required field `prompt` for bytedance/seedream-v4-edit" },
+          { status: 400 },
+        );
+      }
+      if (!payload.image_urls || !Array.isArray(payload.image_urls) || payload.image_urls.length === 0) {
+        return jsonResponse(
+          { error: "Missing required field `image_urls` (array) for bytedance/seedream-v4-edit. Up to 10 images supported." },
+          { status: 400 },
+        );
+      }
+      if (payload.image_urls.length > 10) {
+        return jsonResponse(
+          { error: "Maximum 10 images allowed for bytedance/seedream-v4-edit" },
+          { status: 400 },
+        );
+      }
+
+      inputParams = {
+        prompt: payload.prompt,
+        image_urls: payload.image_urls,
+        image_size: payload.image_size || "square_hd",
+        image_resolution: payload.image_resolution || "1K",
+        max_images: payload.max_images || 1,
+        ...(payload.seed !== undefined ? { seed: payload.seed } : {}),
+      };
     } else {
       return jsonResponse(
-        { error: `Unsupported model: ${model}. Supported models: google/imagen4-fast, flux-2/pro-text-to-image, flux-2/pro-image-to-image, google/nano-banana-edit` },
+        { error: `Unsupported model: ${model}. Supported models: google/imagen4-fast, flux-2/pro-text-to-image, flux-2/pro-image-to-image, google/nano-banana-edit, bytedance/seedream-v4-edit` },
         { status: 400 },
       );
     }

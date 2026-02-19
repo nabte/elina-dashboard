@@ -11,18 +11,6 @@ body {
     width: 100%;
 }
 
-/* Mobile: allow vertical scrolling on main content area */
-@media (max-width: 1023px) {
-    #main-content-area {
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch;
-    }
-    #main-content-area > main {
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch;
-        min-height: 0;
-    }
-}
 
 /* ========================================
    SIDEBAR STYLES
@@ -204,9 +192,7 @@ input[type="time"]:focus {
 .content-panel.active {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
+    flex: 1;
 }
 
 

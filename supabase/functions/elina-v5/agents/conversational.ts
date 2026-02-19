@@ -32,7 +32,7 @@ export async function runConversationalAgent(
     // 2. Preparar mensajes
     const messages: any[] = [
         { role: 'system', content: systemPrompt },
-        ...context.recentMessages.slice(-8), // Últimos 8 mensajes para contexto
+        ...context.recentMessages.slice(-15), // Últimos 15 mensajes para mantener contexto de conversación
         { role: 'user', content: userMessage }
     ]
 
@@ -290,6 +290,25 @@ Ejemplo: "Lamento mucho escuchar eso 😔 Entiendo tu frustración y quiero ayud
 7. Si detectas venta, cierra con CTA breve y claro
 8. EVITA párrafos largos - divide en mensajes cortos si es necesario
 `
+
+    // CONTINUIDAD DE CONVERSACIÓN
+    // Generar un resumen de los últimos mensajes para que SIEMPRE sepas de qué se habla
+    if (context.recentMessages && context.recentMessages.length > 0) {
+        const lastMessages = context.recentMessages.slice(-6)
+        const summaryLines = lastMessages.map(m => {
+            const role = m.role === 'user' ? 'Cliente' : 'Tú'
+            // Truncar mensajes largos para el resumen
+            const content = m.content.length > 120 ? m.content.substring(0, 120) + '...' : m.content
+            return `${role}: ${content}`
+        })
+
+        prompt += `\n## 🧠 Resumen de Conversación Reciente
+IMPORTANTE: Estos son los últimos mensajes de esta conversación. SIEMPRE mantén el hilo del tema.
+Si el cliente hace una pregunta de seguimiento (ej: "cómo?", "cuánto?", "y eso?"), CONECTA con lo que se habló antes. NUNCA respondas "¿a qué te refieres?" si el contexto es claro.
+
+${summaryLines.join('\n')}
+`
+    }
 
     return prompt
 }
