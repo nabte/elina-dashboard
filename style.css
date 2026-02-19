@@ -205,16 +205,10 @@ input[type="time"]:focus {
     display: flex;
     flex-direction: column;
     height: 100%;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-/* Mobile: allow scrolling inside content panels and main containers */
-@media (max-width: 1023px) {
-    .content-panel.active {
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-}
 
 /* ========================================
    GROUP TABS STYLING
