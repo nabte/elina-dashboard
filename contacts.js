@@ -8,7 +8,7 @@
     let selectedContactIds = new Set();
     let currentSort = { column: 'created_at', direction: 'desc' };
     let currentPage = 1;
-    const contactsPerPage = 50; // Mostrar 50 contactos por página
+    let contactsPerPage = 50; // Mostrar 50 contactos por página (configurable)
     let totalContacts = 0;
     let contactsRealtimeChannel = null;
     let realtimeDebounceTimer = null; // <-- AÑADIDO: Temporizador para debouncing
@@ -142,8 +142,8 @@
                     p_search_term: searchTerm || null,
                     p_sort_column: currentSort.column,
                     p_sort_direction: currentSort.direction,
-                    p_page_number: page,
-                    p_page_size: contactsPerPage,
+                    p_page_number: contactsPerPage === 0 ? 1 : page,
+                    p_page_size: contactsPerPage === 0 ? 100000 : contactsPerPage,
                     p_restricted_labels: restrictedLabels || null
                 });
 
@@ -164,9 +164,6 @@
         }
 
         // **MÉTODO NORMAL**: Sin filtro de etiquetas o si falla la función RPC
-        const from = (currentPage - 1) * contactsPerPage;
-        const to = from + contactsPerPage - 1;
-
         let query = window.auth.sb
             .from('contacts')
             .select('id, full_name, phone_number, created_at, labels, razon_de_label_auto', { count: 'exact' })
@@ -182,9 +179,16 @@
             query = query.overlaps('labels', restrictedLabels);
         }
 
-        const { data, error, count } = await query
-            .order(currentSort.column, { ascending: currentSort.direction === 'asc', nullsFirst: false })
-            .range(from, to);
+        query = query.order(currentSort.column, { ascending: currentSort.direction === 'asc', nullsFirst: false });
+
+        // Si contactsPerPage === 0, cargar todos (sin range)
+        if (contactsPerPage > 0) {
+            const from = (currentPage - 1) * contactsPerPage;
+            const to = from + contactsPerPage - 1;
+            query = query.range(from, to);
+        }
+
+        const { data, error, count } = await query;
 
         if (error) throw new Error(`No se pudieron cargar contactos: ${error.message}`);
 
@@ -299,22 +303,47 @@
         const paginationContainer = document.getElementById('contacts-pagination');
         if (!paginationContainer) return;
 
-        const totalPages = Math.ceil(totalContacts / contactsPerPage);
-        if (totalPages <= 1) {
-            paginationContainer.innerHTML = '';
-            return;
-        }
+        const totalPages = contactsPerPage === 0 ? 1 : Math.ceil(totalContacts / contactsPerPage);
+        const from = contactsPerPage === 0 ? 1 : (currentPage - 1) * contactsPerPage + 1;
+        const to = contactsPerPage === 0 ? totalContacts : Math.min(currentPage * contactsPerPage, totalContacts);
 
-        const from = (currentPage - 1) * contactsPerPage + 1;
-        const to = Math.min(currentPage * contactsPerPage, totalContacts);
+        const pageSizeOptions = [50, 100, 500, 0]; // 0 = todos
+        const pageSizeLabels = { 50: '50', 100: '100', 500: '500', 0: 'Todos' };
 
         paginationContainer.innerHTML = `
-            <span class="text-sm text-slate-600">Mostrando ${from}-${to} de ${totalContacts} contactos</span>
-            <div class="flex gap-2">
-                <button id="prev-page-btn" class="p-2 rounded-md hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" ${currentPage === 1 ? 'disabled' : ''}><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
-                <button id="next-page-btn" class="p-2 rounded-md hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" ${currentPage === totalPages ? 'disabled' : ''}><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-slate-600">Mostrando ${from}-${to} de ${totalContacts}</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400">Mostrar:</span>
+                    <div class="flex bg-slate-100 rounded-lg p-0.5 gap-0.5">
+                        ${pageSizeOptions.map(size => `
+                            <button data-page-size="${size}" class="px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                                contactsPerPage === size
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
+                            }">${pageSizeLabels[size]}</button>
+                        `).join('')}
+                    </div>
+                </div>
             </div>
+            ${totalPages > 1 ? `
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-400">Pág. ${currentPage}/${totalPages}</span>
+                <button id="prev-page-btn" class="p-1.5 rounded-lg hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" ${currentPage === 1 ? 'disabled' : ''}><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                <button id="next-page-btn" class="p-1.5 rounded-lg hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" ${currentPage === totalPages ? 'disabled' : ''}><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+            </div>` : ''}
         `;
+
+        // Page size buttons
+        paginationContainer.querySelectorAll('[data-page-size]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const newSize = parseInt(btn.dataset.pageSize);
+                if (newSize === contactsPerPage) return;
+                contactsPerPage = newSize;
+                currentPage = 1;
+                updatePage(1);
+            });
+        });
 
         document.getElementById('prev-page-btn')?.addEventListener('click', () => updatePage(currentPage - 1));
         document.getElementById('next-page-btn')?.addEventListener('click', () => updatePage(currentPage + 1));

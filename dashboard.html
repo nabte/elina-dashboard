@@ -671,6 +671,19 @@
                                 <h2 class="text-3xl font-black text-slate-800 tracking-tight">Directorio</h2>
                                 <span id="contacts-count-badge"
                                     class="hidden bg-slate-100 text-slate-500 text-xs font-bold px-2 py-1 rounded-full border border-slate-200">0</span>
+                                <!-- Help tooltip button -->
+                                <div class="relative group">
+                                    <button class="w-6 h-6 rounded-full bg-slate-100 hover:bg-blue-100 text-slate-400 hover:text-blue-500 flex items-center justify-center transition-colors border border-slate-200" title="Ayuda">
+                                        <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <div class="hidden group-hover:block absolute left-0 top-8 w-72 bg-slate-800 text-white text-xs rounded-xl p-3 shadow-xl z-50 leading-relaxed">
+                                        <p class="font-bold mb-1">Info del Directorio</p>
+                                        <p>• <b>Omitir IA</b> se activa si el contacto tiene la etiqueta <code class="bg-slate-700 px-1 rounded">ignorar</code>.</p>
+                                        <p>• La etiqueta <code class="bg-slate-700 px-1 rounded">todos</code> no se muestra aquí (solo en Envío Masivo).</p>
+                                        <p>• Puedes editar etiquetas con el botón "Editar etiquetas".</p>
+                                        <div class="absolute -top-1.5 left-3 w-3 h-3 bg-slate-800 rotate-45"></div>
+                                    </div>
+                                </div>
                             </div>
                             <p class="text-sm text-slate-500 font-medium">Gestiona tus prospectos y clientes de
                                 WhatsApp.</p>
@@ -884,12 +897,6 @@
                         </div>
                     </div>
 
-                    <!-- Nota visual -->
-                    <p class="text-xs text-slate-500 mt-3">
-                        • <b>Ignorar IA</b> se prende si el contacto tiene la etiqueta <code>ignorar</code>.<br>
-                        • La etiqueta <code>todos</code> no se muestra aquí (solo se usa en Envío Masivo).<br>
-                        • Puedes editar etiquetas con el botón “Editar etiquetas”.
-                    </p>
                 </div>
 
                 <!-- Panel de Marketing / Envío Masivo -->
@@ -2158,13 +2165,7 @@
 
 
 
-                <form id="sales-context-form" class="space-y-5">
-                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-                        <p class="text-sm text-blue-800">
-                            <strong>💡 ¿Qué es el Contexto de Ventas?</strong><br>
-                            Configura cómo la IA debe responder a objeciones comunes de tus clientes.
-                            La IA detectará automáticamente estas objeciones y usará las respuestas que
-                            <!-- Panel de Citas y Calendario -->
+                <!-- Panel de Citas y Calendario -->
                         <div id="appointments" class="content-panel max-w-full mx-auto overflow-y-auto h-full">
                             <!-- Calendario -->
                             <div id="appointments-container" class="bg-white rounded-xl shadow-md p-3">
