@@ -28,16 +28,25 @@ serve(async (req) => {
 
         console.log(`[Venom] Action: ${action} | User: ${user_id}`);
 
-        // Obtener perfil del usuario
+        // Obtener perfil y suscripción del usuario
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('id, full_name, email, plan_id')
+            .select('id, full_name, email')
             .eq('id', user_id)
             .single();
 
         if (profileError || !profile) {
             throw new Error("Perfil no encontrado");
         }
+
+        // Obtener plan desde subscriptions
+        const { data: subscription } = await supabase
+            .from('subscriptions')
+            .select('plan_id')
+            .eq('user_id', user_id)
+            .single();
+
+        const planId = subscription?.plan_id || 'free';
 
         // Generar session_id único
         let sessionId = `user-${user_id.substring(0, 8)}`;
@@ -137,7 +146,7 @@ serve(async (req) => {
 
                 if (isNewInstance) {
                     // Verificar límite de instancias según plan
-                    const limit = profile.plan_id === 'enterprise' ? 3 : (profile.plan_id === 'business' ? 1 : 0);
+                    const limit = planId === 'enterprise' ? 3 : (planId === 'business' ? 1 : 0);
 
                     if (limit === 0) {
                         throw new Error("Tu plan no permite instancias Venom. Actualiza a Business o Enterprise.");
