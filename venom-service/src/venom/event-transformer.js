@@ -8,7 +8,7 @@ export class EventTransformer {
   /**
    * Transforma un mensaje de Venom al formato MESSAGES_UPSERT de Baileys
    */
-  static messageToB...aileys(message, sessionId) {
+  static messageToBaileys(message, sessionId) {
     try {
       const isGroup = message.isGroupMsg || message.chatId.includes('@g.us');
 
