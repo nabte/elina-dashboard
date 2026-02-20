@@ -14,13 +14,19 @@ class RedisClient {
     }
 
     try {
-      this.client = createClient({
+      const clientConfig = {
         socket: {
           host: config.redis.host,
           port: config.redis.port
-        },
-        password: config.redis.password
-      });
+        }
+      };
+
+      // Solo agregar password si está definida
+      if (config.redis.password) {
+        clientConfig.password = config.redis.password;
+      }
+
+      this.client = createClient(clientConfig);
 
       this.client.on('error', (err) => {
         logger.error('Redis client error:', err);
