@@ -3,7 +3,7 @@
 # Con Chrome headless y dependencias mínimas
 # ============================================
 
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Metadatos
 LABEL maintainer="ELINA"
