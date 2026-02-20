@@ -21,11 +21,14 @@ RUN apk add --no-cache \
     npm \
     dumb-init
 
+# Crear symlink para Chromium (en Alpine está en /usr/bin/chromium)
+RUN ln -sf /usr/bin/chromium /usr/bin/chromium-browser
+
 # Variables de entorno para Puppeteer
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
     CHROME_BIN=/usr/bin/chromium-browser \
-    CHROME_PATH=/usr/lib/chromium/ \
+    CHROME_PATH=/usr/bin/chromium-browser \
     NODE_ENV=production
 
 # Crear directorio de trabajo
