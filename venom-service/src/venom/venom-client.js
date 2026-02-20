@@ -2,6 +2,7 @@ import venom from 'venom-bot';
 import { config } from '../config/env.js';
 import logger from '../utils/logger.js';
 import path from 'path';
+import fs from 'fs';
 
 /**
  * Wrapper del cliente Venom con manejo de errores y reconexión
@@ -26,6 +27,17 @@ export class VenomClient {
       logger.info(`Creating Venom client for session: ${this.sessionId}`);
 
       const sessionPath = path.join(config.venom.sessionsDir, this.sessionId);
+
+      // Eliminar archivo SingletonLock si existe (evita error de perfil en uso)
+      const lockFile = path.join(sessionPath, this.sessionId, 'SingletonLock');
+      try {
+        if (fs.existsSync(lockFile)) {
+          fs.unlinkSync(lockFile);
+          logger.info(`Removed stale SingletonLock file for session: ${this.sessionId}`);
+        }
+      } catch (lockError) {
+        logger.warn(`Could not remove lock file: ${lockError.message}`);
+      }
 
       this.client = await venom.create(
         this.sessionId,
@@ -65,13 +77,21 @@ export class VenomClient {
             '--no-first-run',
             '--no-zygote',
             '--disable-gpu',
-            '--disable-software-rasterizer'
+            '--disable-software-rasterizer',
+            '--disable-features=TranslateUI,BlinkGenPropertyTrees',
+            '--disable-ipc-flooding-protection',
+            '--disable-renderer-backgrounding',
+            '--force-color-profile=srgb',
+            '--metrics-recording-only',
+            '--mute-audio'
           ],
           folderNameToken: sessionPath,
           mkdirFolderToken: sessionPath,
           autoClose: 60000 * 2, // 2 minutos de inactividad
           disableSpins: true,
-          disableWelcome: true
+          disableWelcome: true,
+          // Evitar bloqueo de perfil
+          userDataDir: sessionPath
         }
       );
 
