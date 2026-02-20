@@ -5,6 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elina IA - Dashboard</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <!-- Versión: 2026-02-17-001 - Force Update App JS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Librería para gráficos -->
@@ -34,10 +39,10 @@
             margin-left: 6px;
         }
     </style>
-  <script type="module" crossorigin src="/assets/dashboard-Cj-Q3P05.js"></script>
+  <script type="module" crossorigin src="/assets/dashboard-uTybvTxt.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
   <link rel="modulepreload" crossorigin href="/assets/auth-BA9H5Y7F.js">
-  <link rel="stylesheet" crossorigin href="/assets/dashboard-CEMJAiRv.css">
+  <link rel="stylesheet" crossorigin href="/assets/dashboard-BVca9r_8.css">
 </head>
 
 <body class="bg-slate-100 text-slate-800">
@@ -227,7 +232,7 @@
 
         <!-- Contenido principal -->
         <div id="main-content-area"
-            class="flex-1 transition-all duration-300 ease-in-out flex flex-col h-full overflow-hidden relative">
+            class="flex-1 transition-all duration-300 ease-in-out flex flex-col h-full overflow-y-auto overflow-x-hidden relative min-h-0">
             <!-- Mobile Header -->
             <div
                 class="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between shadow-sm z-30 flex-shrink-0">
@@ -242,7 +247,7 @@
                 </button>
             </div>
 
-            <main class="p-4 sm:p-5 lg:p-6 flex-1 flex flex-col h-full overflow-hidden w-full relative">
+            <main class="p-4 sm:p-5 lg:p-6 flex-1 flex flex-col w-full relative">
                 <!-- Botón para colapsar/expandir el sidebar (visible solo en desktop/tablet) -->
                 <button id="toggle-sidebar-collapse-btn"
                     class="hidden lg:block fixed top-5 z-50 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-md hover:bg-slate-100 transition-all duration-300 ease-in-out">
@@ -672,6 +677,24 @@
                                 <h2 class="text-3xl font-black text-slate-800 tracking-tight">Directorio</h2>
                                 <span id="contacts-count-badge"
                                     class="hidden bg-slate-100 text-slate-500 text-xs font-bold px-2 py-1 rounded-full border border-slate-200">0</span>
+                                <!-- Help tooltip button -->
+                                <div class="relative group">
+                                    <button
+                                        class="w-6 h-6 rounded-full bg-slate-100 hover:bg-blue-100 text-slate-400 hover:text-blue-500 flex items-center justify-center transition-colors border border-slate-200"
+                                        title="Ayuda">
+                                        <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <div
+                                        class="hidden group-hover:block absolute left-0 top-8 w-72 bg-slate-800 text-white text-xs rounded-xl p-3 shadow-xl z-50 leading-relaxed">
+                                        <p class="font-bold mb-1">Info del Directorio</p>
+                                        <p>• <b>Omitir IA</b> se activa si el contacto tiene la etiqueta <code
+                                                class="bg-slate-700 px-1 rounded">ignorar</code>.</p>
+                                        <p>• La etiqueta <code class="bg-slate-700 px-1 rounded">todos</code> no se
+                                            muestra aquí (solo en Envío Masivo).</p>
+                                        <p>• Puedes editar etiquetas con el botón "Editar etiquetas".</p>
+                                        <div class="absolute -top-1.5 left-3 w-3 h-3 bg-slate-800 rotate-45"></div>
+                                    </div>
+                                </div>
                             </div>
                             <p class="text-sm text-slate-500 font-medium">Gestiona tus prospectos y clientes de
                                 WhatsApp.</p>
@@ -885,12 +908,6 @@
                         </div>
                     </div>
 
-                    <!-- Nota visual -->
-                    <p class="text-xs text-slate-500 mt-3">
-                        • <b>Ignorar IA</b> se prende si el contacto tiene la etiqueta <code>ignorar</code>.<br>
-                        • La etiqueta <code>todos</code> no se muestra aquí (solo se usa en Envío Masivo).<br>
-                        • Puedes editar etiquetas con el botón “Editar etiquetas”.
-                    </p>
                 </div>
 
                 <!-- Panel de Marketing / Envío Masivo -->
@@ -2159,192 +2176,184 @@
 
 
 
-                <form id="sales-context-form" class="space-y-5">
-                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-                        <p class="text-sm text-blue-800">
-                            <strong>💡 ¿Qué es el Contexto de Ventas?</strong><br>
-                            Configura cómo la IA debe responder a objeciones comunes de tus clientes.
-                            La IA detectará automáticamente estas objeciones y usará las respuestas que
-                            <!-- Panel de Citas y Calendario -->
-                        <div id="appointments" class="content-panel max-w-full mx-auto overflow-y-auto h-full">
-                            <!-- Calendario -->
-                            <div id="appointments-container" class="bg-white rounded-xl shadow-md p-3">
-                                <div id="appointments-loader" class="text-center text-slate-500 p-8">
-                                    <i data-lucide="loader" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
-                                    <p>Cargando citas...</p>
+                <!-- Panel de Citas y Calendario -->
+                <div id="appointments" class="content-panel max-w-full mx-auto overflow-y-auto h-full">
+                    <!-- Calendario -->
+                    <div id="appointments-container" class="bg-white rounded-xl shadow-md p-3">
+                        <div id="appointments-loader" class="text-center text-slate-500 p-8">
+                            <i data-lucide="loader" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
+                            <p>Cargando citas...</p>
+                        </div>
+                        <!-- Vista Mensual -->
+                        <div id="calendar-month-view" class="hidden">
+                            <!-- Header compacto con controles integrados -->
+                            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+                                <div class="flex items-center gap-3">
+                                    <button id="calendar-prev-month" class="p-1.5 rounded-lg hover:bg-slate-100">
+                                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                                    </button>
+                                    <h3 id="calendar-month-title" class="text-base font-bold text-slate-800">
+                                    </h3>
+                                    <button id="calendar-next-month" class="p-1.5 rounded-lg hover:bg-slate-100">
+                                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                    </button>
                                 </div>
-                                <!-- Vista Mensual -->
-                                <div id="calendar-month-view" class="hidden">
-                                    <!-- Header compacto con controles integrados -->
-                                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
-                                        <div class="flex items-center gap-3">
-                                            <button id="calendar-prev-month"
-                                                class="p-1.5 rounded-lg hover:bg-slate-100">
-                                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                                            </button>
-                                            <h3 id="calendar-month-title" class="text-base font-bold text-slate-800">
-                                            </h3>
-                                            <button id="calendar-next-month"
-                                                class="p-1.5 rounded-lg hover:bg-slate-100">
-                                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                                            </button>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <label
-                                                class="text-xs font-medium text-slate-600 whitespace-nowrap">Filtrar:</label>
-                                            <select id="appointments-filter-status"
-                                                class="form-input border-slate-300 rounded-lg text-xs py-1 px-2 min-w-[100px]">
-                                                <option value="all">Todas</option>
-                                                <option value="pending">Pendientes</option>
-                                                <option value="confirmed">Confirmadas</option>
-                                                <option value="completed">Completadas</option>
-                                                <option value="cancelled">Canceladas</option>
-                                            </select>
-                                            <div
-                                                class="relative inline-flex items-center bg-slate-200 rounded-lg p-0.5">
-                                                <button id="calendar-view-month-btn"
-                                                    class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 bg-green-600 text-white shadow-sm">
-                                                    <i data-lucide="calendar" class="w-3 h-3"></i> Mes
-                                                </button>
-                                                <button id="calendar-view-week-btn"
-                                                    class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 text-slate-700 hover:text-slate-900">
-                                                    <i data-lucide="calendar-days" class="w-3 h-3"></i> Sem
-                                                </button>
-                                            </div>
-                                            <button id="new-appointment-btn"
-                                                class="bg-green-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-green-700 flex items-center gap-1.5 text-xs">
-                                                <i data-lucide="plus" class="w-3 h-3"></i> Nueva
-                                            </button>
-                                            <button id="appointments-config-btn"
-                                                class="bg-slate-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-1.5 text-xs"
-                                                title="Configurar citas">
-                                                <i data-lucide="settings" class="w-3 h-3"></i>
-                                            </button>
-                                        </div>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-xs font-medium text-slate-600 whitespace-nowrap">Filtrar:</label>
+                                    <select id="appointments-filter-status"
+                                        class="form-input border-slate-300 rounded-lg text-xs py-1 px-2 min-w-[100px]">
+                                        <option value="all">Todas</option>
+                                        <option value="pending">Pendientes</option>
+                                        <option value="confirmed">Confirmadas</option>
+                                        <option value="completed">Completadas</option>
+                                        <option value="cancelled">Canceladas</option>
+                                    </select>
+                                    <div class="relative inline-flex items-center bg-slate-200 rounded-lg p-0.5">
+                                        <button id="calendar-view-month-btn"
+                                            class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 bg-green-600 text-white shadow-sm">
+                                            <i data-lucide="calendar" class="w-3 h-3"></i> Mes
+                                        </button>
+                                        <button id="calendar-view-week-btn"
+                                            class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 text-slate-700 hover:text-slate-900">
+                                            <i data-lucide="calendar-days" class="w-3 h-3"></i> Sem
+                                        </button>
                                     </div>
-                                    <div id="calendar-month-grid" class="grid grid-cols-7 gap-1.5">
-                                        <!-- Los días del mes se renderizarán aquí -->
-                                    </div>
-                                </div>
-                                <!-- Vista Semanal -->
-                                <div id="calendar-week-view" class="hidden">
-                                    <!-- Header compacto con controles integrados -->
-                                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
-                                        <div class="flex items-center gap-3">
-                                            <button id="calendar-prev-week" class="p-1.5 rounded-lg hover:bg-slate-100">
-                                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                                            </button>
-                                            <h3 id="calendar-week-title" class="text-base font-bold text-slate-800">
-                                            </h3>
-                                            <button id="calendar-next-week" class="p-1.5 rounded-lg hover:bg-slate-100">
-                                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                                            </button>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <label
-                                                class="text-xs font-medium text-slate-600 whitespace-nowrap">Filtrar:</label>
-                                            <select id="appointments-filter-status-week"
-                                                class="form-input border-slate-300 rounded-lg text-xs py-1 px-2 min-w-[100px]">
-                                                <option value="all">Todas</option>
-                                                <option value="pending">Pendientes</option>
-                                                <option value="confirmed">Confirmadas</option>
-                                                <option value="completed">Completadas</option>
-                                                <option value="cancelled">Canceladas</option>
-                                            </select>
-                                            <div
-                                                class="relative inline-flex items-center bg-slate-200 rounded-lg p-0.5">
-                                                <button id="calendar-view-month-btn-week"
-                                                    class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 text-slate-700 hover:text-slate-900">
-                                                    <i data-lucide="calendar" class="w-3 h-3"></i> Mes
-                                                </button>
-                                                <button id="calendar-view-week-btn-week"
-                                                    class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 bg-green-600 text-white shadow-sm">
-                                                    <i data-lucide="calendar-days" class="w-3 h-3"></i> Sem
-                                                </button>
-                                            </div>
-                                            <button id="new-appointment-btn-week"
-                                                class="bg-green-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-green-700 flex items-center gap-1.5 text-xs">
-                                                <i data-lucide="plus" class="w-3 h-3"></i> Nueva
-                                            </button>
-                                            <button id="appointments-config-btn-week"
-                                                class="bg-slate-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-1.5 text-xs"
-                                                title="Configurar citas">
-                                                <i data-lucide="settings" class="w-3 h-3"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div id="calendar-week-grid" class="grid grid-cols-8 gap-2">
-                                        <!-- Los días de la semana con horas se renderizarán aquí -->
-                                    </div>
-                                </div>
-                                <!-- Lista de Citas (fallback) -->
-                                <div id="appointments-list" class="hidden space-y-3"></div>
-                                <div id="appointments-empty" class="hidden bg-slate-50 rounded-xl p-12 text-center">
-                                    <i data-lucide="calendar-x" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
-                                    <h3 class="text-xl font-bold text-slate-700">No hay citas agendadas</h3>
-                                    <p class="text-slate-500 mt-2">Las citas que la IA agende aparecerán aquí.</p>
-                                    <p class="text-sm text-slate-400 mt-4">Activa el sistema de citas en Configuración
-                                        para
-                                        comenzar.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="community-manager" class="content-panel">
-                            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Community Manager IA</h2>
-                            <div class="bg-white rounded-xl shadow-md p-6 text-center">
-                                <i data-lucide="construction" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
-                                <h3 class="text-xl font-bold">Próximamente</h3>
-                                <p class="text-slate-500 mt-2">Automatiza la creación y publicación de contenido en tus
-                                    redes
-                                    sociales.</p>
-                            </div>
-                        </div>
-
-                        <div id="designer-ai" class="content-panel pb-16" data-placeholder="true">
-                            <!-- Contenido cargado dinámicamente desde designer-ai.html -->
-                        </div>
-
-
-                        <div id="video-ai" class="content-panel pb-16" data-placeholder="true">
-                            <!-- Contenido cargado dinámicamente desde video-ai.html -->
-                        </div>
-
-                        <div id="ia-mind" class="content-panel pb-16" data-placeholder="true">
-                            <!-- Contenido cargado dinámicamente desde personal-tasks.html -->
-                        </div>
-
-                        <!-- Personalidades Section -->
-                        <div id="personalities" class="content-panel px-6 py-8 overflow-y-auto">
-                            <div class="max-w-6xl mx-auto">
-                                <div class="mb-8">
-                                    <h2 class="text-3xl font-bold text-slate-800 mb-2">🤖 Personalidades de Agente</h2>
-                                    <p class="text-slate-600">Configura cómo tu agente IA interactúa con los clientes según tu tipo de negocio.</p>
-                                </div>
-
-                                <!-- Existing Personalities List Container -->
-                                <div id="existing-personalities-list" class="mb-8">
-                                    <!-- Rendered by personality-wizard.js -->
-                                </div>
-
-                                <!-- Empty State (shown when no personalities) -->
-                                <div id="personalities-empty-state" class="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
-                                    <div class="text-6xl mb-4">🤖</div>
-                                    <h3 class="text-xl font-bold text-slate-800 mb-2">Sin Personalidad Configurada</h3>
-                                    <p class="text-slate-600 mb-6">Configura una personalidad para que tu agente se adapte a tu negocio</p>
-                                    <button onclick="openPersonalityWizard()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition">
-                                        ✨ Configurar Primera Personalidad
+                                    <button id="new-appointment-btn"
+                                        class="bg-green-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-green-700 flex items-center gap-1.5 text-xs">
+                                        <i data-lucide="plus" class="w-3 h-3"></i> Nueva
+                                    </button>
+                                    <button id="appointments-config-btn"
+                                        class="bg-slate-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-1.5 text-xs"
+                                        title="Configurar citas">
+                                        <i data-lucide="settings" class="w-3 h-3"></i>
                                     </button>
                                 </div>
                             </div>
+                            <div id="calendar-month-grid" class="grid grid-cols-7 gap-1.5">
+                                <!-- Los días del mes se renderizarán aquí -->
+                            </div>
                         </div>
-
-                        <div id="settings" class="content-panel" data-placeholder="true">
-                            <!-- Contenido cargado dinámicamente desde settings.html -->
+                        <!-- Vista Semanal -->
+                        <div id="calendar-week-view" class="hidden">
+                            <!-- Header compacto con controles integrados -->
+                            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+                                <div class="flex items-center gap-3">
+                                    <button id="calendar-prev-week" class="p-1.5 rounded-lg hover:bg-slate-100">
+                                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                                    </button>
+                                    <h3 id="calendar-week-title" class="text-base font-bold text-slate-800">
+                                    </h3>
+                                    <button id="calendar-next-week" class="p-1.5 rounded-lg hover:bg-slate-100">
+                                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-xs font-medium text-slate-600 whitespace-nowrap">Filtrar:</label>
+                                    <select id="appointments-filter-status-week"
+                                        class="form-input border-slate-300 rounded-lg text-xs py-1 px-2 min-w-[100px]">
+                                        <option value="all">Todas</option>
+                                        <option value="pending">Pendientes</option>
+                                        <option value="confirmed">Confirmadas</option>
+                                        <option value="completed">Completadas</option>
+                                        <option value="cancelled">Canceladas</option>
+                                    </select>
+                                    <div class="relative inline-flex items-center bg-slate-200 rounded-lg p-0.5">
+                                        <button id="calendar-view-month-btn-week"
+                                            class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 text-slate-700 hover:text-slate-900">
+                                            <i data-lucide="calendar" class="w-3 h-3"></i> Mes
+                                        </button>
+                                        <button id="calendar-view-week-btn-week"
+                                            class="relative z-10 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1 bg-green-600 text-white shadow-sm">
+                                            <i data-lucide="calendar-days" class="w-3 h-3"></i> Sem
+                                        </button>
+                                    </div>
+                                    <button id="new-appointment-btn-week"
+                                        class="bg-green-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-green-700 flex items-center gap-1.5 text-xs">
+                                        <i data-lucide="plus" class="w-3 h-3"></i> Nueva
+                                    </button>
+                                    <button id="appointments-config-btn-week"
+                                        class="bg-slate-600 text-white font-semibold py-1 px-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-1.5 text-xs"
+                                        title="Configurar citas">
+                                        <i data-lucide="settings" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="calendar-week-grid" class="grid grid-cols-8 gap-2">
+                                <!-- Los días de la semana con horas se renderizarán aquí -->
+                            </div>
+                        </div>
+                        <!-- Lista de Citas (fallback) -->
+                        <div id="appointments-list" class="hidden space-y-3"></div>
+                        <div id="appointments-empty" class="hidden bg-slate-50 rounded-xl p-12 text-center">
+                            <i data-lucide="calendar-x" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
+                            <h3 class="text-xl font-bold text-slate-700">No hay citas agendadas</h3>
+                            <p class="text-slate-500 mt-2">Las citas que la IA agende aparecerán aquí.</p>
+                            <p class="text-sm text-slate-400 mt-4">Activa el sistema de citas en Configuración
+                                para
+                                comenzar.</p>
                         </div>
                     </div>
-            </main>
+                </div>
+
+                <div id="community-manager" class="content-panel">
+                    <h2 class="text-2xl sm:text-3xl font-bold mb-6">Community Manager IA</h2>
+                    <div class="bg-white rounded-xl shadow-md p-6 text-center">
+                        <i data-lucide="construction" class="w-16 h-16 mx-auto text-slate-400 mb-4"></i>
+                        <h3 class="text-xl font-bold">Próximamente</h3>
+                        <p class="text-slate-500 mt-2">Automatiza la creación y publicación de contenido en tus
+                            redes
+                            sociales.</p>
+                    </div>
+                </div>
+
+                <div id="designer-ai" class="content-panel pb-16" data-placeholder="true">
+                    <!-- Contenido cargado dinámicamente desde designer-ai.html -->
+                </div>
+
+
+                <div id="video-ai" class="content-panel pb-16" data-placeholder="true">
+                    <!-- Contenido cargado dinámicamente desde video-ai.html -->
+                </div>
+
+                <div id="ia-mind" class="content-panel pb-16" data-placeholder="true">
+                    <!-- Contenido cargado dinámicamente desde personal-tasks.html -->
+                </div>
+
+                <!-- Personalidades Section -->
+                <div id="personalities" class="content-panel px-6 py-8 overflow-y-auto">
+                    <div class="max-w-6xl mx-auto">
+                        <div class="mb-8">
+                            <h2 class="text-3xl font-bold text-slate-800 mb-2">🤖 Personalidades de Agente</h2>
+                            <p class="text-slate-600">Configura cómo tu agente IA interactúa con los clientes según tu
+                                tipo de negocio.</p>
+                        </div>
+
+                        <!-- Existing Personalities List Container -->
+                        <div id="existing-personalities-list" class="mb-8">
+                            <!-- Rendered by personality-wizard.js -->
+                        </div>
+
+                        <!-- Empty State (shown when no personalities) -->
+                        <div id="personalities-empty-state"
+                            class="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+                            <div class="text-6xl mb-4">🤖</div>
+                            <h3 class="text-xl font-bold text-slate-800 mb-2">Sin Personalidad Configurada</h3>
+                            <p class="text-slate-600 mb-6">Configura una personalidad para que tu agente se adapte a tu
+                                negocio</p>
+                            <button onclick="openPersonalityWizard()"
+                                class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition">
+                                ✨ Configurar Primera Personalidad
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="settings" class="content-panel" data-placeholder="true">
+                    <!-- Contenido cargado dinámicamente desde settings.html -->
+                </div>
         </div>
+        </main>
+    </div>
     </div>
 
     <!-- Modal para Editar Etiquetas (inicialmente oculto) -->
@@ -4835,10 +4844,10 @@
         <!-- Personality Wizard Initialization -->
         <script>
             // Initialize personality wizard when section loads
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function () {
                 // Listen for section changes
-                const observer = new MutationObserver(function(mutations) {
-                    mutations.forEach(function(mutation) {
+                const observer = new MutationObserver(function (mutations) {
+                    mutations.forEach(function (mutation) {
                         if (mutation.attributeName === 'class') {
                             const personalitiesSection = document.getElementById('personalities');
                             if (personalitiesSection && !personalitiesSection.classList.contains('hidden')) {

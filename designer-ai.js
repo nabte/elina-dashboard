@@ -47,15 +47,15 @@
 
     // --- CONSTANTES (MIGRADO DE /diseñadoria/index.tsx) ---
     const FLYER_STYLE_FRAGMENTS = {
-        'none': { name: 'Ninguno / Manual', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/noun.jpg', prompt: 'Create a visually appealing, well-composed, full-bleed promotional social media flyer based *only* on the user\'s specific instructions for style, text, and visual elements. There is no predefined base style.' },
-        'corp-moderno': { name: 'Corp. Moderno', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/Corporativo%20Moderno.jpg', prompt: 'Create a professional, clean, full-bleed promotional social media flyer design. The background should be a smooth, edge-to-edge gradient in corporate blue tones. Use professional, high-quality photos. Typography is a modern, readable sans-serif. Leave ample clean space for text overlays.' },
-        'elegancia': { name: 'Elegancia Min.', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/Elegancia%20Minimalista.jpg', prompt: 'Create an elegant, minimalist, full-bleed promotional social media flyer design. Use a clean, light-colored background (like white or soft gray), a refined serif or sans-serif font. The layout must be uncluttered with generous use of negative space. The overall feeling should be premium and sophisticated.' },
-        'comida': { name: 'Estilo Audaz', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/Comida%20Audaz.jpg', prompt: 'Create a bold, promotional, full-bleed social media flyer design. Use strong, high-contrast colors like red, yellow, and black. The typography must be large and impactful. The main subject should be presented in a powerful and appealing manner.' },
-        'colorido': { name: 'Colorido', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/product/Gemini_Generated_Image_th5h7nth5h7nth5h.png', prompt: 'Create a "Modern Health Campaign" style full-bleed design. The background should feature smooth, flowing gradients of purple and blue that extend edge-to-edge. All visual and textual elements must be integrated directly into this background, utilizing clean, geometric divisions (e.g., sharp diagonal lines, large color blocks, or integrated rounded shapes). High-quality, relevant photography should be seamlessly blended into sections of this full-bleed layout. Typography is a modern, clean sans-serif, using varying weights and colors to establish clear hierarchy. The overall feel must be trustworthy, informative, and clean.' },
-        'urbano': { name: 'Collage Urbano', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/Collage%20Urbano.jpg', prompt: 'Create a dynamic, urban collage-style, full-bleed promotional social media flyer design. Combine textures like torn paper, duct tape, and spray paint splatters. Use a mix of gritty, high-contrast photography and bold, handwritten or stencil-style fonts. The vibe should be edgy and energetic.' },
-        'deporte': { name: 'Estilo Dinámico', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/Deporte%20Din%C3%A1mico.jpg', prompt: 'Create an energetic and dynamic, full-bleed promotional social media flyer design. Use strong diagonal lines, motion blur effects, and a high-contrast color palette. Typography should be bold, modern, and convey a sense of speed and power.' },
-        'premium': { name: 'Brillo Premium', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/Brillo%20Premium.jpg', prompt: 'Create a luxurious and premium, full-bleed promotional social media flyer design. Use a dark, sophisticated color palette, often incorporating gold, silver, or metallic accents. Lighting should be elegant, creating soft highlights and shadows. The mood is exclusive and high-end.' },
-        'lineas': { name: 'Líneas', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/product/Gemini_Generated_Image_r0m7v1r0m7v1r0m7.png', prompt: 'Create a "Dynamic Geometric" style design. The composition is based on a clean, bright white background that is geometrically divided by fluid, rounded shapes (circles, capsule-like diagonal forms) in various tones of blue. These shapes must extend to the very edges of the canvas. All visual and textual elements, including photography, must be seamlessly integrated as part of this unified full-bleed canvas. High-quality photography should be directly incorporated into the flow of the geometric shapes or background, forming an organic part of the overall design. Typography is modern and clean sans-serif, using bold weights for headlines and lighter weights for details.' },
+        'none': { name: 'Ninguno / Manual', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/noun.jpg', prompt: 'Create a visually appealing, well-composed, full-bleed promotional graphic based *only* on the user\'s specific instructions for style, text, and visual elements. There is no predefined base style. Fill the entire canvas edge-to-edge.' },
+        'corp-moderno': { name: 'Corp. Moderno', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/Corporativo%20Moderno.jpg', prompt: 'Professional, clean, full-bleed corporate design. The background should be a smooth, edge-to-edge gradient in corporate blue tones. Use professional, high-quality photos. Typography is a modern, readable sans-serif. Leave ample clean space for text overlays.' },
+        'elegancia': { name: 'Elegancia Min.', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/Elegancia%20Minimalista.jpg', prompt: 'Elegant, minimalist, full-bleed design. Use a clean, light-colored background (like white or soft gray), a refined serif or sans-serif font. The layout must be uncluttered with generous use of negative space. The overall feeling should be premium and sophisticated.' },
+        'comida': { name: 'Estilo Audaz', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/Comida%20Audaz.jpg', prompt: 'Bold, high-impact, full-bleed promotional design. Use strong, high-contrast colors like red, yellow, and black. The typography must be large and impactful. The main subject should be presented in a powerful and appealing manner.' },
+        'colorido': { name: 'Colorido', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/product/Gemini_Generated_Image_th5h7nth5h7nth5h.png', prompt: '"Modern Health Campaign" style full-bleed design. The background should feature smooth, flowing gradients of purple and blue that extend edge-to-edge. All visual and textual elements must be integrated directly into this background, utilizing clean, geometric divisions (e.g., sharp diagonal lines, large color blocks, or integrated rounded shapes). High-quality, relevant photography should be seamlessly blended into sections of this full-bleed layout. Typography is a modern, clean sans-serif, using varying weights and colors to establish clear hierarchy.' },
+        'urbano': { name: 'Collage Urbano', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/Collage%20Urbano.jpg', prompt: 'Dynamic, urban collage-style, full-bleed promotional design. Combine textures like torn paper, duct tape, and spray paint splatters. Use a mix of gritty, high-contrast photography and bold, handwritten or stencil-style fonts. The vibe should be edgy and energetic.' },
+        'deporte': { name: 'Estilo Dinámico', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/Deporte%20Din%C3%A1mico.jpg', prompt: 'Energetic and dynamic, full-bleed promotional design. Use strong diagonal lines, motion blur effects, and a high-contrast color palette. Typography should be bold, modern, and convey a sense of speed and power.' },
+        'premium': { name: 'Brillo Premium', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/Brillo%20Premium.jpg', prompt: 'Luxurious and premium, full-bleed design. Use a dark, sophisticated color palette, often incorporating gold, silver, or metallic accents. Lighting should be elegant, creating soft highlights and shadows. The mood is exclusive and high-end.' },
+        'lineas': { name: 'Líneas', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/product/Gemini_Generated_Image_r0m7v1r0m7v1r0m7.png', prompt: '"Dynamic Geometric" style full-bleed design. The composition is based on a clean, bright white background that is geometrically divided by fluid, rounded shapes (circles, capsule-like diagonal forms) in various tones of blue. These shapes must extend to the very edges of the canvas. All visual and textual elements, including photography, must be seamlessly integrated as part of this unified full-bleed canvas. Typography is modern and clean sans-serif, using bold weights for headlines and lighter weights for details.' },
     };
     const ENVIRONMENT_FRAGMENTS = {
         studio: { name: 'Foto de Estudio Clásica', description: 'Fondo limpio y neutro.', image: 'https://creativersezone.b-cdn.net/ELINA/media%20app/product/foto%20estudio%20clasica.png', prompt: 'on a seamless, light gray background. The lighting is a soft, three-point setup, creating subtle, flattering shadows that define the product\'s form. Hyper-realistic, 8k, tack sharp focus.' },
@@ -252,61 +252,121 @@
         return typeof value === 'string' ? value.trim() : '';
     }
 
+    // Convierte hex a nombre descriptivo de color para evitar que el modelo lo renderice como texto
+    function hexToColorName(hex) {
+        if (!hex || typeof hex !== 'string') return null;
+        hex = hex.replace('#', '').toUpperCase();
+        const colorMap = {
+            'FF0000': 'red', 'FF4444': 'bright red', 'CC0000': 'dark red', 'FF6666': 'light red',
+            '00FF00': 'green', '00CC00': 'dark green', '33FF33': 'bright green', '228B22': 'forest green',
+            '0000FF': 'blue', '0066FF': 'royal blue', '3399FF': 'sky blue', '000080': 'navy blue', '00BFFF': 'deep sky blue',
+            'FFFF00': 'yellow', 'FFD700': 'gold', 'FFA500': 'orange', 'FF8C00': 'dark orange',
+            'FF00FF': 'magenta', 'FF69B4': 'hot pink', 'FFC0CB': 'pink', 'E91E63': 'rose',
+            '800080': 'purple', '9B59B6': 'violet', '6A0DAD': 'deep purple', '8E44AD': 'amethyst',
+            '00FFFF': 'cyan', '008080': 'teal', '20B2AA': 'light sea green',
+            'FFFFFF': 'white', '000000': 'black', '808080': 'gray', 'C0C0C0': 'silver',
+            'A52A2A': 'brown', '8B4513': 'saddle brown', 'D2691E': 'chocolate',
+            'F5F5DC': 'beige', 'FFFDD0': 'cream', 'FAF0E6': 'linen',
+        };
+        if (colorMap[hex]) return colorMap[hex];
+        // Approximate by hue for unknown hex
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        const l = (max + min) / 2 / 255;
+        if (max - min < 30) {
+            if (l > 0.85) return 'off-white';
+            if (l > 0.6) return 'light gray';
+            if (l > 0.3) return 'gray';
+            return 'dark charcoal';
+        }
+        let h = 0;
+        const d = max - min;
+        if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+        else if (max === g) h = ((b - r) / d + 2) * 60;
+        else h = ((r - g) / d + 4) * 60;
+        if (h < 15) return l > 0.5 ? 'salmon' : 'dark red';
+        if (h < 45) return l > 0.5 ? 'peach' : 'burnt orange';
+        if (h < 70) return l > 0.5 ? 'light yellow' : 'olive';
+        if (h < 150) return l > 0.5 ? 'light green' : 'dark green';
+        if (h < 200) return l > 0.5 ? 'light cyan' : 'teal';
+        if (h < 260) return l > 0.5 ? 'light blue' : 'dark blue';
+        if (h < 310) return l > 0.5 ? 'lavender' : 'deep purple';
+        return l > 0.5 ? 'light pink' : 'dark magenta';
+    }
+
     function formatPalette(colors) {
-        return colors.filter(Boolean).map((c) => c.toUpperCase()).join(', ');
+        return colors.filter(Boolean).map((c) => {
+            const name = hexToColorName(c);
+            return name || c;
+        }).join(', ');
     }
 
     function updateFlyerPrompt() {
         const pieces = [];
-        pieces.push('Design a polished promotional flyer suitable for social media. Use clear hierarchy and professional layout.');
+        // Instrucción principal: evitar "flyer/poster/mockup" para que no genere un mockup
+        pieces.push('Create a full-bleed, edge-to-edge promotional graphic design that fills the ENTIRE canvas. This is the final print-ready artwork itself, NOT a preview, NOT a mockup, NOT a photo of a printed piece. Every pixel of the canvas must be part of the design.');
+
         const style = FLYER_STYLE_FRAGMENTS[flyerState.flyerStyle];
         if (style) {
-            pieces.push(`Base style guidance: ${style.prompt}`);
+            pieces.push(`Visual style direction: ${style.prompt}`);
         }
         if (flyerState.flyerStyle === 'none') {
             const customStyle = safeTrim(flyerState.textInputs.styleMods);
             if (customStyle) {
-                pieces.push(`Custom style instructions: ${customStyle}`);
+                pieces.push(`Custom style: ${customStyle}`);
             }
         }
+
+        // Texto: instrucciones claras de qué texto renderizar
+        const textParts = [];
         const headline = safeTrim(flyerState.textInputs.headline);
-        if (headline) pieces.push(`Headline: ${headline}`);
+        if (headline) textParts.push(`Main headline text (large, prominent): "${headline}"`);
         const secondary = safeTrim(flyerState.textInputs.secondary);
-        if (secondary) pieces.push(`Secondary text: ${secondary}`);
+        if (secondary) textParts.push(`Supporting text (medium size): "${secondary}"`);
         const price = safeTrim(flyerState.textInputs.price);
-        if (price) pieces.push(`Call to action or price: ${price}`);
+        if (price) textParts.push(`Call-to-action or price tag (eye-catching): "${price}"`);
         const terms = safeTrim(flyerState.textInputs.terms);
-        if (terms) pieces.push(`Small print: ${terms}`);
-        const visuals = safeTrim(flyerState.textInputs.visuals);
-        if (visuals) pieces.push(`Visual elements to include: ${visuals}`);
-        if (flyerState.colors && flyerState.colors.length) {
-            pieces.push(`Brand colour palette: ${formatPalette(flyerState.colors)}`);
+        if (terms) textParts.push(`Fine print (small, bottom area): "${terms}"`);
+        if (textParts.length > 0) {
+            pieces.push(`TEXT TO RENDER ON THE DESIGN (display these exact words as typography, using readable fonts with good contrast against the background):\n${textParts.join('\n')}`);
         }
+
+        const visuals = safeTrim(flyerState.textInputs.visuals);
+        if (visuals) pieces.push(`Additional visual elements: ${visuals}`);
+
+        // Colores: usar nombres descriptivos, no hex
+        if (flyerState.colors && flyerState.colors.length) {
+            const colorNames = formatPalette(flyerState.colors);
+            pieces.push(`Use this color palette throughout the design: ${colorNames}. These are the brand colors — apply them to backgrounds, accents, shapes, and typography.`);
+        }
+
         if (flyerState.removeProductBg) {
-            pieces.push('If a product reference is used, remove its original background.');
+            pieces.push('Remove the original background from the product image and integrate the product seamlessly into the design.');
         }
         flyerState.finalPrompt = pieces.join('\n\n').trim();
     }
 
     function updateProductPrompt() {
         const pieces = [];
-        pieces.push('Create a photorealistic marketing render of the product with dramatic lighting and professional composition.');
+        pieces.push('Create a photorealistic, full-bleed product photograph that fills the entire canvas. The product from the reference image must be the hero of the composition — faithfully preserve its shape, colors, materials, and branding details. Professional e-commerce quality, tack-sharp focus, 8K detail.');
         if (productState.mode === 'product-only') {
             const environment = ENVIRONMENT_FRAGMENTS[productState.productOnlyData.environment];
             if (environment) {
-                pieces.push(`Environment: ${environment.prompt}`);
+                pieces.push(`Place the product ${environment.prompt}`);
             }
             const custom = safeTrim(productState.productOnlyData.customPrompt);
             if (custom) {
-                pieces.push(`Extra instructions: ${custom}`);
+                pieces.push(`Additional direction: ${custom}`);
             }
         } else {
             const who = LIFESTYLE_WHO[productState.lifestyleData.who];
-            if (who?.prompt) pieces.push(`Subject: ${who.prompt}`);
+            if (who?.prompt) pieces.push(who.prompt);
             const where = LIFESTYLE_WHERE[productState.lifestyleData.where];
-            if (where?.prompt) pieces.push(`Location: ${where.prompt}`);
+            if (where?.prompt) pieces.push(where.prompt);
             const when = LIFESTYLE_WHEN[productState.lifestyleData.when];
-            if (when?.prompt) pieces.push(`Mood or time: ${when.prompt}`);
+            if (when?.prompt) pieces.push(when.prompt);
             const whoCustom = safeTrim(productState.lifestyleData.whoCustom);
             if (whoCustom) pieces.push(`Subject details: ${whoCustom}`);
             const whereCustom = safeTrim(productState.lifestyleData.whereCustom);
@@ -319,12 +379,12 @@
 
     function updateHeadshotPrompt() {
         const pieces = [];
-        pieces.push('Generate a professional portrait that preserves the subject identity with realistic lighting and skin texture.');
+        pieces.push('Generate a professional portrait photograph that fills the entire canvas. Faithfully preserve the face, identity, skin tone, and features of the person in the reference image. The result must look like a real photograph with realistic lighting, natural skin texture, and professional retouching.');
         const scene = HEADSHOT_SCENES[headshotState.scene];
         if (scene?.prompt) {
-            pieces.push(`Scene: ${scene.prompt}`);
+            pieces.push(scene.prompt);
         }
-        pieces.push('Deliver a sharp, flattering headshot suitable for corporate branding.');
+        pieces.push('Deliver a sharp, flattering headshot suitable for LinkedIn, corporate websites, or professional branding.');
         headshotState.finalPrompt = pieces.join('\n\n').trim();
     }
 
@@ -384,10 +444,7 @@
         const galleryItem = event.target.closest('.gallery-item-home');
         if (galleryItem) {
             const imageSrc = galleryItem.dataset.imageSrc;
-            if (imageSrc) {
-                const filename = `imagen-${Date.now()}.png`;
-                openImageInViewer(imageSrc, 'Imagen generada', filename);
-            }
+            if (imageSrc) openDesignerLightbox(imageSrc);
             return;
         }
 
@@ -405,9 +462,9 @@
             return;
         }
 
-        if (event.target.closest('.view-large-btn')) {
+        if (event.target.closest('.view-large-btn') || (event.target.closest('#design-result-container') && activeImage && !isLoading)) {
             event.preventDefault();
-            if (activeImage) openImageInViewer(activeImage, 'Diseño generado', 'elina-design.png');
+            if (activeImage) openDesignerLightbox(activeImage);
             return;
         }
 
@@ -687,57 +744,73 @@
         const aspectRatio = IMAGE_GENERATION_SETTINGS.aspectRatio;
         let finalPrompt = basePrompt;
 
-        // Agregar instrucciones de aspect ratio al prompt (como Gemini)
         if (aspectRatio && aspectRatio !== 'auto') {
-            finalPrompt = `${basePrompt}
-
-Render the image using a ${aspectRatio} aspect ratio.`;
+            finalPrompt += `\n\nRender the image using a ${aspectRatio} aspect ratio.`;
         }
 
-        // Agregar descripciones de imágenes en el prompt (KIE no soporta imágenes inline como Gemini)
-        const imageDescriptions = [];
+        // Build numbered image references matching the exact order images are collected in generateWithKIE
+        // Flyer order: logo(1), product(2), background(3), ref1(4), ref2(5), ref3(6)
+        // Product order: main(1), opt1(2), opt2(3)
+        // Headshot order: ref1(1), ref2(2), ref3(3)
+        const imageRoles = [];
+        let imgIndex = 1;
 
         if (activeTool === 'flyer') {
             const images = flyerState.images || {};
-            if (images.background) {
-                imageDescriptions.push('BACKGROUND IMAGE: Usa esta imagen como fondo completo sin distorsionarla.');
+            if (images.logo) {
+                imageRoles.push(`- Image ${imgIndex}: This is the BRAND LOGO. Place it in the design (typically top or corner area). Reproduce the logo exactly — do not alter, redraw, or reinterpret it. Keep it crisp and legible.`);
+                imgIndex++;
             }
             if (images.product) {
-                const productInstruction = flyerState.removeProductBg
-                    ? 'PRODUCT IMAGE: Incluye este producto en el diseño y elimina su fondo original.'
-                    : 'PRODUCT IMAGE: Incluye este producto en el diseño respetando su fondo.';
-                imageDescriptions.push(productInstruction);
+                const bgInstruction = flyerState.removeProductBg
+                    ? 'Remove its original background and integrate the product cleanly into the composition.'
+                    : 'Keep its original background intact.';
+                imageRoles.push(`- Image ${imgIndex}: This is the PRODUCT to feature prominently in the design. Preserve its real appearance, shape, and details accurately. ${bgInstruction}`);
+                imgIndex++;
             }
-            if (images.logo) {
-                imageDescriptions.push('LOGO IMAGE: Mantén la integridad del logo.');
+            if (images.background) {
+                imageRoles.push(`- Image ${imgIndex}: Use this as the BACKGROUND — stretch or adapt it to fill the entire canvas edge-to-edge. All other elements (text, logo, product) are layered on top of this background.`);
+                imgIndex++;
             }
             ['ref1', 'ref2', 'ref3'].forEach((key) => {
                 if (images[key]) {
-                    imageDescriptions.push('STYLE REFERENCE: Utiliza esta imagen como inspiración visual.');
+                    imageRoles.push(`- Image ${imgIndex}: This is a STYLE REFERENCE. Match its visual style, color mood, layout approach, and overall aesthetic — but do NOT copy it directly. Use it only as creative inspiration.`);
+                    imgIndex++;
                 }
             });
         } else if (activeTool === 'product') {
             const images = productState.images || {};
             if (images.main) {
-                imageDescriptions.push('PRIMARY PRODUCT IMAGE: Mantén la fidelidad del producto.');
+                imageRoles.push(`- Image ${imgIndex}: This is the PRIMARY PRODUCT. It is the hero of the image. Reproduce it with exact fidelity — preserve shape, color, texture, branding, and every detail.`);
+                imgIndex++;
             }
             if (images.opt1) {
-                imageDescriptions.push('SECONDARY IMAGE 1: Usa esta referencia solo para detalles adicionales.');
+                imageRoles.push(`- Image ${imgIndex}: SECONDARY REFERENCE — use this for additional context about the product (different angle, packaging, or detail shot). Do not create a separate product from this.`);
+                imgIndex++;
             }
             if (images.opt2) {
-                imageDescriptions.push('SECONDARY IMAGE 2: Usa esta referencia solo para detalles adicionales.');
+                imageRoles.push(`- Image ${imgIndex}: SECONDARY REFERENCE — additional angle or detail for context only.`);
+                imgIndex++;
             }
         } else if (activeTool === 'headshot') {
             const images = headshotState.images || {};
+            let faceIdx = 0;
             ['ref1', 'ref2', 'ref3'].forEach((key) => {
                 if (images[key]) {
-                    imageDescriptions.push('FACE REFERENCE: Preserva la identidad de la persona.');
+                    if (faceIdx === 0) {
+                        imageRoles.push(`- Image ${imgIndex}: This is the PRIMARY FACE REFERENCE. The generated portrait MUST look like this exact person — preserve facial structure, skin tone, eye color, hair, and all identifying features.`);
+                    } else {
+                        imageRoles.push(`- Image ${imgIndex}: ADDITIONAL FACE REFERENCE of the same person from a different angle. Use it to improve accuracy of the portrait.`);
+                    }
+                    imgIndex++;
+                    faceIdx++;
                 }
             });
         }
 
-        if (imageDescriptions.length > 0) {
-            finalPrompt = `${imageDescriptions.join(' ')}\n\n${finalPrompt}`;
+        if (imageRoles.length > 0) {
+            const roleBlock = `HOW TO USE THE PROVIDED REFERENCE IMAGES:\n${imageRoles.join('\n')}`;
+            finalPrompt = `${roleBlock}\n\n${finalPrompt}`;
         }
 
         return finalPrompt;
@@ -1033,14 +1106,30 @@ Render the image using a ${aspectRatio} aspect ratio.`;
 
     function handleDownload(url) {
         if (!url) return;
-        const link = document.createElement('a');
-        link.href = url;
-        const mimeType = url.split(';')[0].split(':')[1];
-        const extension = mimeType.split('/')[1] || 'png';
-        link.download = `elina-design-${Date.now()}.${extension}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        try {
+            const link = document.createElement('a');
+            link.href = url;
+            let extension = 'png';
+            if (url.startsWith('data:')) {
+                const mimeType = url.split(';')[0].split(':')[1] || '';
+                extension = mimeType.split('/')[1] || 'png';
+            } else {
+                const urlPath = new URL(url).pathname;
+                const ext = urlPath.split('.').pop();
+                if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) extension = ext;
+            }
+            link.download = `elina-design-${Date.now()}.${extension}`;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => document.body.removeChild(link), 100);
+            window.showToast?.('Descarga iniciada', 'success');
+        } catch (err) {
+            console.error('Download error:', err);
+            window.open(url, '_blank');
+            window.showToast?.('Abierto en nueva pestaña — guarda desde ahí', 'info');
+        }
     }
 
     // --- LÃGICA DE RENDERIZADO ---
@@ -1243,9 +1332,9 @@ Render the image using a ${aspectRatio} aspect ratio.`;
                                     <i data-lucide="image" class="w-3.5 h-3.5"></i> Vista Previa
                                 </h3>
                                 
-                                <div id="design-result-container" class="relative group aspect-square bg-slate-50 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner border border-slate-100">
+                                <div id="design-result-container" class="relative aspect-square bg-slate-50 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner border border-slate-100 ${!isLoading && activeImage ? 'cursor-pointer' : ''}">
                                     ${isLoading ? `
-                                        <div class="absolute inset-0 bg-white/60 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
+                                        <div class="absolute inset-0 bg-white/60 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-8 text-center">
                                             <div class="relative w-16 h-16 mb-4">
                                                 <div class="absolute inset-0 rounded-full border-4 border-indigo-100"></div>
                                                 <div class="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
@@ -1253,22 +1342,10 @@ Render the image using a ${aspectRatio} aspect ratio.`;
                                             <p class="font-bold text-slate-800 text-base">Invocando a Elina...</p>
                                             <p class="text-[10px] text-slate-400 mt-1 font-medium italic">Suele tomar 10-15 segundos</p>
                                         </div>
-                                    ` : ''} 
+                                    ` : ''}
 
                                     ${!isLoading && activeImage ? `
-                                        <div class="relative w-full h-full group">
-                                            <img src="${activeImage}" alt="Artistic Result" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                                <button class="view-large-btn bg-white text-slate-900 font-black px-5 py-3 rounded-2xl flex items-center gap-2 shadow-2xl active:scale-95 transition-all">
-                                                    <i data-lucide="maximize-2" class="w-4 h-4"></i>
-                                                    VER GRANDE
-                                                </button>
-                                                <button class="download-btn bg-emerald-500 text-white font-black px-5 py-3 rounded-2xl flex items-center gap-2 shadow-2xl active:scale-95 transition-all">
-                                                    <i data-lucide="download" class="w-4 h-4"></i>
-                                                    DESCARGAR
-                                                </button>
-                                            </div>
-                                        </div>
+                                        <img src="${activeImage}" alt="Resultado" class="w-full h-full object-cover" />
                                     ` : ''}
 
                                     ${!isLoading && !activeImage ? `
@@ -1278,6 +1355,27 @@ Render the image using a ${aspectRatio} aspect ratio.`;
                                         </div>
                                     ` : ''}
                                 </div>
+
+                                ${!isLoading && activeImage ? `
+                                <div class="flex gap-2 mt-3">
+                                    <button class="view-large-btn flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 text-xs">
+                                        <i data-lucide="expand" class="w-3.5 h-3.5"></i>
+                                        Ver Grande
+                                    </button>
+                                    <button class="download-btn flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 text-xs shadow-sm shadow-emerald-200">
+                                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                        Descargar
+                                    </button>
+                                </div>
+                                ` : ''}
+
+                                ${localGallery.length > 1 ? `
+                                <div class="flex gap-1.5 mt-3 overflow-x-auto pb-1">
+                                    ${localGallery.slice(0, 8).map((item, i) => `
+                                        <img src="${item.src}" alt="Variante ${i + 1}" class="gallery-thumbnail w-12 h-12 rounded-lg object-cover border-2 ${item.src === activeImage ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-transparent hover:border-slate-300'} cursor-pointer transition-all flex-shrink-0" />
+                                    `).join('')}
+                                </div>
+                                ` : ''}
                             </div>
 
                             <div class="space-y-4">
@@ -1820,10 +1918,92 @@ Render the image using a ${aspectRatio} aspect ratio.`;
         document.getElementById('close-full-gallery-modal-btn')?.addEventListener('click', () => modal.classList.add('hidden'), { once: true });
         content.addEventListener('click', (e) => {
             const viewBtn = e.target.closest('.view-image-btn');
-            if (viewBtn) {
-                openImageInViewer(viewBtn.dataset.src, 'Imagen de la galerÃ­a');
+            if (viewBtn && viewBtn.dataset.src) {
+                openDesignerLightbox(viewBtn.dataset.src);
             }
         });
+    }
+
+    // --- Lightbox propio del designer (no depende de modales externos) ---
+    function openDesignerLightbox(src) {
+        if (!src) return;
+
+        // Remover lightbox previo si existe
+        document.getElementById('designer-lightbox')?.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'designer-lightbox';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:16px;cursor:pointer;backdrop-filter:blur(4px);animation:fadeIn .2s ease';
+
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = 'Vista ampliada';
+        img.style.cssText = 'max-height:80vh;max-width:90vw;object-fit:contain;border-radius:12px;box-shadow:0 25px 50px rgba(0,0,0,0.5);cursor:default;animation:scaleIn .25s ease';
+
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:10px;cursor:default';
+        actions.innerHTML = `
+            <button id="lb-download" style="background:#10b981;color:white;font-weight:800;padding:10px 24px;border-radius:12px;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;box-shadow:0 4px 12px rgba(16,185,129,0.3);transition:transform .1s">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Descargar
+            </button>
+            <button id="lb-close" style="background:rgba(255,255,255,0.15);color:white;font-weight:800;padding:10px 24px;border-radius:12px;border:1px solid rgba(255,255,255,0.2);cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;transition:transform .1s">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Cerrar
+            </button>
+        `;
+
+        overlay.appendChild(img);
+        overlay.appendChild(actions);
+        document.body.appendChild(overlay);
+
+        // Añadir animaciones
+        const style = document.createElement('style');
+        style.id = 'designer-lightbox-styles';
+        style.textContent = `
+            @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+            @keyframes scaleIn { from { opacity: 0; transform: scale(0.9) } to { opacity: 1; transform: scale(1) } }
+            #lb-download:hover { transform: scale(1.03) }
+            #lb-download:active { transform: scale(0.97) }
+            #lb-close:hover { background: rgba(255,255,255,0.25); transform: scale(1.03) }
+            #lb-close:active { transform: scale(0.97) }
+        `;
+        document.head.appendChild(style);
+
+        const closeLightbox = () => {
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity .15s ease';
+            setTimeout(() => {
+                overlay.remove();
+                style.remove();
+            }, 150);
+        };
+
+        // Cerrar al click en backdrop
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeLightbox();
+        });
+
+        // Cerrar con botón
+        actions.querySelector('#lb-close').addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeLightbox();
+        });
+
+        // Descargar
+        actions.querySelector('#lb-download').addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleDownload(src);
+        });
+
+        // Cerrar con Escape
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                closeLightbox();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
     }
 
     // --- INICIO: Helper para abrir el visor de imÃ¡genes ---
