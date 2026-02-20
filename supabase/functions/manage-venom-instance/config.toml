@@ -1,0 +1,2 @@
+[env]
+VENOM_SERVICE_URL = "http://venom-service:3000"
