@@ -786,47 +786,16 @@ async function saveSingleKnowledge(content) {
 }
 
 async function saveNormalizedChunks(markdownText) {
-    // 1. Split into logical sections based on headers
-    const lines = markdownText.split('\n');
-    let chunks = [];
-    let currentChunk = { title: 'General', content: [] };
-
-    lines.forEach(line => {
-        if (line.match(/^#{1,3}\s/)) {
-            if (currentChunk.content.length > 0) {
-                chunks.push({
-                    title: currentChunk.title.replace(/[*#]/g, '').trim(),
-                    content: currentChunk.content.join('\n').trim()
-                });
-            }
-            currentChunk = {
-                title: line.replace(/^#+\s/, '').trim(),
-                content: [line]
-            };
-        } else {
-            currentChunk.content.push(line);
-        }
-    });
-
-    if (currentChunk.content.length > 0) {
-        chunks.push({
-            title: currentChunk.title.replace(/[*#]/g, '').trim(),
-            content: currentChunk.content.join('\n').trim()
-        });
-    }
-
-    chunks = chunks.filter(c => c.content.length > 10);
-    if (chunks.length === 0) {
-        chunks.push({ title: 'Info General', content: markdownText });
-    }
-
     const { data: { session } } = await window.auth.sb.auth.getSession();
     const sbUrl = window.auth.sb.supabaseUrl;
 
-    // A. SAVE PARENT (Display Only)
-    const docTitle = chunks[0].title.substring(0, 40) || 'Nuevo Documento';
-    console.log(`[RAG] Saving Parent Doc: ${docTitle}`);
+    // Extract doc title from first header
+    const firstLine = markdownText.split('\n').find(l => l.match(/^#{1,3}\s/));
+    const docTitle = (firstLine ? firstLine.replace(/^#+\s/, '').trim() : 'Nuevo Documento').substring(0, 40);
 
+    console.log(`[RAG] Processing document: ${docTitle}`);
+
+    // A. SAVE PARENT (Display Only - no embedding)
     await fetch(`${sbUrl}/functions/v1/generate-faqs`, {
         method: 'POST',
         headers: {
@@ -837,16 +806,37 @@ async function saveNormalizedChunks(markdownText) {
             manual: true,
             type: 'doc',
             question: docTitle,
-            answer: markdownText // Full content
+            answer: markdownText
         })
     });
 
-    // B. SAVE CHUNKS (Hidden for RAG) - OPTIMIZED BATCH
-    console.log(`[RAG] Saving ${chunks.length} hidden chunks via Batch...`);
+    // B. SMART CHUNKING with Overlap (for RAG)
+    console.log(`[RAG] Applying smart chunking with overlap...`);
 
-    // Format chunks as text blocks
+    const chunkResponse = await fetch(`${sbUrl}/functions/v1/smart-chunk-document`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token || window.auth.sb.supabaseKey}`
+        },
+        body: JSON.stringify({
+            markdownText,
+            docTitle
+        })
+    });
+
+    if (!chunkResponse.ok) {
+        throw new Error('Failed to chunk document: ' + await chunkResponse.text());
+    }
+
+    const { chunks, summary } = await chunkResponse.json();
+
+    console.log(`[RAG] Generated ${chunks.length} chunks:`, summary);
+
+    // C. SAVE CHUNKS (Hidden for RAG - with embeddings)
     const formattedChunks = chunks.map((chunk, i) => {
-        return `Title: ${docTitle} (Sección ${i + 1}): ${chunk.title}\nContent: ${chunk.content}`;
+        const overlapTag = chunk.hasOverlap ? ' [+overlap]' : '';
+        return `[${docTitle}] Parte ${i + 1}/${chunks.length}${overlapTag}\n\n${chunk.content}`;
     });
 
     await fetch(`${sbUrl}/functions/v1/generate-faqs`, {
@@ -862,6 +852,8 @@ async function saveNormalizedChunks(markdownText) {
             chunks: formattedChunks
         })
     });
+
+    console.log(`[RAG] ✅ Document saved with ${chunks.length} searchable chunks`);
 }
 
 // Expose functions to window

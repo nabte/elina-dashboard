@@ -2,29 +2,29 @@
 
 // CORRECCIÓN: Se importan todos los módulos necesarios para que el compilador (Vite) los reconozca.
 import './auth.js'; // auth.js debe estar primero
-import './csv-mapping-modal.js'; // Ensure CSV modal and helpers are loaded early
-import './bulk-sending.js';
-import './chats.js';
-import './contacts.js';
-import './smart-promotions.js';
-import './sales-context.js';
-import './designer-ai.js';
-import './follow-ups.js';
-import './kanban.js';
-import './products.js';
-import './quotes.js';
-import './settings.js';
-import './smart-labels.js';
-import './templates.js';
-import './video-ai.js';
-import './appointments.js';
-import './auto-responses.js';
-import './prompt-training.js';
-import './personal-tasks.js';
-import { initPlansModal } from './plans-modal.js';
-import './knowledge-files-functions.js';
-import { initAffiliatePanel } from './affiliate-panel.js';
-import { initSupportChat } from './support-chat.js';
+import '../modals/csv-mapping-modal.js'; // Ensure CSV modal and helpers are loaded early
+import '../features/bulk-sending.js';
+import '../features/chats.js';
+import '../features/contacts.js';
+import '../modals/smart-promotions.js';
+import '../ai/sales-context.js';
+import '../ai/designer-ai.js';
+import '../tasks/follow-ups.js';
+import '../features/kanban.js';
+import '../features/products.js';
+import '../features/quotes.js';
+import '../settings/settings.js';
+import '../tasks/smart-labels.js';
+import '../modals/templates.js';
+import '../ai/video-ai.js';
+import '../features/appointments.js';
+import '../ai/auto-responses.js';
+import '../ai/prompt-training.js';
+import '../tasks/personal-tasks.js';
+import { initPlansModal } from '../modals/plans-modal.js';
+import '../settings/knowledge-files-functions.js';
+import { initAffiliatePanel } from '../affiliate/affiliate-panel.js';
+import { initSupportChat } from '../affiliate/support-chat.js';
 
 
 // --- INICIO: CORRECCIÓN DE ESTILO GLOBAL ---
@@ -663,7 +663,8 @@ class DashboardApp {
                     { id: 'ai-memory', label: 'Asistente IA' },
                     { id: 'ai-flows', label: 'Flujos Personalizados' },
                     { id: 'smart-promotions', label: 'Promos Inteligentes' },
-                    { id: 'sales-context', label: 'Contexto de Ventas' }
+                    { id: 'sales-context', label: 'Contexto de Ventas' },
+                    { id: 'personalities', label: 'Personalidades' }
                 ]
             },
             'marketing': {
@@ -1808,9 +1809,9 @@ class DashboardApp {
 
         // Si no hay cache válido, consultar el estado actual
         try {
-            console.log(`[WhatsApp] 📞 Llamando a manage-whatsapp-instance con user_id: ${this.user.id}`);
+            console.log(`[WhatsApp] 📞 Llamando a manage-venom-instance con user_id: ${this.user.id}`);
 
-            const { data, error } = await window.auth.invokeFunction('manage-whatsapp-instance', {
+            const { data, error } = await window.auth.invokeFunction('manage-venom-instance', {
                 body: {
                     action: 'status',
                     user_id: this.user.id
@@ -1894,7 +1895,7 @@ class DashboardApp {
             console.log(`[WhatsApp Polling] Intento ${attempts}/${MAX_ATTEMPTS}`);
 
             try {
-                const { data, error } = await window.auth.invokeFunction('manage-whatsapp-instance', {
+                const { data, error } = await window.auth.invokeFunction('manage-venom-instance', {
                     body: {
                         action: 'status',
                         user_id: this.user.id
@@ -1954,81 +1955,37 @@ class DashboardApp {
     async checkWhatsappConnection() {
         this.renderWhatsappConnection('loading');
 
-        // Determinar método de conexión (default QR si no está establecido)
-        const method = this.connectionMethod || 'qr';
-        const action = method === 'qr' ? 'get-qr' : 'pairing-code';
+        // Venom solo soporta QR (no pairing code)
+        const action = 'get-qr';
 
-        // Obtener número de teléfono con código de país (AMBOS métodos lo necesitan)
+        // Número de teléfono es OPCIONAL para Venom
         let phone = null;
 
-        // Obtener referencias al error message
-        const phoneErrorMessage = document.getElementById('phone-error-message');
+        // Obtener referencias al input (puede estar oculto)
         const phoneInput = document.getElementById('whatsapp-phone-input');
 
-        // Ocultar error previo
-        if (phoneErrorMessage) phoneErrorMessage.classList.add('hidden');
-        if (phoneInput) phoneInput.classList.remove('border-red-500', 'border-2');
+        // Intentar obtener número solo si el input está visible y tiene valor
+        if (this.whatsappIti && phoneInput && phoneInput.offsetParent !== null) {
+            // Input visible y con intl-tel-input inicializado
+            if (this.whatsappIti.isValidNumber()) {
+                // Obtener número en formato E.164 y quitar el +
+                phone = this.whatsappIti.getNumber().replace('+', '');
 
-        // Usar intl-tel-input para obtener el número completo
-        if (this.whatsappIti) {
-            // Validar que el número sea válido
-            if (!this.whatsappIti.isValidNumber()) {
-                // Mostrar error visual
-                if (phoneErrorMessage) phoneErrorMessage.classList.remove('hidden');
-                if (phoneInput) {
-                    phoneInput.classList.add('border-red-500', 'border-2');
-                    phoneInput.focus();
+                // Corrección para México (agregar "1" para celulares)
+                if (phone.startsWith('52') && phone.length === 12) {
+                    phone = '521' + phone.substring(2);
+                    console.log('[WhatsApp] Número mexicano corregido:', phone);
+                } else {
+                    console.log('[WhatsApp] Número extraído:', phone);
                 }
-                this.renderWhatsappConnection('error', null, '⚠️ Ingresa un número válido con tu código de país');
-
-                // Inicializar iconos de lucide
-                if (typeof lucide !== 'undefined' && lucide.createIcons) {
-                    lucide.createIcons();
-                }
-                return;
             }
-
-            // Obtener número en formato E.164 (ej: +5219995169313) y quitar el +
-            phone = this.whatsappIti.getNumber().replace('+', '');
-
-            // CORRECCIÓN: Para México (52), números celulares necesitan el "1" después del código de país
-            // Formato: 52 + 1 + 10 dígitos = 13 dígitos total
-            if (phone.startsWith('52') && phone.length === 12) {
-                // Es México (52) + 10 dígitos → Agregar el "1" para celulares
-                phone = '521' + phone.substring(2);
-                console.log('[WhatsApp] Número mexicano corregido (agregado "1" para celular):', phone);
-            } else {
-                console.log('[WhatsApp] Número extraído:', phone);
-            }
-        } else {
-            // Fallback si intl-tel-input no está disponible
-            const phoneNumber = phoneInput?.value.trim();
-
-            if (!phoneNumber) {
-                // Mostrar error visual
-                if (phoneErrorMessage) phoneErrorMessage.classList.remove('hidden');
-                if (phoneInput) {
-                    phoneInput.classList.add('border-red-500', 'border-2');
-                    phoneInput.focus();
-                }
-                this.renderWhatsappConnection('error', null, '⚠️ Por favor ingresa tu número de WhatsApp');
-
-                // Inicializar iconos de lucide
-                if (typeof lucide !== 'undefined' && lucide.createIcons) {
-                    lucide.createIcons();
-                }
-                return;
-            }
-
-            // Asumir México si no hay intl-tel-input (formato: 521 + 10 dígitos)
-            const cleanNumber = phoneNumber.replace(/\D/g, '');
-            phone = '521' + cleanNumber;
-            console.log('[WhatsApp] Número extraído (fallback México):', phone);
         }
+
+        console.log('[WhatsApp] Conectando con número:', phone || 'sin número (opcional)');
 
         try {
             // Llamar a nuestra edge function en lugar de n8n
-            const { data, error } = await window.auth.invokeFunction('manage-whatsapp-instance', {
+            const { data, error } = await window.auth.invokeFunction('manage-venom-instance', {
                 body: {
                     action: action,
                     user_id: this.user.id,
@@ -2050,9 +2007,13 @@ class DashboardApp {
             }
 
             console.log('✅ Respuesta exitosa:', data);
+            console.log('📦 RESPUESTA COMPLETA (stringified):', JSON.stringify(data, null, 2));
             console.log('🔍 MÉTODO DETECTADO:', method, '| this.connectionMethod:', this.connectionMethod);
             console.log('📋 data.pairingCode:', data.pairingCode);
             console.log('📋 data.code:', data.code);
+            console.log('📋 data.base64:', data.base64 ? `Existe (${data.base64.substring(0, 50)}...)` : 'undefined');
+            console.log('📋 data.qrcode:', data.qrcode);
+            console.log('📋 data.qrcode?.base64:', data.qrcode?.base64 ? `Existe (${data.qrcode.base64.substring(0, 50)}...)` : 'undefined');
 
             // VERIFICAR SI YA ESTÁ CONECTADO
             if (data?.instance?.state === 'open') {
@@ -2066,16 +2027,32 @@ class DashboardApp {
             console.log('⚡ Entrando a if, method === "qr"?', method === 'qr');
             if (method === 'qr') {
                 // Para QR, mostrar la imagen
-                if (data.qrcode) {
+                if (data.qrcode && data.qrcode.base64) {
+                    console.log('📸 Mostrando QR desde data.qrcode.base64');
                     this.renderWhatsappConnection('qr', data.qrcode.base64);
                     // POLLING DESHABILITADO - Solo verificar manualmente con botón
                     // this.startConnectionPolling();
                 } else if (data.base64) {
+                    console.log('📸 Mostrando QR desde data.base64');
                     this.renderWhatsappConnection('qr', data.base64);
                     // POLLING DESHABILITADO - Solo verificar manualmente con botón
                     // this.startConnectionPolling();
                 } else {
-                    this.renderWhatsappConnection('error', null, 'No se pudo generar el código QR');
+                    console.error('❌ No se encontró ni data.qrcode.base64 ni data.base64');
+                    console.error('📦 Respuesta recibida:', JSON.stringify(data, null, 2));
+
+                    // Mostrar error más descriptivo
+                    const errorMsg = `No se pudo generar el código QR. La API devolvió: ${JSON.stringify(data)}`;
+                    this.renderWhatsappConnection('error', null, errorMsg);
+
+                    // Mostrar alerta al usuario con instrucciones
+                    alert('⚠️ Error al generar código QR\n\n' +
+                          'La API de Evolution no devolvió un código QR válido.\n\n' +
+                          'Posibles causas:\n' +
+                          '1. La URL de Evolution API no está configurada correctamente\n' +
+                          '2. La API de Evolution está caída o no responde\n' +
+                          '3. Hay un problema con las credenciales de la API\n\n' +
+                          'Por favor, verifica los logs de Supabase para más detalles.');
                 }
             } else {
                 // Para Pairing Code, mostrar el código
@@ -2133,7 +2110,7 @@ class DashboardApp {
 
         try {
             console.log('[WhatsApp] 📞 Llamando a logout...');
-            const { data, error } = await window.auth.invokeFunction('manage-whatsapp-instance', {
+            const { data, error } = await window.auth.invokeFunction('manage-venom-instance', {
                 body: {
                     action: 'logout',
                     user_id: this.user.id
@@ -2247,18 +2224,18 @@ class DashboardApp {
                     </div>`;
                 if (connectButton) connectButton.style.display = 'block';
                 if (disconnectButton) disconnectButton.style.display = 'none';
-                if (methodSelector) methodSelector.style.display = 'block';
+                if (methodSelector) methodSelector.style.display = 'none';
                 break;
             case 'initial':
             default:
                 html = `
                     <div class="flex flex-col items-center justify-center h-48 text-slate-400">
                          <i data-lucide="qr-code" class="w-16 h-16"></i>
-                         <p class="font-bold mt-2">Elige un método para conectar</p>
+                         <p class="font-bold mt-2">Solicita el QR para vincular</p>
                     </div>`;
                 if (connectButton) connectButton.style.display = 'block';
                 if (disconnectButton) disconnectButton.style.display = 'none';
-                if (methodSelector) methodSelector.style.display = 'block';
+                if (methodSelector) methodSelector.style.display = 'none';
                 break;
         }
         container.innerHTML = html;

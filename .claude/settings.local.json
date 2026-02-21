@@ -44,7 +44,15 @@
       "Bash(npm install:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(npm --version:*)",
+      "Bash(xcopy:*)",
+      "Bash(copy:*)",
+      "Bash(ssh:*)",
+      "Bash(ssh-copy-id:*)",
+      "Bash(ssh-keyscan:*)",
+      "Bash(~/.ssh/known_hosts)",
+      "Bash(git push:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -331,6 +331,14 @@ serve(async (req) => {
 
                 const qrData = await qrRes.json();
 
+                console.log('[QR] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                console.log('[QR] RESPUESTA COMPLETA DE EVOLUTION API:');
+                console.log(JSON.stringify(qrData, null, 2));
+                console.log('[QR] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                console.log('[QR] Tiene qrData.base64?', !!qrData.base64);
+                console.log('[QR] Tiene qrData.qrcode?', !!qrData.qrcode);
+                console.log('[QR] Tiene qrData.qrcode.base64?', !!qrData.qrcode?.base64);
+
                 // LIMPIAR BASE64 AQUÍ EN EL BACKEND para evitar problemas de cache en frontend
                 if (qrData.base64 && qrData.base64.includes('data:image')) {
                     // Si tiene prefijo, extraer solo la parte base64 pura

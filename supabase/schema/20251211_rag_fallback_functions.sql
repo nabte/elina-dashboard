@@ -10,7 +10,7 @@ CREATE OR REPLACE FUNCTION public.get_rag_with_fallback(
   p_contact_id text,
   p_query_embedding vector(1536) DEFAULT NULL,
   p_match_count int DEFAULT 5,
-  p_similarity_threshold real DEFAULT 0.7
+  p_similarity_threshold real DEFAULT 0.45 -- Updated from 0.7 for better recall
 )
 RETURNS TABLE(
   id bigint,

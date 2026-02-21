@@ -57,7 +57,7 @@ serve(async (req) => {
       contact_id,
       query_embedding,
       match_count = 5,
-      similarity_threshold = 0.7,
+      similarity_threshold = 0.45, // Updated from 0.7 for better recall
       include_simulations = true, // Por defecto incluir simulaciones para aprendizaje
     } = body;
 

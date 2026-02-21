@@ -30,6 +30,16 @@ Deno.serve(async (req) => {
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         );
 
+        // 🔥 FILTRO 1: Ignorar eventos que NO son mensajes
+        const event = body.event || '';
+        if (event !== 'messages.upsert') {
+            console.log(`[Router] ⏭️ Ignoring event: ${event} (not a message)`);
+            return new Response(JSON.stringify({ status: 'ignored', event }), {
+                headers: { 'Content-Type': 'application/json' },
+                status: 200
+            });
+        }
+
         // Extract conversation data
         const conversation_id = body.data?.key?.remoteJid?.replace('@s.whatsapp.net', '') || '';
         const input_text = body.data?.message?.conversation ||
@@ -44,6 +54,30 @@ Deno.serve(async (req) => {
                 headers: { 'Content-Type': 'application/json' },
                 status: 400
             });
+        }
+
+        // 🔥 FILTRO 2: Verificar que la instancia pertenezca a un usuario válido
+        const instanceName = body.instance || '';
+        if (instanceName) {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('id, evolution_instance_name')
+                .eq('evolution_instance_name', instanceName)
+                .maybeSingle();
+
+            if (!profile) {
+                console.warn(`[Router] ⚠️ Instance "${instanceName}" not found in any user profile - ignoring`);
+                return new Response(JSON.stringify({
+                    status: 'ignored',
+                    reason: 'instance_not_configured',
+                    instance: instanceName
+                }), {
+                    headers: { 'Content-Type': 'application/json' },
+                    status: 200
+                });
+            }
+
+            console.log(`[Router] ✅ Instance "${instanceName}" belongs to user ${profile.id}`);
         }
 
         // 1. Find contact

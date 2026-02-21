@@ -1690,6 +1690,65 @@ window.clearAssistantChat = clearAssistantChat;
 // FAQ MANAGEMENT LOGIC
 // ==========================================
 
+// Helper: Calculate text similarity (0-1)
+function calculateSimilarity(str1, str2) {
+    const s1 = str1.toLowerCase().trim();
+    const s2 = str2.toLowerCase().trim();
+
+    // If either string is empty or too short, return 0
+    if (s1.length < 3 || s2.length < 3) return 0;
+
+    // If both are identical, return 1
+    if (s1 === s2) return 1;
+
+    // Simple word overlap similarity
+    const words1 = new Set(s1.split(/\s+/).filter(w => w.length > 0));
+    const words2 = new Set(s2.split(/\s+/).filter(w => w.length > 0));
+
+    // If either has no words, return 0
+    if (words1.size === 0 || words2.size === 0) return 0;
+
+    const intersection = new Set([...words1].filter(x => words2.has(x)));
+    const union = new Set([...words1, ...words2]);
+
+    // Avoid division by zero
+    if (union.size === 0) return 0;
+
+    return intersection.size / union.size;
+}
+
+// Find duplicate FAQs
+window.findDuplicateFaqs = function (faqs, threshold = 0.7) {
+    const duplicates = [];
+
+    for (let i = 0; i < faqs.length; i++) {
+        for (let j = i + 1; j < faqs.length; j++) {
+            const text1 = faqs[i].extracted_text || '';
+            const text2 = faqs[j].extracted_text || '';
+
+            const q1 = text1.match(/P:\s*(.*?)(?=\nR:|$)/s)?.[1]?.trim() || '';
+            const q2 = text2.match(/P:\s*(.*?)(?=\nR:|$)/s)?.[1]?.trim() || '';
+
+            // Skip if either question is empty or too short
+            if (q1.length < 3 || q2.length < 3) continue;
+
+            const similarity = calculateSimilarity(q1, q2);
+
+            if (similarity >= threshold && similarity > 0) {
+                duplicates.push({
+                    similarity,
+                    faq1: faqs[i],
+                    faq2: faqs[j],
+                    question1: q1,
+                    question2: q2
+                });
+            }
+        }
+    }
+
+    return duplicates;
+}
+
 window.loadFaqsList = async function () {
     const container = document.getElementById('faq-list-container');
     if (!container) return;
@@ -1712,6 +1771,14 @@ window.loadFaqsList = async function () {
             .order('created_at', { ascending: false });
 
         if (error) throw error;
+
+        // Detect duplicates
+        const duplicates = window.findDuplicateFaqs(data || [], 0.7);
+        const duplicateIds = new Set();
+        duplicates.forEach(d => {
+            duplicateIds.add(d.faq1.id);
+            duplicateIds.add(d.faq2.id);
+        });
 
         // INJECT SELECTION HEADER (Ideally this should be in the static HTML, but we inject it here)
         let selectionHeader = document.getElementById('faq-selection-header');
@@ -1750,6 +1817,32 @@ window.loadFaqsList = async function () {
             }
         };
 
+        // Show duplicates warning if any
+        let duplicatesWarning = document.getElementById('faq-duplicates-warning');
+        if (duplicates.length > 0) {
+            if (!duplicatesWarning) {
+                duplicatesWarning = document.createElement('div');
+                duplicatesWarning.id = 'faq-duplicates-warning';
+                duplicatesWarning.className = 'bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex items-center justify-between';
+                container.parentNode.insertBefore(duplicatesWarning, container);
+            }
+            duplicatesWarning.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600"></i>
+                    <div>
+                        <p class="text-sm font-bold text-amber-800">Se detectaron ${duplicates.length} posibles duplicados</p>
+                        <p class="text-xs text-amber-600">FAQs con preguntas similares marcadas en naranja</p>
+                    </div>
+                </div>
+                <button onclick="window.showDuplicatesModal()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-colors">
+                    Ver Duplicados
+                </button>
+            `;
+            if (window.lucide) lucide.createIcons();
+        } else if (duplicatesWarning) {
+            duplicatesWarning.remove();
+        }
+
         if (!data || data.length === 0) {
             container.innerHTML = `
                 <div class="text-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-xl">
@@ -1758,28 +1851,36 @@ window.loadFaqsList = async function () {
                 </div>
             `;
         } else {
+            // Store duplicates for modal
+            window._currentDuplicates = duplicates;
+
             container.innerHTML = data.map(file => {
                 const text = file.extracted_text || '';
                 const pMatch = text.match(/P:\s*(.*?)(?=\nR:|$)/s);
                 const rMatch = text.match(/R:\s*(.*)/s);
                 const question = pMatch ? pMatch[1].trim() : (file.filename.replace('faq_', '').replace('.txt', '') || 'Pregunta sin título');
                 const answer = rMatch ? rMatch[1].trim() : text;
+                const isDuplicate = duplicateIds.has(file.id);
 
                 return `
-                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all group relative pl-10">
+                <div class="bg-white p-4 rounded-xl border ${isDuplicate ? 'border-amber-300 bg-amber-50/30' : 'border-slate-100'} shadow-sm hover:shadow-md transition-all group relative pl-10">
                     <div class="absolute left-3 top-4 flex items-center">
                         <input type="checkbox" value="${file.id}" class="faq-checkbox w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer">
                     </div>
+                    ${isDuplicate ? '<div class="absolute left-3 top-9"><span class="text-[9px] bg-amber-500 text-white px-1 py-0.5 rounded font-bold">DUP</span></div>' : ''}
                     <div class="absolute top-2 right-2 flex gap-1">
-                        <button onclick="window.deleteFaq('${file.id}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
+                        <button onclick="window.editFaq('${file.id}')" class="p-2.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-all" title="Editar">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="window.deleteFaq('${file.id}')" class="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Eliminar">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
-                    <h4 class="font-bold text-slate-800 pr-10 text-sm mb-1 line-clamp-2" title="${question}">${question}</h4>
+                    <h4 class="font-bold text-slate-800 pr-20 text-sm mb-1 line-clamp-2" title="${question}">${question}</h4>
                     <p class="text-slate-600 text-xs leading-relaxed line-clamp-3" title="${answer}">${answer}</p>
                     <div class="mt-3 pt-3 border-t border-slate-50 flex items-center justify-between">
                          <span class="text-[10px] text-slate-400">${new Date(file.created_at).toLocaleDateString()}</span>
-                         <span class="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">Activo</span>
+                         <span class="text-[10px] ${isDuplicate ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'} px-1.5 py-0.5 rounded font-bold">Activo</span>
                     </div>
                 </div>
                 `;
@@ -1815,6 +1916,147 @@ window.deleteFaq = async function (fileId) {
     } catch (err) {
         console.error('Error deleting FAQ:', err);
         window.showToast?.('Error al eliminar', 'error');
+    }
+}
+
+// Edit FAQ function
+window.editFaq = async function (fileId) {
+    try {
+        const { data, error } = await window.auth.sb
+            .from('knowledge_files')
+            .select('*')
+            .eq('id', fileId)
+            .single();
+
+        if (error) throw error;
+
+        const text = data.extracted_text || '';
+        const pMatch = text.match(/P:\s*(.*?)(?=\nR:|$)/s);
+        const rMatch = text.match(/R:\s*(.*)/s);
+        const question = pMatch ? pMatch[1].trim() : '';
+        const answer = rMatch ? rMatch[1].trim() : text;
+
+        window.openFaqModal(fileId, question, answer);
+
+    } catch (err) {
+        console.error('Error loading FAQ for edit:', err);
+        window.showToast?.('Error al cargar FAQ', 'error');
+    }
+}
+
+// Show duplicates modal
+window.showDuplicatesModal = function () {
+    const duplicates = window._currentDuplicates || [];
+    if (duplicates.length === 0) return;
+
+    // Remove existing modal if any
+    const existing = document.getElementById('duplicates-modal');
+    if (existing) existing.remove();
+
+    const modalHtml = `
+    <div id="duplicates-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-lg text-slate-800">FAQs Duplicados Detectados</h3>
+                <button onclick="document.getElementById('duplicates-modal').remove()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1">
+                <p class="text-sm text-slate-600 mb-4">Se encontraron ${duplicates.length} pares de FAQs con preguntas similares. Puedes fusionarlos para combinar sus respuestas.</p>
+                <div class="space-y-4">
+                    ${duplicates.map((dup, idx) => {
+                        const a1 = dup.faq1.extracted_text.match(/R:\s*(.*)/s)?.[1]?.trim() || '';
+                        const a2 = dup.faq2.extracted_text.match(/R:\s*(.*)/s)?.[1]?.trim() || '';
+                        return `
+                        <div class="border border-amber-200 rounded-xl p-4 bg-amber-50/30">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-bold text-amber-700">Similitud: ${(dup.similarity * 100).toFixed(0)}%</span>
+                                <button onclick="window.mergeFaqs('${dup.faq1.id}', '${dup.faq2.id}')" class="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-lg transition-colors">
+                                    Fusionar
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-xs font-bold text-slate-700 mb-1">FAQ 1:</p>
+                                    <p class="text-xs text-slate-800 mb-2 line-clamp-2">${dup.question1}</p>
+                                    <p class="text-[11px] text-slate-600 line-clamp-2">${a1}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold text-slate-700 mb-1">FAQ 2:</p>
+                                    <p class="text-xs text-slate-800 mb-2 line-clamp-2">${dup.question2}</p>
+                                    <p class="text-[11px] text-slate-600 line-clamp-2">${a2}</p>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    if (window.lucide) lucide.createIcons();
+}
+
+// Merge two FAQs
+window.mergeFaqs = async function (id1, id2) {
+    try {
+        // Load both FAQs
+        const { data: faqs, error } = await window.auth.sb
+            .from('knowledge_files')
+            .select('*')
+            .in('id', [id1, id2]);
+
+        if (error || !faqs || faqs.length !== 2) throw new Error('No se pudieron cargar los FAQs');
+
+        const faq1 = faqs.find(f => f.id === id1);
+        const faq2 = faqs.find(f => f.id === id2);
+
+        const text1 = faq1.extracted_text || '';
+        const text2 = faq2.extracted_text || '';
+
+        const q1 = text1.match(/P:\s*(.*?)(?=\nR:|$)/s)?.[1]?.trim() || '';
+        const a1 = text1.match(/R:\s*(.*)/s)?.[1]?.trim() || '';
+        const q2 = text2.match(/P:\s*(.*?)(?=\nR:|$)/s)?.[1]?.trim() || '';
+        const a2 = text2.match(/R:\s*(.*)/s)?.[1]?.trim() || '';
+
+        // Combine answers
+        const mergedQuestion = q1.length >= q2.length ? q1 : q2; // Keep longer question
+        const mergedAnswer = `${a1}\n\n${a2}`; // Combine both answers
+
+        // Update the first FAQ
+        const newText = `P: ${mergedQuestion}\nR: ${mergedAnswer}`;
+        const { error: updateError } = await window.auth.sb
+            .from('knowledge_files')
+            .update({ extracted_text: newText })
+            .eq('id', id1);
+
+        if (updateError) throw updateError;
+
+        // Delete the second FAQ
+        const { error: deleteError } = await window.auth.sb
+            .from('knowledge_files')
+            .delete()
+            .eq('id', id2);
+
+        if (deleteError) throw deleteError;
+
+        // Close modal and reload
+        document.getElementById('duplicates-modal')?.remove();
+        await window.loadFaqsList();
+
+        const successBadge = document.createElement('div');
+        successBadge.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-bounce transition-all duration-500';
+        successBadge.innerHTML = `✅ FAQs Fusionados`;
+        document.body.appendChild(successBadge);
+        setTimeout(() => successBadge.remove(), 3000);
+
+    } catch (err) {
+        console.error('Error merging FAQs:', err);
+        alert('Error al fusionar: ' + err.message);
     }
 }
 
@@ -1886,10 +2128,11 @@ function injectFaqModal() {
     <div id="faq-modal-overlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all scale-95 opacity-0" id="faq-modal-content">
             <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-lg text-slate-800">Nueva Pregunta Frecuente</h3>
+                <h3 id="faq-modal-title" class="font-bold text-lg text-slate-800">Nueva Pregunta Frecuente</h3>
                 <button onclick="window.closeFaqModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div class="p-6 space-y-4">
+                <input type="hidden" id="manual-faq-id" value="">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pregunta (Trigger)</label>
                     <input type="text" id="manual-faq-question" class="w-full rounded-lg border-slate-300 focus:ring-violet-500 focus:border-violet-500 text-sm" placeholder="Ej: ¿Aceptan tarjeta?">
@@ -1910,10 +2153,27 @@ function injectFaqModal() {
     if (window.lucide) lucide.createIcons();
 }
 
-window.openFaqModal = function () {
+window.openFaqModal = function (fileId = null, question = '', answer = '') {
     injectFaqModal();
     const overlay = document.getElementById('faq-modal-overlay');
     const content = document.getElementById('faq-modal-content');
+    const title = document.getElementById('faq-modal-title');
+    const idInput = document.getElementById('manual-faq-id');
+    const qInput = document.getElementById('manual-faq-question');
+    const aInput = document.getElementById('manual-faq-answer');
+
+    // Set mode: create or edit
+    if (fileId) {
+        title.textContent = 'Editar Pregunta Frecuente';
+        idInput.value = fileId;
+        qInput.value = question;
+        aInput.value = answer;
+    } else {
+        title.textContent = 'Nueva Pregunta Frecuente';
+        idInput.value = '';
+        qInput.value = '';
+        aInput.value = '';
+    }
 
     overlay.classList.remove('hidden');
     // Simple checks for animation
@@ -1940,9 +2200,11 @@ window.closeFaqModal = function () {
 }
 
 window.saveManualFaq = async function () {
+    const idInput = document.getElementById('manual-faq-id');
     const qInput = document.getElementById('manual-faq-question');
     const aInput = document.getElementById('manual-faq-answer');
 
+    const fileId = idInput ? idInput.value.trim() : '';
     const question = qInput ? qInput.value.trim() : '';
     const answer = aInput ? aInput.value.trim() : '';
 
@@ -1962,33 +2224,51 @@ window.saveManualFaq = async function () {
     try {
         const userId = await window.getUserId();
 
-        // Use new direct endpoint for manual save
-        const { data: { session } } = await window.auth.sb.auth.getSession();
-        const sbUrl = window.auth.sb.supabaseUrl;
+        if (fileId) {
+            // EDIT MODE: Update existing FAQ
+            const newText = `P: ${question}\nR: ${answer}`;
+            const { error } = await window.auth.sb
+                .from('knowledge_files')
+                .update({ extracted_text: newText })
+                .eq('id', fileId);
 
-        const response = await fetch(`${sbUrl}/functions/v1/generate-faqs`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session?.access_token || window.auth.sb.supabaseKey}`
-            },
-            body: JSON.stringify({
-                manual: true,
-                question: question,
-                answer: answer
-            })
-        });
+            if (error) throw error;
 
-        if (!response.ok) throw new Error(await response.text());
+            const successBadge = document.createElement('div');
+            successBadge.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-bounce transition-all duration-500';
+            successBadge.innerHTML = `✅ FAQ Actualizada`;
+            document.body.appendChild(successBadge);
+            setTimeout(() => successBadge.remove(), 3000);
+
+        } else {
+            // CREATE MODE: Use edge function
+            const { data: { session } } = await window.auth.sb.auth.getSession();
+            const sbUrl = window.auth.sb.supabaseUrl;
+
+            const response = await fetch(`${sbUrl}/functions/v1/generate-faqs`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || window.auth.sb.supabaseKey}`
+                },
+                body: JSON.stringify({
+                    manual: true,
+                    question: question,
+                    answer: answer
+                })
+            });
+
+            if (!response.ok) throw new Error(await response.text());
+
+            const successBadge = document.createElement('div');
+            successBadge.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-bounce transition-all duration-500';
+            successBadge.innerHTML = `✅ FAQ Guardada`;
+            document.body.appendChild(successBadge);
+            setTimeout(() => successBadge.remove(), 3000);
+        }
 
         window.closeFaqModal();
         await window.loadFaqsList();
-
-        const successBadge = document.createElement('div');
-        successBadge.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-bounce transition-all duration-500';
-        successBadge.innerHTML = `✅ FAQ Guardada`;
-        document.body.appendChild(successBadge);
-        setTimeout(() => successBadge.remove(), 3000);
 
     } catch (err) {
         console.error('Error saving FAQ:', err);

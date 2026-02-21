@@ -3,32 +3,42 @@
  * Dashboard para análisis de calidad de conversaciones
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-// Initialize Supabase
-const supabaseUrl = window.location.hostname === 'localhost'
-    ? 'http://localhost:54321'
-    : 'https://mytvwfbijlgbihlegmfg.supabase.co'
-
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dHZ3ZmJpamxnYmlobGVnbWZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA5NDk3NTYsImV4cCI6MjA0NjUyNTc1Nn0.MbTKOFsLYfY4vRn3fP5_gCMJbKbnlqFIYQtfJJRdHiM'
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
+let supabase = null
 let currentUserId = null
 let conversationsData = []
 
 // ============================================================================
 // INITIALIZATION
 // ============================================================================
+
+// Wait for auth module to be ready
+async function waitForAuth() {
+    return new Promise((resolve) => {
+        if (window.auth?.sb) {
+            resolve(window.auth.sb)
+        } else {
+            const checkAuth = setInterval(() => {
+                if (window.auth?.sb) {
+                    clearInterval(checkAuth)
+                    resolve(window.auth.sb)
+                }
+            }, 100)
+        }
+    })
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🎨 [QUALITY_DASHBOARD] Initializing...')
 
-    // Check authentication
+    // Wait for auth to be available
+    supabase = await waitForAuth()
+
+    // Check authentication using the shared auth
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
         console.error('❌ [QUALITY_DASHBOARD] User not authenticated')
-        window.location.href = 'index.html'
+        window.location.href = '/'
         return
     }
 

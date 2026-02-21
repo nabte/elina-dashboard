@@ -79,15 +79,26 @@ async function initPersonalityWizard() {
         body: {}
     })
 
+    // Get DOM elements
+    const emptyState = document.getElementById('personalities-empty-state')
+    const existingList = document.getElementById('existing-personalities-list')
+
     if (error) {
         console.error('[Personality Wizard] Error loading personalities:', error)
+        // Show empty state on error
+        if (emptyState) emptyState.style.display = 'block'
+        if (existingList) existingList.style.display = 'none'
     } else if (personalities?.personalities?.length > 0) {
         console.log(`[Personality Wizard] User has ${personalities.personalities.length} personalities`)
+        // Hide empty state and show personalities list
+        if (emptyState) emptyState.style.display = 'none'
+        if (existingList) existingList.style.display = 'block'
         renderExistingPersonalities(personalities.personalities, personalities.active_personality)
+    } else {
+        // No personalities found, show empty state
+        if (emptyState) emptyState.style.display = 'block'
+        if (existingList) existingList.style.display = 'none'
     }
-
-    // Setup wizard UI
-    renderWizardStep1()
 }
 
 // ============================================================================
@@ -139,7 +150,7 @@ function renderWizardStep1() {
     `
 }
 
-window.selectPersonalityType = function(type) {
+window.selectPersonalityType = function (type) {
     wizardState.selectedType = type
     renderWizardStep1() // Re-render to show selection
 }
@@ -199,7 +210,7 @@ function renderWizardStep2() {
     `
 }
 
-window.updateBusinessDescription = function(value) {
+window.updateBusinessDescription = function (value) {
     wizardState.businessDescription = value
     document.getElementById('char-count').textContent = value.length
 
@@ -341,11 +352,11 @@ function renderWizardStep3() {
 // WIZARD ACTIONS
 // ============================================================================
 
-window.goToStep1 = function() {
+window.goToStep1 = function () {
     renderWizardStep1()
 }
 
-window.goToStep2 = function() {
+window.goToStep2 = function () {
     if (!wizardState.selectedType) {
         window.showToast?.('Selecciona un tipo de personalidad', 'warning')
         return
@@ -355,7 +366,7 @@ window.goToStep2 = function() {
 
 window.analyzeAndGoToStep3 = analyzeAndGoToStep3
 
-window.activatePersonalityAndClose = async function() {
+window.activatePersonalityAndClose = async function () {
     if (!wizardState.createdPersonalityId) return
 
     try {
@@ -380,7 +391,7 @@ window.activatePersonalityAndClose = async function() {
     }
 }
 
-window.closePersonalityWizard = function() {
+window.closePersonalityWizard = function () {
     const modal = document.getElementById('personality-wizard-modal')
     if (modal) {
         modal.classList.remove('active')
@@ -415,10 +426,10 @@ function renderExistingPersonalities(personalities, activePersonality) {
 
         <div class="personalities-list">
             ${personalities.map(p => {
-                const isActive = activePersonality?.id === p.id
-                const typeInfo = PERSONALITY_TYPES[p.personality_type] || {}
+        const isActive = activePersonality?.id === p.id
+        const typeInfo = PERSONALITY_TYPES[p.personality_type] || {}
 
-                return `
+        return `
                     <div class="personality-item ${isActive ? 'active' : ''}">
                         <div class="personality-item-emoji">${typeInfo.emoji || '🤖'}</div>
                         <div class="personality-item-info">
@@ -444,12 +455,12 @@ function renderExistingPersonalities(personalities, activePersonality) {
                         </div>
                     </div>
                 `
-            }).join('')}
+    }).join('')}
         </div>
     `
 }
 
-window.activatePersonality = async function(personalityId) {
+window.activatePersonality = async function (personalityId) {
     try {
         const { data, error } = await window.auth.invokeFunction('activate-personality', {
             body: {
@@ -473,7 +484,7 @@ window.activatePersonality = async function(personalityId) {
 // MODAL LAUNCHER
 // ============================================================================
 
-window.openPersonalityWizard = function() {
+window.openPersonalityWizard = function () {
     // Create modal
     const modal = document.createElement('div')
     modal.id = 'personality-wizard-modal'
@@ -495,5 +506,4 @@ window.openPersonalityWizard = function() {
 // Export for external use
 if (typeof window !== 'undefined') {
     window.initPersonalityWizard = initPersonalityWizard
-    window.openPersonalityWizard = openPersonalityWizard
 }

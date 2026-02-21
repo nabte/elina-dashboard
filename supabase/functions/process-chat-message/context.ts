@@ -159,9 +159,31 @@ export async function getChatHistory(
     }).join('\n')
 }
 
-// Placeholder for simulation history
-export function getSimulationHistory(text: string): string {
-    return ""
+// Get simulation history from database
+export async function getSimulationHistory(
+    supabase: SupabaseClient,
+    userId: string,
+    sessionId: string,
+    limit: number = 10
+): Promise<string> {
+    const { data, error } = await supabase
+        .from('simulation_history')
+        .select('role, content, created_at')
+        .eq('user_id', userId)
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false })
+        .limit(limit)
+
+    if (error || !data) {
+        console.error('[getSimulationHistory] Error fetching history:', error)
+        return ""
+    }
+
+    // Format: "User: hello\nAI: hi"
+    return data.reverse().map((m: any) => {
+        const role = m.role === 'user' ? 'User' : 'AI'
+        return `${role}: ${m.content}`
+    }).join('\n')
 }
 
 

@@ -7,7 +7,7 @@ import { runConversationalAgent, type AgentConfig } from "./agent.ts"
 import { loadActivePersonality, mergePersonalityConfig, loadPersonalityExtensions } from "./personality-loader.ts"
 import { extractTaskFromMessage } from "./llm.ts"
 import { processPlaceholders, shouldGenerateQuote, createAndSendQuote } from "./logic.ts"
-import { sendMessage, sendImage, sendVideo, sendAudio, getMediaUrl, EVOLUTION_API_URL } from "./evolution-client.ts"
+import { sendMessage, sendMedia, sendImage, sendVideo, sendAudio, getMediaUrl, EVOLUTION_API_URL } from "./evolution-client.ts"
 import { processMedia, generateAudio } from "./media.ts"
 import { checkWorkflowTriggers, processWorkflowMessage } from "./workflow-engine.ts"
 
@@ -1036,15 +1036,99 @@ Instrucciones especiales:
                 if (!isSimulation && !payload?.return_context_only) {
                     console.log(`... [EVOLUTION] Enviando respuesta (${finalResponseType})...`)
                     try {
-                        if (finalResponseType === 'text') {
-                            await sendMessage(instanceName, evolutionApiKey, remoteJid, finalOutputText, profile.evolution_api_url)
-                        } else if (finalResponseType === 'image') {
-                            await sendImage(instanceName, evolutionApiKey, remoteJid, finalMediaUrl, finalOutputText, profile.evolution_api_url)
-                        } else if (finalResponseType === 'video') {
-                            await sendVideo(instanceName, evolutionApiKey, remoteJid, finalMediaUrl, finalOutputText, profile.evolution_api_url)
-                        } else if (finalResponseType === 'audio') {
-                            await sendAudio(instanceName, evolutionApiKey, remoteJid, finalMediaUrl, profile.evolution_api_url)
+                        // Check if we have products with images to send
+                        const productsWithMedia = productIds
+                            .map(id => productsMap.get(id))
+                            .filter(p => p && p.media_url && p.media_url.trim() !== '')
+
+                        if (productsWithMedia.length > 0 && finalResponseType === 'text') {
+                            console.log(`+++ [PRODUCTOS CON MEDIA] Detectados ${productsWithMedia.length} productos con imágenes`)
+
+                            // Limit to max 3 products with images
+                            const maxProducts = Math.min(productsWithMedia.length, 3)
+
+                            for (let i = 0; i < maxProducts; i++) {
+                                const product = productsWithMedia[i]
+
+                                // Build caption for this product
+                                let caption = `*${product.product_name}*\n`
+
+                                if (product.description) {
+                                    caption += `${product.description}\n\n`
+                                }
+
+                                const price = Number(product.price)
+                                if (price > 0 && !isNaN(price)) {
+                                    caption += `💰 Precio: $${price.toLocaleString('es-MX', { minimumFractionDigits: 2 })}\n`
+                                } else {
+                                    caption += `💰 Precio: A consultar\n`
+                                }
+
+                                if (product.stock !== undefined && product.stock !== null) {
+                                    caption += `📦 Stock: ${product.stock}\n`
+                                }
+
+                                // If this is the last product (3rd) and there are more products, add remaining text
+                                if (i === maxProducts - 1 && (productsWithMedia.length > 3 || finalOutputText.trim())) {
+                                    // Add any remaining text from AI response
+                                    if (finalOutputText.trim()) {
+                                        caption += `\n---\n\n${finalOutputText}`
+                                    }
+
+                                    // If there are more products beyond the 3rd, mention them
+                                    if (productsWithMedia.length > 3) {
+                                        const remainingProducts = productsWithMedia.slice(3)
+                                        caption += `\n\n*Otros productos disponibles:*\n`
+                                        remainingProducts.forEach(rp => {
+                                            const rpPrice = Number(rp.price)
+                                            const priceStr = (rpPrice > 0 && !isNaN(rpPrice))
+                                                ? `$${rpPrice.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+                                                : 'A consultar'
+                                            caption += `• ${rp.product_name} - ${priceStr}\n`
+                                        })
+                                    }
+                                }
+
+                                // Send media with caption
+                                await sendMedia(
+                                    instanceName,
+                                    evolutionApiKey,
+                                    remoteJid,
+                                    product.media_url,
+                                    'image',
+                                    caption,
+                                    undefined,
+                                    profile.evolution_api_url
+                                )
+
+                                console.log(`+++ [PRODUCTOS CON MEDIA] Enviado producto ${i + 1}/${maxProducts}: ${product.product_name}`)
+
+                                // Small delay between messages to avoid rate limits
+                                if (i < maxProducts - 1) {
+                                    await new Promise(resolve => setTimeout(resolve, 800))
+                                }
+                            }
+
+                            // If we didn't include the text in the last caption and there's text to send
+                            if (maxProducts < 3 && finalOutputText.trim()) {
+                                await new Promise(resolve => setTimeout(resolve, 800))
+                                await sendMessage(instanceName, evolutionApiKey, remoteJid, finalOutputText, profile.evolution_api_url)
+                                console.log(`+++ [PRODUCTOS CON MEDIA] Texto adicional enviado`)
+                            }
+
+                        } else {
+                            // Normal message sending (no products with media)
+                            if (finalResponseType === 'text') {
+                                await sendMessage(instanceName, evolutionApiKey, remoteJid, finalOutputText, profile.evolution_api_url)
+                            } else if (finalResponseType === 'image') {
+                                await sendImage(instanceName, evolutionApiKey, remoteJid, finalMediaUrl, finalOutputText, profile.evolution_api_url)
+                            } else if (finalResponseType === 'video') {
+                                await sendVideo(instanceName, evolutionApiKey, remoteJid, finalMediaUrl, finalOutputText, profile.evolution_api_url)
+                            } else if (finalResponseType === 'audio') {
+                                await sendAudio(instanceName, evolutionApiKey, remoteJid, finalMediaUrl, profile.evolution_api_url)
+                            }
                         }
+
                         console.log(`+++ [EVOLUTION] Mensaje enviado exitosamente.`)
                     } catch (sendError) {
                         console.error("!!! [ERROR] Falló el envío a Evolution:", sendError)

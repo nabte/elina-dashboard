@@ -8,13 +8,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createSupabaseAdminClient } from './utils/supabase.ts'
 import { corsHeaders } from './utils/cors.ts'
-import { loadAccountConfig, validateAccountConfig } from './config/account-config.ts'
+import { validateAccountConfig } from './config/account-config.ts'
 import { shouldIgnoreMessage } from './core/filters.ts'
 import { detectIntent, isCriticalIntent } from './intent/detector.ts'
 import { runConversationalAgent } from './agents/conversational.ts'
-import { sendMessage, sendImage, sendAudio } from './utils/evolution.ts'
+import { sendMessage, sendImage, sendVideo } from './utils/messaging-client.ts'
 import {
-    getProfileByInstance,
+    getProfileAndMessagingConfig,
     ensureContact,
     loadConversationContext,
     saveChatHistory
@@ -89,12 +89,13 @@ serve(async (req) => {
         }
 
         // ========================================================================
-        // 2. LOAD ACCOUNT CONFIGURATION
+        // 2. LOAD WHATSAPP PROVIDER & CONFIGURATION
         // ========================================================================
-        console.log(`\n📋 [CONFIG] Loading account configuration...`)
+        console.log(`\n📋 [MESSAGING] Loading WhatsApp instance and provider...`)
 
-        const profile = await getProfileByInstance(supabase, instanceName)
-        const config = await loadAccountConfig(supabase, profile.id)
+        const { profile, messagingConfig, accountConfig: config } = await getProfileAndMessagingConfig(supabase, instanceName)
+
+        console.log(`✅ [MESSAGING] Provider: ${messagingConfig.provider.toUpperCase()}`)
 
         // Validate configuration
         const validation = validateAccountConfig(config)
@@ -188,7 +189,7 @@ serve(async (req) => {
 
             // 🔄 NUEVO: Solo enviar si NO es simulación
             if (!isSimulation) {
-                await sendMessage(config, remoteJid, autoResponse.responseText)
+                await sendMessage(messagingConfig, remoteJid, autoResponse.responseText)
             }
 
             // Save history
@@ -536,10 +537,9 @@ serve(async (req) => {
                     console.log(`     Caption length: ${item.caption.length} chars`)
 
                     if (item.type === 'video') {
-                        const { sendVideo } = await import('./utils/evolution.ts')
-                        await sendVideo(config, remoteJid, item.url, item.caption)
+                        await sendVideo(messagingConfig, remoteJid, item.url, item.caption)
                     } else {
-                        await sendImage(config, remoteJid, item.url, item.caption)
+                        await sendImage(messagingConfig, remoteJid, item.url, item.caption)
                     }
 
                     // Delay entre mensajes
@@ -560,10 +560,9 @@ serve(async (req) => {
                     console.log(`   - Sending single media with full text as caption`)
 
                     if (media.type === 'video') {
-                        const { sendVideo } = await import('./utils/evolution.ts')
-                        await sendVideo(config, remoteJid, media.url, finalText)
+                        await sendVideo(messagingConfig, remoteJid, media.url, finalText)
                     } else {
-                        await sendImage(config, remoteJid, media.url, finalText)
+                        await sendImage(messagingConfig, remoteJid, media.url, finalText)
                     }
 
                 } else {
@@ -574,10 +573,9 @@ serve(async (req) => {
                         const media = finalMediaToSend[i]
 
                         if (media.type === 'video') {
-                            const { sendVideo } = await import('./utils/evolution.ts')
-                            await sendVideo(config, remoteJid, media.url, '')
+                            await sendVideo(messagingConfig, remoteJid, media.url, '')
                         } else {
-                            await sendImage(config, remoteJid, media.url, '')
+                            await sendImage(messagingConfig, remoteJid, media.url, '')
                         }
 
                         if (i < finalMediaToSend.length - 1) {
@@ -588,14 +586,14 @@ serve(async (req) => {
                     // Texto al final
                     if (finalText.length > 0) {
                         await new Promise(r => setTimeout(r, 600))
-                        await sendMessage(config, remoteJid, finalText, true)
+                        await sendMessage(messagingConfig, remoteJid, finalText)
                     }
                 }
             }
 
         } else {
             // Sin media - Enviar solo texto
-            await sendMessage(config, remoteJid, finalText, true)
+            await sendMessage(messagingConfig, remoteJid, finalText)
         }
 
         // Si se requiere cotización PDF

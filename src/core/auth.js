@@ -216,12 +216,38 @@ window.auth = {
     try {
       if (!email || !password) throw new Error('Credenciales incompletas');
 
-      const { error } = await this.sb.auth.signInWithPassword({ email, password });
+      const { data, error } = await this.sb.auth.signInWithPassword({ email, password });
       if (error) throw error;
+
+      // Verificar acceso a la cuenta usando la función de base de datos
+      if (data?.user?.id) {
+        const { data: accessCheck, error: accessError } = await this.sb.rpc('check_account_access', {
+          p_user_id: data.user.id
+        });
+
+        if (accessError) {
+          console.error('[Auth] Error verificando acceso:', accessError);
+        }
+
+        // Si está bloqueado, cerrar sesión y mostrar mensaje
+        if (accessCheck?.blocked) {
+          await this.sb.auth.signOut();
+          throw new Error(accessCheck.reason || 'Tu cuenta no tiene acceso. Por favor, verifica tu suscripción.');
+        }
+      }
 
       // La redirección la maneja onAuthStateChange
     } catch (error) {
-      const friendlyMessage = error.message === 'Invalid login credentials' ? 'Correo o contraseña incorrectos.' : error.message;
+      let friendlyMessage = error.message;
+
+      if (error.message === 'Invalid login credentials') {
+        friendlyMessage = 'Correo o contraseña incorrectos.';
+      } else if (error.message.includes('Email not confirmed')) {
+        friendlyMessage = 'Por favor, confirma tu correo electrónico antes de iniciar sesión.';
+      } else if (error.message.includes('período de prueba') || error.message.includes('suscripción')) {
+        friendlyMessage = error.message;
+      }
+
       this.setLoadingState(form, false, 'Iniciar Sesión', friendlyMessage);
     }
   },
@@ -232,7 +258,7 @@ window.auth = {
     const email = document.getElementById('register-email')?.value;
     const password = document.getElementById('register-password')?.value;
     const name = document.getElementById('register-name')?.value;
-    const phone = window.iti ? window.iti.getNumber() : document.getElementById('register-phone')?.value; // Obtener número internacional
+    const phone = window.iti ? window.iti.getNumber() : document.getElementById('register-phone')?.value;
 
     this.setLoadingState(form, true, 'Creando...');
 
@@ -252,38 +278,41 @@ window.auth = {
 
       if (error) throw error;
 
-      // NOTA: El perfil y la suscripción se crean desde n8n (webhook volution-instance-create)
-      // No creamos nada aquí, solo esperamos a que n8n lo haga
-
       if (data.user) {
-        // Llamada al webhook de n8n para crear la instancia
-        try {
-          const n8nWebhookUrl = 'https://n8n-n8n.mcjhhb.easypanel.host/webhook/volution-instance-create';
-          await fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              nombre: name,
-              email: email,
-              telefono_admin: phone,
-              Passwr: password // Nota: Enviar la contraseña así no es ideal, pero sigue el flujo de n8n.
-            })
-          });
-        } catch (n8nError) {
-          console.error("Error al llamar al webhook de n8n, pero el registro de usuario continuó:", n8nError);
-          // No se detiene el flujo, pero se registra el error.
-        }
+        // El perfil y suscripción se crean automáticamente por el trigger handle_new_user()
+        // Pero también llamamos a n8n para crear la instancia de WhatsApp
+
+        // Llamada al webhook de n8n (no bloqueante)
+        fetch('https://n8n-n8n.mcjhhb.easypanel.host/webhook/volution-instance-create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre: name,
+            email: email,
+            telefono_admin: phone,
+            Passwr: password
+          })
+        }).catch(err => {
+          console.warn('[Auth] Error al llamar a n8n (no crítico):', err);
+        });
 
         // Ocultar formulario y mostrar mensaje de éxito
         form.style.display = 'none';
         const successMessage = document.getElementById('register-success-message');
         successMessage.classList.remove('hidden');
         lucide.createIcons({ nodes: [successMessage.querySelector('i')] });
-
       }
 
     } catch (error) {
-      this.setLoadingState(form, false, 'Crear Cuenta', error.message);
+      let friendlyMessage = error.message;
+
+      if (error.message.includes('already registered')) {
+        friendlyMessage = 'Este correo ya está registrado. Inicia sesión o recupera tu contraseña.';
+      } else if (error.message.includes('password')) {
+        friendlyMessage = 'La contraseña debe cumplir con los requisitos de seguridad.';
+      }
+
+      this.setLoadingState(form, false, 'Crear Cuenta', friendlyMessage);
     }
   },
 

@@ -215,6 +215,44 @@ export class SessionManager {
   }
 
   /**
+   * Actualiza el webhook URL de una sesión
+   */
+  async updateWebhook(sessionId, webhookUrl) {
+    try {
+      if (!this.sessions.has(sessionId)) {
+        throw new SessionNotFoundError(sessionId);
+      }
+
+      logger.info(`Updating webhook for session ${sessionId}: ${webhookUrl}`);
+
+      // Actualizar en memoria
+      this.webhooks.set(sessionId, webhookUrl);
+
+      // Actualizar en Redis
+      const redisKey = `venom:session:${sessionId}`;
+      const redisData = await redisClient.get(redisKey);
+
+      if (redisData) {
+        redisData.webhookUrl = webhookUrl;
+        redisData.lastUpdate = Date.now();
+        await redisClient.set(redisKey, redisData, { EX: 7200 });
+      }
+
+      logger.info(`Webhook updated for session ${sessionId}`);
+
+      return {
+        success: true,
+        sessionId,
+        webhookUrl
+      };
+
+    } catch (error) {
+      logger.error(`Failed to update webhook for ${sessionId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Lista todas las sesiones activas
    */
   async listSessions() {

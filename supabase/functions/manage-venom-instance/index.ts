@@ -39,17 +39,15 @@ serve(async (req) => {
             throw new Error("Perfil no encontrado");
         }
 
-        // Obtener plan desde subscriptions
-        const { data: subscription } = await supabase
-            .from('subscriptions')
-            .select('plan_id')
-            .eq('user_id', user_id)
-            .single();
+        // Plan ya no se usa - límite fijo de 1 instancia por usuario
 
-        const planId = subscription?.plan_id || 'free';
+        // Generar session_id único (solo alfanuméricos)
+        let sessionId = `user${user_id.replace(/-/g, '').substring(0, 12)}`;
 
-        // Generar session_id único
-        let sessionId = `user-${user_id.substring(0, 8)}`;
+        console.log('🚨🚨🚨 DEBUG VENOM: SessionId generado:', sessionId);
+        console.log('🚨🚨🚨 DEBUG VENOM: user_id original:', user_id);
+        console.log('🚨🚨🚨 DEBUG VENOM: user_id sin guiones:', user_id.replace(/-/g, ''));
+        console.log('🚨🚨🚨 DEBUG VENOM: Deployment version 6 - CÓDIGO NUEVO');
 
         // =========================================
         // ACCIÓN: STATUS - Verificar estado
@@ -145,20 +143,14 @@ serve(async (req) => {
                 const isNewInstance = !instance;
 
                 if (isNewInstance) {
-                    // Verificar límite de instancias según plan
-                    const limit = planId === 'enterprise' ? 3 : (planId === 'business' ? 1 : 0);
-
-                    if (limit === 0) {
-                        throw new Error("Tu plan no permite instancias Venom. Actualiza a Business o Enterprise.");
-                    }
-
+                    // Verificar límite de 1 instancia por usuario
                     const { count } = await supabase
                         .from('venom_instances')
                         .select('*', { count: 'exact', head: true })
                         .eq('user_id', user_id);
 
-                    if (count && count >= limit) {
-                        throw new Error(`Límite de ${limit} instancia(s) alcanzado. Elimina una existente o actualiza tu plan.`);
+                    if (count && count >= 1) {
+                        throw new Error('Ya tienes una instancia Venom. Desconecta la actual antes de crear otra.');
                     }
 
                     // Crear instancia en DB
@@ -186,12 +178,16 @@ serve(async (req) => {
                 }
 
                 // Crear sesión en servicio Venom
-                const createPayload = {
+                const createPayload: any = {
                     sessionId: sessionId,
                     userId: user_id,
-                    webhookUrl: instance.webhook_url,
-                    phoneNumber: phone || instance.phone_number
+                    webhookUrl: instance.webhook_url
                 };
+
+                // Solo agregar phoneNumber si existe (debe ser string)
+                if (phone || instance.phone_number) {
+                    createPayload.phoneNumber = phone || instance.phone_number;
+                }
 
                 console.log(`[Venom] Creating session:`, createPayload);
 
@@ -349,6 +345,119 @@ serve(async (req) => {
                 console.error(`[Venom Delete Error] ${e.message}`);
                 throw e;
             }
+        }
+
+        // =========================================
+        // ACCIÓN: UPDATE-CONFIG (SuperAdmin)
+        // =========================================
+        if (action === 'update-config') {
+            const { instance_id, webhook_url, image_format } = await req.json();
+
+            // Ejecutar función de base de datos
+            const { data, error } = await supabase.rpc('superadmin_update_venom_config', {
+                p_instance_id: instance_id,
+                p_webhook_url: webhook_url,
+                p_image_format: image_format
+            });
+
+            if (error) throw error;
+
+            // Si webhook cambió, actualizar en servicio Venom
+            if (webhook_url) {
+                const { data: instance } = await supabase
+                    .from('venom_instances')
+                    .select('session_id')
+                    .eq('id', instance_id)
+                    .single();
+
+                if (instance) {
+                    await fetch(`${VENOM_SERVICE_URL}/sessions/${instance.session_id}/webhook`, {
+                        method: 'PUT',
+                        headers: {
+                            'X-API-Key': VENOM_API_KEY!,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ webhookUrl: webhook_url })
+                    });
+                }
+            }
+
+            return new Response(JSON.stringify(data), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
+
+        // =========================================
+        // ACCIÓN: LIST-ALL (SuperAdmin)
+        // =========================================
+        if (action === 'list-all') {
+            // Verificar que sea superadmin
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user_id)
+                .single();
+
+            if (profile?.role !== 'superadmin') {
+                throw new Error("Solo SuperAdmin puede listar todas las instancias");
+            }
+
+            // Obtener desde vista
+            const { data: instances, error } = await supabase
+                .from('superadmin_venom_instances')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            return new Response(JSON.stringify({ instances }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
+
+        // =========================================
+        // ACCIÓN: DELETE-BY-ID (SuperAdmin)
+        // =========================================
+        if (action === 'delete-by-id') {
+            const { instance_id } = await req.json();
+
+            // Verificar que sea superadmin
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user_id)
+                .single();
+
+            if (profile?.role !== 'superadmin') {
+                throw new Error("Solo SuperAdmin puede eliminar instancias");
+            }
+
+            // Obtener session_id antes de eliminar
+            const { data: instance } = await supabase
+                .from('venom_instances')
+                .select('session_id')
+                .eq('id', instance_id)
+                .single();
+
+            if (instance) {
+                // Eliminar en servicio Venom
+                await fetch(`${VENOM_SERVICE_URL}/sessions/${instance.session_id}`, {
+                    method: 'DELETE',
+                    headers: { 'X-API-Key': VENOM_API_KEY! }
+                });
+            }
+
+            // Eliminar de BD
+            const { error } = await supabase
+                .from('venom_instances')
+                .delete()
+                .eq('id', instance_id);
+
+            if (error) throw error;
+
+            return new Response(JSON.stringify({ success: true }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
         }
 
         return new Response(JSON.stringify({

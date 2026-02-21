@@ -8,7 +8,7 @@ import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!
 const EMBEDDING_MODEL = 'text-embedding-3-small'
-const SIMILARITY_THRESHOLD = 0.35
+const SIMILARITY_THRESHOLD = 0.45 // Updated from 0.35 for better precision
 const MAX_CONTEXT_MESSAGES = 5
 const MAX_PRODUCT_RESULTS = 3
 

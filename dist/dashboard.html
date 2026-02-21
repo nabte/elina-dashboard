@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -20,7 +20,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="flow-builder-animations.css">
+    <link rel="stylesheet" href="personality-wizard.css">
     <style>
         /* Forzar ancho completo para intl-tel-input */
         .iti {
@@ -39,10 +42,6 @@
             margin-left: 6px;
         }
     </style>
-  <script type="module" crossorigin src="/assets/dashboard-uTybvTxt.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="modulepreload" crossorigin href="/assets/auth-BA9H5Y7F.js">
-  <link rel="stylesheet" crossorigin href="/assets/dashboard-BVca9r_8.css">
 </head>
 
 <body class="bg-slate-100 text-slate-800">
@@ -142,12 +141,11 @@
                             <span class="sidebar-text font-semibold">IA Mind</span>
                         </a>
                     </li>
-
                     <li>
                         <a href="#"
                             class="nav-link text-sm flex items-center gap-3 px-4 py-2 rounded-md hover:bg-green-500 hover:text-white transition-colors"
                             data-target="personalities">
-                            <i data-lucide="user-cog" class="w-4 h-4 flex-shrink-0"></i>
+                            <i data-lucide="sparkles" class="w-4 h-4 flex-shrink-0"></i>
                             <span class="sidebar-text">Personalidades</span>
                         </a>
                     </li>
@@ -2340,9 +2338,9 @@
                             <h3 class="text-xl font-bold text-slate-800 mb-2">Sin Personalidad Configurada</h3>
                             <p class="text-slate-600 mb-6">Configura una personalidad para que tu agente se adapte a tu
                                 negocio</p>
-                            <button onclick="openPersonalityWizard()"
-                                class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition">
-                                ✨ Configurar Primera Personalidad
+                            <button onclick="window.openPersonalityWizard()"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition shadow-md shadow-blue-200 active:scale-95 flex items-center justify-center gap-2 mx-auto">
+                                <i data-lucide="sparkles" class="w-5 h-5"></i> Configurar Primera Personalidad
                             </button>
                         </div>
                     </div>
@@ -3738,7 +3736,8 @@
             }
         };
     </script>
-
+
+    <script type="module" src="/src/core/app.js?v=2.1.2"></script>
 
     <!-- Componente de Notificación Toast (Global) -->
     <div id="toast-notification"
@@ -4769,7 +4768,20 @@
                 </div>
             </div>
         </div>
-        <!-- Script eliminado: El wizard se maneja desde app.js -->
+        <!-- Script eliminado: El wizard se maneja desde app.js -->
+        <script type="module">
+            /* Legacy Script Removed - Logic moved to prompt-training.js
+            import { initPersonalTasks } from './personal-tasks.js';
+
+            // Sidebar Group Toggling Logic (Keep if needed elsewhere, but for now commenting out to be safe)
+            document.querySelectorAll('a[data-group]').forEach(trigger => {
+                trigger.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // Basic toggle logic if needed
+                });
+            });
+            */
+        </script>
         <!-- Scripts for knowledge and sales context are now imported in app.js -->
         <!-- Logic moved to app.js -->
 
@@ -4839,30 +4851,15 @@
         </script>
 
         <!-- Personality Wizard Module -->
-        <script src="./personality-wizard.js"></script>
+        <script type="module" src="/src/settings/personality-wizard.js"></script>
 
-        <!-- Personality Wizard Initialization -->
         <script>
             // Initialize personality wizard when section loads
-            document.addEventListener('DOMContentLoaded', function () {
-                // Listen for section changes
-                const observer = new MutationObserver(function (mutations) {
-                    mutations.forEach(function (mutation) {
-                        if (mutation.attributeName === 'class') {
-                            const personalitiesSection = document.getElementById('personalities');
-                            if (personalitiesSection && !personalitiesSection.classList.contains('hidden')) {
-                                // Section is now visible, initialize wizard
-                                if (window.initPersonalityWizard) {
-                                    window.initPersonalityWizard();
-                                }
-                            }
-                        }
-                    });
-                });
-
-                const personalitiesSection = document.getElementById('personalities');
-                if (personalitiesSection) {
-                    observer.observe(personalitiesSection, { attributes: true });
+            document.addEventListener('panel:activated', function (e) {
+                if (e.detail.panelId === 'personalities') {
+                    if (window.initPersonalityWizard) {
+                        window.initPersonalityWizard();
+                    }
                 }
             });
         </script>

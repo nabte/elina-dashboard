@@ -1,0 +1,5 @@
+# Router Webhook Configuration
+# Permite recibir webhooks de Evolution API sin autenticación
+
+[function]
+verify_jwt = false

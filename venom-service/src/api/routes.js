@@ -61,6 +61,24 @@ router.get('/sessions/:sessionId/status', async (req, res, next) => {
 });
 
 /**
+ * PUT /sessions/:sessionId/webhook
+ * Actualiza el webhook URL de una sesión
+ */
+router.put('/sessions/:sessionId/webhook', validate(schemas.updateWebhook), async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+    const { webhookUrl } = req.body;
+
+    const result = await sessionManager.updateWebhook(sessionId, webhookUrl);
+
+    res.json(result);
+
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * DELETE /sessions/:sessionId
  * Elimina una sesión
  */
@@ -148,6 +166,7 @@ router.get('/', (req, res) => {
         list: 'GET /sessions',
         getQR: 'GET /sessions/:sessionId/qr',
         getStatus: 'GET /sessions/:sessionId/status',
+        updateWebhook: 'PUT /sessions/:sessionId/webhook',
         delete: 'DELETE /sessions/:sessionId'
       },
       messages: {

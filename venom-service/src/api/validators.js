@@ -28,6 +28,10 @@ export const schemas = {
     type: Joi.string().valid('text', 'image', 'file', 'video', 'audio').default('text')
   }),
 
+  updateWebhook: Joi.object({
+    webhookUrl: Joi.string().uri().required()
+  }),
+
   sessionId: Joi.object({
     sessionId: Joi.string().required()
   })

@@ -694,7 +694,7 @@
 
         // Días vacíos antes del primer día del mes
         for (let i = 0; i < firstDayOfWeek; i++) {
-            html += '<div class="aspect-square"></div>';
+            html += '<div class="h-24 md:h-28 lg:h-32"></div>';
         }
 
         // Días del mes
@@ -724,7 +724,7 @@
                 }
             });
 
-            let dayClass = 'aspect-square border border-slate-300 rounded-lg p-1.5 overflow-y-auto relative transition-all duration-200';
+            let dayClass = 'h-24 md:h-28 lg:h-32 border border-slate-300 rounded-lg p-1.5 overflow-y-auto relative transition-all duration-200';
             let clickable = false;
             if (isPast) {
                 dayClass += ' bg-slate-100 opacity-50 cursor-not-allowed';

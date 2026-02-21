@@ -141,12 +141,11 @@
                             <span class="sidebar-text font-semibold">IA Mind</span>
                         </a>
                     </li>
-
                     <li>
                         <a href="#"
                             class="nav-link text-sm flex items-center gap-3 px-4 py-2 rounded-md hover:bg-green-500 hover:text-white transition-colors"
                             data-target="personalities">
-                            <i data-lucide="user-cog" class="w-4 h-4 flex-shrink-0"></i>
+                            <i data-lucide="sparkles" class="w-4 h-4 flex-shrink-0"></i>
                             <span class="sidebar-text">Personalidades</span>
                         </a>
                     </li>
@@ -398,7 +397,7 @@
                                 <div id="whatsapp-connection-container" class="text-center mb-4"></div>
 
                                 <!-- Método de conexión -->
-                                <div id="connection-method-selector" class="mb-4">
+                                <div id="connection-method-selector" class="mb-4" style="display: none;">
                                     <label class="block text-sm font-medium text-slate-700 mb-2">Método de
                                         conexión</label>
                                     <div class="flex gap-2">
@@ -414,7 +413,7 @@
                                 </div>
 
                                 <!-- Input para número de WhatsApp (ambos métodos) -->
-                                <div id="phone-input-container" class="mb-3">
+                                <div id="phone-input-container" class="mb-3" style="display: none;">
                                     <div
                                         class="bg-gradient-to-r from-purple-50 to-indigo-50 p-3 rounded-lg border border-purple-200">
                                         <div class="flex items-center gap-2 mb-2">
@@ -2339,9 +2338,9 @@
                             <h3 class="text-xl font-bold text-slate-800 mb-2">Sin Personalidad Configurada</h3>
                             <p class="text-slate-600 mb-6">Configura una personalidad para que tu agente se adapte a tu
                                 negocio</p>
-                            <button onclick="openPersonalityWizard()"
-                                class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition">
-                                ✨ Configurar Primera Personalidad
+                            <button onclick="window.openPersonalityWizard()"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition shadow-md shadow-blue-200 active:scale-95 flex items-center justify-center gap-2 mx-auto">
+                                <i data-lucide="sparkles" class="w-5 h-5"></i> Configurar Primera Personalidad
                             </button>
                         </div>
                     </div>
@@ -3738,7 +3737,7 @@
         };
     </script>
 
-    <script type="module" src="/app.js?v=2.1.2"></script>
+    <script type="module" src="/src/core/app.js?v=2.1.2"></script>
 
     <!-- Componente de Notificación Toast (Global) -->
     <div id="toast-notification"
@@ -4852,30 +4851,15 @@
         </script>
 
         <!-- Personality Wizard Module -->
-        <script src="./personality-wizard.js"></script>
+        <script type="module" src="/src/settings/personality-wizard.js"></script>
 
-        <!-- Personality Wizard Initialization -->
         <script>
             // Initialize personality wizard when section loads
-            document.addEventListener('DOMContentLoaded', function () {
-                // Listen for section changes
-                const observer = new MutationObserver(function (mutations) {
-                    mutations.forEach(function (mutation) {
-                        if (mutation.attributeName === 'class') {
-                            const personalitiesSection = document.getElementById('personalities');
-                            if (personalitiesSection && !personalitiesSection.classList.contains('hidden')) {
-                                // Section is now visible, initialize wizard
-                                if (window.initPersonalityWizard) {
-                                    window.initPersonalityWizard();
-                                }
-                            }
-                        }
-                    });
-                });
-
-                const personalitiesSection = document.getElementById('personalities');
-                if (personalitiesSection) {
-                    observer.observe(personalitiesSection, { attributes: true });
+            document.addEventListener('panel:activated', function (e) {
+                if (e.detail.panelId === 'personalities') {
+                    if (window.initPersonalityWizard) {
+                        window.initPersonalityWizard();
+                    }
                 }
             });
         </script>
