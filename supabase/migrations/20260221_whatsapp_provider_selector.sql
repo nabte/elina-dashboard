@@ -62,26 +62,26 @@ SELECT
     p.email,
     p.whatsapp_provider,
     p.whatsapp_provider_url,
-    p.instance_name,
+    p.evolution_instance_name,
     s.plan_id,
-    
+
     -- Info Evolution si aplica
-    CASE 
-        WHEN p.whatsapp_provider = 'evolution' THEN p.instance_name
+    CASE
+        WHEN p.whatsapp_provider = 'evolution' THEN p.evolution_instance_name
         ELSE NULL
     END as evolution_instance,
-    
+
     -- Info Venom si aplica
-    CASE 
+    CASE
         WHEN p.whatsapp_provider = 'venom' THEN v.session_id
         ELSE NULL
     END as venom_session,
-    
-    CASE 
+
+    CASE
         WHEN p.whatsapp_provider = 'venom' THEN v.status
         ELSE NULL
     END as venom_status
-    
+
 FROM profiles p
 LEFT JOIN subscriptions s ON s.user_id = p.id
 LEFT JOIN venom_instances v ON v.user_id = p.id
