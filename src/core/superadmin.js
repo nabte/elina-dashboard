@@ -157,6 +157,20 @@ function setupEventListeners() {
             openAssignReferrerModal(assignRefBtn.dataset.userId, assignRefBtn.dataset.userEmail, assignRefBtn.dataset.currentReferrer);
             return;
         }
+
+        // Edit WhatsApp
+        const editWhatsAppBtn = e.target.closest('.edit-whatsapp-btn');
+        if (editWhatsAppBtn) {
+            openEditWhatsAppModal(
+                editWhatsAppBtn.dataset.userId,
+                editWhatsAppBtn.dataset.userEmail,
+                editWhatsAppBtn.dataset.provider,
+                editWhatsAppBtn.dataset.instance,
+                editWhatsAppBtn.dataset.apiKey,
+                editWhatsAppBtn.dataset.providerUrl
+            );
+            return;
+        }
     });
 
     // Acciones del modal Change Plan
@@ -170,6 +184,19 @@ function setupEventListeners() {
         document.getElementById('assign-referrer-modal').classList.add('hidden');
     });
     document.getElementById('confirm-assign-referrer-btn').addEventListener('click', handleAssignReferrerSave);
+
+    // Acciones del modal Edit WhatsApp
+    document.getElementById('cancel-edit-whatsapp-btn').addEventListener('click', () => {
+        document.getElementById('edit-whatsapp-modal').classList.add('hidden');
+    });
+    document.getElementById('confirm-edit-whatsapp-btn').addEventListener('click', handleWhatsAppSave);
+
+    // Toggle campos Evolution/Venom
+    document.getElementById('modal-whatsapp-provider').addEventListener('change', (e) => {
+        const isVenom = e.target.value === 'venom';
+        document.getElementById('evolution-fields').classList.toggle('hidden', isVenom);
+        document.getElementById('venom-info').classList.toggle('hidden', !isVenom);
+    });
 
 }
 
@@ -304,6 +331,27 @@ async function loadUsers() {
                     <span class="px-2.5 py-1 text-xs rounded-full font-medium ${statusBadgeClass} uppercase tracking-wider">
                         ${subscription.status}
                     </span>
+                </td>
+                <td class="p-4 border-b border-slate-700">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-1 text-xs rounded ${
+                            user.whatsapp_provider === 'venom'
+                                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                                : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                        } font-medium uppercase">
+                            ${user.whatsapp_provider || 'evolution'}
+                        </span>
+                        <button class="edit-whatsapp-btn text-slate-500 hover:text-cyan-400 transition-colors"
+                                title="Editar WhatsApp"
+                                data-user-id="${user.id}"
+                                data-user-email="${user.email}"
+                                data-provider="${user.whatsapp_provider || 'evolution'}"
+                                data-instance="${user.evolution_instance_name || ''}"
+                                data-api-key="${user.evolution_api_key || ''}"
+                                data-provider-url="${user.whatsapp_provider_url || ''}">
+                            <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
                 </td>
                 <td class="p-4 border-b border-slate-700 text-center">
                     <button class="toggle-affiliate-btn relative w-12 h-6 rounded-full transition-colors duration-200 flex items-center p-1 ${switchClass}"
@@ -960,6 +1008,75 @@ async function loadImpersonationLogs() {
     } catch (error) {
         console.error('Error loading impersonation logs:', error);
         if (loader) loader.querySelector('td').textContent = `Error: ${error.message}`;
+    }
+}
+
+// ========================================
+// WHATSAPP CONFIGURATION
+// ========================================
+
+function openEditWhatsAppModal(userId, userEmail, provider, instanceName, apiKey, providerUrl) {
+    document.getElementById('edit-whatsapp-user-id').value = userId;
+    document.getElementById('edit-whatsapp-user-email').textContent = userEmail;
+    document.getElementById('modal-whatsapp-provider').value = provider || 'evolution';
+    document.getElementById('modal-instance-name').value = instanceName || '';
+    document.getElementById('modal-api-key').value = apiKey || '';
+    document.getElementById('modal-provider-url').value = providerUrl || '';
+
+    // Mostrar/ocultar campos según proveedor
+    const isVenom = provider === 'venom';
+    document.getElementById('evolution-fields').classList.toggle('hidden', isVenom);
+    document.getElementById('venom-info').classList.toggle('hidden', !isVenom);
+
+    document.getElementById('edit-whatsapp-modal').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+async function handleWhatsAppSave() {
+    const userId = document.getElementById('edit-whatsapp-user-id').value;
+    const provider = document.getElementById('modal-whatsapp-provider').value;
+    const instanceName = document.getElementById('modal-instance-name').value.trim();
+    const apiKey = document.getElementById('modal-api-key').value.trim();
+    const providerUrl = document.getElementById('modal-provider-url').value.trim();
+
+    const button = document.getElementById('confirm-edit-whatsapp-btn');
+    button.disabled = true;
+    button.textContent = 'Guardando...';
+
+    try {
+        // Actualizar directamente en la tabla profiles
+        const updates = {
+            whatsapp_provider: provider,
+            whatsapp_provider_url: providerUrl || null,
+            updated_at: new Date().toISOString()
+        };
+
+        // Solo actualizar campos Evolution si el proveedor es Evolution
+        if (provider === 'evolution') {
+            updates.evolution_instance_name = instanceName || null;
+            updates.evolution_api_key = apiKey || null;
+        }
+
+        const { error } = await window.auth.sb
+            .from('profiles')
+            .update(updates)
+            .eq('id', userId);
+
+        if (error) throw error;
+
+        // Cerrar modal y recargar
+        document.getElementById('edit-whatsapp-modal').classList.add('hidden');
+        await loadUsers();
+
+        // Notificación success
+        alert('✅ Configuración de WhatsApp actualizada correctamente');
+
+    } catch (error) {
+        console.error('Error updating WhatsApp config:', error);
+        alert(`❌ Error: ${error.message}`);
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Guardar';
     }
 }
 

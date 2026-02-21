@@ -78,9 +78,6 @@
                         <button
                             class="nav-tab px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all duration-200"
                             data-target="venom-section">Venom</button>
-                        <button
-                            class="nav-tab px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all duration-200"
-                            data-target="providers-section">Proveedores</button>
                     </nav>
                     <a href="/dashboard.html"
                         class="flex-shrink-0 bg-slate-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-600 text-sm transition-colors flex items-center gap-2">
@@ -116,6 +113,7 @@
                                     <th class="p-4 border-b border-slate-700">Usuario</th>
                                     <th class="p-4 border-b border-slate-700">Plan</th>
                                     <th class="p-4 border-b border-slate-700">Estado</th>
+                                    <th class="p-4 border-b border-slate-700">WhatsApp</th>
                                     <th class="p-4 border-b border-slate-700 text-center">Es Afiliado</th>
                                     <th class="p-4 border-b border-slate-700">Referido Por</th>
                                     <th class="p-4 border-b border-slate-700 text-right">Acciones</th>
@@ -123,7 +121,7 @@
                             </thead>
                             <tbody id="users-table-body" class="divide-y divide-slate-700 text-sm">
                                 <tr id="users-loader">
-                                    <td colspan="6" class="p-12 text-center text-slate-400">
+                                    <td colspan="7" class="p-12 text-center text-slate-400">
                                         <div class="flex flex-col items-center gap-3">
                                             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400">
                                             </div>
@@ -489,15 +487,6 @@
                 <div id="venom-instances-container"></div>
             </section>
 
-            <!-- Sección de Proveedores WhatsApp -->
-            <section id="providers-section" class="tab-content hidden animate-fade-in">
-                <div class="mb-6">
-                    <h2 class="text-3xl font-bold text-white">Proveedores WhatsApp</h2>
-                    <p class="text-slate-400 text-sm mt-1">Asigna Evolution o Venom a cada usuario y configura URLs personalizadas</p>
-                </div>
-
-                <div id="whatsapp-providers-container"></div>
-            </section>
         </main>
     </div>
 
@@ -575,21 +564,92 @@
         </div>
     </div>
 
+    <!-- Modal para Editar WhatsApp -->
+    <div id="edit-whatsapp-modal"
+        class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-lg">
+            <div class="p-6 border-b border-slate-700">
+                <h3 class="text-xl font-bold text-white">Configurar WhatsApp</h3>
+                <div class="mt-2 text-sm text-slate-300 bg-slate-700/30 p-2 rounded border border-slate-700">
+                    Usuario: <span id="edit-whatsapp-user-email" class="font-mono text-white"></span>
+                </div>
+                <input type="hidden" id="edit-whatsapp-user-id">
+            </div>
+            <div class="p-6 space-y-4">
+                <!-- Proveedor -->
+                <div>
+                    <label for="modal-whatsapp-provider" class="block text-sm font-medium text-slate-300 mb-1">
+                        Proveedor WhatsApp
+                    </label>
+                    <select id="modal-whatsapp-provider"
+                        class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-cyan-500 outline-none">
+                        <option value="evolution">Evolution API</option>
+                        <option value="venom">Venom Bot</option>
+                    </select>
+                </div>
+
+                <!-- Campos Evolution (se ocultan si es Venom) -->
+                <div id="evolution-fields" class="space-y-4">
+                    <div>
+                        <label for="modal-instance-name" class="block text-sm font-medium text-slate-300 mb-1">
+                            Nombre de Instancia
+                        </label>
+                        <input type="text" id="modal-instance-name"
+                            class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-cyan-500 outline-none"
+                            placeholder="ej: elina-123">
+                    </div>
+
+                    <div>
+                        <label for="modal-api-key" class="block text-sm font-medium text-slate-300 mb-1">
+                            API Key
+                        </label>
+                        <input type="password" id="modal-api-key"
+                            class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-cyan-500 outline-none font-mono text-sm"
+                            placeholder="••••••••••••">
+                    </div>
+
+                    <div>
+                        <label for="modal-provider-url" class="block text-sm font-medium text-slate-300 mb-1">
+                            URL del Proveedor <span class="text-xs text-slate-500">(opcional)</span>
+                        </label>
+                        <input type="url" id="modal-provider-url"
+                            class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-cyan-500 outline-none"
+                            placeholder="https://api.evolution.com">
+                    </div>
+                </div>
+
+                <!-- Info Venom (se muestra solo si es Venom) -->
+                <div id="venom-info" class="hidden p-4 bg-cyan-900/20 border border-cyan-700/30 rounded-lg">
+                    <p class="text-sm text-cyan-300">
+                        <i data-lucide="info" class="inline w-4 h-4 mr-1"></i>
+                        Venom se configura automáticamente desde el dashboard del usuario mediante código QR.
+                    </p>
+                </div>
+            </div>
+            <div class="p-6 bg-slate-900/50 flex justify-end gap-3 rounded-b-xl border-t border-slate-700">
+                <button type="button" id="cancel-edit-whatsapp-btn"
+                    class="bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                    Cancelar
+                </button>
+                <button type="button" id="confirm-edit-whatsapp-btn"
+                    class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition-all transform active:scale-95">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="/src/core/auth.js"></script>
     <script type="module" src="/src/core/superadmin.js"></script>
     <script src="/src/superadmin/venom-manager.js"></script>
-    <script src="/src/superadmin/whatsapp-providers.js"></script>
 
     <script>
-        // Inicializar Managers cuando se navega a las secciones
+        // Inicializar Venom Manager cuando se navega a la sección
         let venomManager = null;
-        let whatsappProvidersManager = null;
 
-        // Detectar cambio de tab
         document.addEventListener('DOMContentLoaded', () => {
             const venomTab = document.querySelector('[data-target="venom-section"]');
-            const providersTab = document.querySelector('[data-target="providers-section"]');
 
             if (venomTab) {
                 venomTab.addEventListener('click', async () => {
@@ -598,17 +658,6 @@
                         await venomManager.init();
                     } else if (venomManager) {
                         venomManager.refresh();
-                    }
-                });
-            }
-
-            if (providersTab) {
-                providersTab.addEventListener('click', async () => {
-                    if (!whatsappProvidersManager && window.WhatsAppProvidersManager) {
-                        whatsappProvidersManager = new window.WhatsAppProvidersManager();
-                        await whatsappProvidersManager.init();
-                    } else if (whatsappProvidersManager) {
-                        whatsappProvidersManager.refresh();
                     }
                 });
             }
