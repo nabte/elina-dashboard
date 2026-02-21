@@ -1,6 +1,10 @@
 -- Actualizar get_all_admin_users para incluir campos WhatsApp
 -- Permite que SuperAdmin vea y edite configuración WhatsApp de usuarios
 
+-- Eliminar función existente primero (necesario para cambiar tipo de retorno)
+DROP FUNCTION IF EXISTS get_all_admin_users();
+
+-- Recrear función con nuevos campos
 CREATE OR REPLACE FUNCTION get_all_admin_users()
 RETURNS TABLE (
     id UUID,
