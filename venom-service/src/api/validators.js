@@ -9,9 +9,14 @@ export const schemas = {
   createSession: Joi.object({
     sessionId: Joi.string().alphanum().min(3).max(50).required(),
     userId: Joi.string().uuid().required(),
+    provider: Joi.string().valid('baileys', 'venom').default('baileys'),
     webhookUrl: Joi.string().uri().optional(),
     phoneNumber: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).optional(),
     metadata: Joi.object().optional()
+  }),
+
+  pairingCode: Joi.object({
+    phoneNumber: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).required()
   }),
 
   sendMessage: Joi.object({

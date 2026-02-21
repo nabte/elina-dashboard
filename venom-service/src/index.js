@@ -56,7 +56,7 @@ app.use(errorHandler);
  */
 async function startServer() {
   try {
-    logger.info('Starting Venom WhatsApp Service...');
+    logger.info('Starting WhatsApp Multi-Tenant Service (Baileys + Venom)...');
 
     // Inicializar Redis
     await redisClient.connect();
@@ -79,13 +79,16 @@ async function startServer() {
 
       server.close(async () => {
         try {
-          // Cerrar todas las sesiones
           const sessions = await sessionManager.listSessions();
           for (const session of sessions) {
-            await sessionManager.deleteSession(session.sessionId);
+            if (session.provider === 'baileys') {
+              // Baileys: solo desconectar, mantener auth state
+              await sessionManager.disconnectSession(session.sessionId);
+            } else {
+              await sessionManager.deleteSession(session.sessionId);
+            }
           }
 
-          // Desconectar Redis
           await redisClient.disconnect();
 
           logger.info('Shutdown complete');
