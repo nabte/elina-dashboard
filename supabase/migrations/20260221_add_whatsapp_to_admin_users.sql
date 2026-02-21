@@ -25,7 +25,7 @@ BEGIN
     SELECT
         p.id,
         p.email,
-        p.created_at,
+        p.updated_at as created_at, -- usar updated_at como created_at
         s.plan_id,
         s.status,
         s.trial_ends_at,
@@ -37,6 +37,6 @@ BEGIN
         p.whatsapp_provider_url
     FROM profiles p
     LEFT JOIN subscriptions s ON p.id = s.user_id
-    ORDER BY p.created_at DESC;
+    ORDER BY p.updated_at DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
