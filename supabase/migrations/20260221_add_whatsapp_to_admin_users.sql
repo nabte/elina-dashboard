@@ -1,5 +1,5 @@
--- Update get_all_admin_users to include affiliate data
--- This function is used by Super Admins to view all users.
+-- Actualizar get_all_admin_users para incluir campos WhatsApp
+-- Permite que SuperAdmin vea y edite configuración WhatsApp de usuarios
 
 CREATE OR REPLACE FUNCTION get_all_admin_users()
 RETURNS TABLE (
@@ -25,7 +25,7 @@ BEGIN
         s.plan_id,
         s.status,
         s.trial_ends_at,
-        COALESCE(p.is_affiliate, FALSE), -- Ensure boolean return
+        COALESCE(p.is_affiliate, FALSE),
         p.referred_by,
         p.whatsapp_provider,
         p.evolution_instance_name,
