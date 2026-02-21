@@ -603,9 +603,16 @@
                         <label for="modal-api-key" class="block text-sm font-medium text-slate-300 mb-1">
                             API Key
                         </label>
-                        <input type="password" id="modal-api-key"
-                            class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-cyan-500 outline-none font-mono text-sm"
-                            placeholder="••••••••••••">
+                        <div class="relative">
+                            <input type="password" id="modal-api-key"
+                                class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 pr-10 text-white focus:ring-2 focus:ring-cyan-500 outline-none font-mono text-sm"
+                                placeholder="••••••••••••">
+                            <button type="button" id="toggle-api-key-btn"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                                onclick="toggleApiKeyVisibility()">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div>
@@ -662,6 +669,25 @@
                 });
             }
         });
+
+        // Toggle API Key visibility
+        function toggleApiKeyVisibility() {
+            const input = document.getElementById('modal-api-key');
+            const btn = document.getElementById('toggle-api-key-btn');
+            const icon = btn.querySelector('i');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                input.type = 'password';
+                icon.setAttribute('data-lucide', 'eye');
+            }
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
     </script>
 </body>
 

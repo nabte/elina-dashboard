@@ -1016,6 +1016,15 @@ async function loadImpersonationLogs() {
 // ========================================
 
 function openEditWhatsAppModal(userId, userEmail, provider, instanceName, apiKey, providerUrl) {
+    console.log('[WhatsApp Modal] Datos recibidos:', {
+        userId,
+        userEmail,
+        provider,
+        instanceName,
+        apiKey: apiKey ? '(oculto - ' + apiKey.length + ' chars)' : 'vacío',
+        providerUrl
+    });
+
     document.getElementById('edit-whatsapp-user-id').value = userId;
     document.getElementById('edit-whatsapp-user-email').textContent = userEmail;
     document.getElementById('modal-whatsapp-provider').value = provider || 'evolution';
