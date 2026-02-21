@@ -28,15 +28,14 @@ export class VenomClient {
 
       const sessionPath = path.join(config.venom.sessionsDir, this.sessionId);
 
-      // Eliminar archivo SingletonLock si existe (evita error de perfil en uso)
-      const lockFile = path.join(sessionPath, this.sessionId, 'SingletonLock');
+      // LIMPIEZA COMPLETA: Eliminar TODO el directorio de sesión para empezar limpio
       try {
-        if (fs.existsSync(lockFile)) {
-          fs.unlinkSync(lockFile);
-          logger.info(`Removed stale SingletonLock file for session: ${this.sessionId}`);
+        if (fs.existsSync(sessionPath)) {
+          fs.rmSync(sessionPath, { recursive: true, force: true });
+          logger.info(`Cleaned session directory for: ${this.sessionId}`);
         }
-      } catch (lockError) {
-        logger.warn(`Could not remove lock file: ${lockError.message}`);
+      } catch (cleanError) {
+        logger.warn(`Could not clean session directory: ${cleanError.message}`);
       }
 
       this.client = await venom.create(
