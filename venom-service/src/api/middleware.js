@@ -115,11 +115,17 @@ export function errorHandler(err, req, res, next) {
   }
 
   // Errores genéricos
-  logger.error('Unhandled error:', err);
+  logger.error('Unhandled error:', {
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method
+  });
 
   res.status(500).json({
     error: 'Internal server error',
-    message: config.server.env === 'development' ? err.message : undefined
+    message: err.message,
+    details: err.toString()
   });
 }
 
