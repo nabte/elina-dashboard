@@ -193,15 +193,11 @@ export class BaileysClient {
     }
 
     try {
-      // Timeout de 30 segundos para evitar cuelgues indefinidos
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Send timeout (30s)')), 30000)
-      );
-
       logger.info(`Sending message to ${to} from ${this.sessionId}...`);
-      const sendPromise = this.sock.sendMessage(to, { text: message });
 
-      const result = await Promise.race([sendPromise, timeoutPromise]);
+      // Dejar que Baileys maneje sus propios timeouts
+      const result = await this.sock.sendMessage(to, { text: message });
+
       logger.info(`✅ Message sent successfully to ${to} from ${this.sessionId}`);
       return result;
     } catch (error) {
