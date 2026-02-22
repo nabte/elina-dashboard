@@ -83,18 +83,14 @@ export function validateParams(schema) {
 }
 
 /**
- * Sanitiza número de teléfono
+ * Sanitiza número de teléfono para WhatsApp
+ * Baileys requiere formato: 5219995169313 (SIN el símbolo +)
  */
 export function sanitizePhoneNumber(phone) {
   if (!phone) return null;
 
-  // Remover caracteres no numéricos excepto +
-  let sanitized = phone.replace(/[^\d+]/g, '');
-
-  // Asegurar que tenga formato internacional
-  if (!sanitized.startsWith('+')) {
-    sanitized = '+' + sanitized;
-  }
+  // Remover TODO excepto números (incluyendo el +)
+  let sanitized = phone.replace(/\D/g, '');
 
   return sanitized;
 }
