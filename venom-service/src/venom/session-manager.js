@@ -438,8 +438,22 @@ export class SessionManager {
         const credsPath = path.join(sessionsDir, dir, 'creds.json');
         if (!fs.existsSync(credsPath)) continue;
 
-        const redisData = await redisClient.get(`venom:session:${dir}`);
-        if (!redisData || redisData.provider !== 'baileys') continue;
+        // Intentar obtener metadata de Redis primero
+        let redisData = await redisClient.get(`venom:session:${dir}`);
+
+        // Si no está en Redis pero existe auth state, restaurar de todos modos
+        // (asumiendo que es Baileys, ya que Venom no persiste auth states)
+        if (!redisData) {
+          logger.info(`Found orphaned auth state for ${dir}, assuming Baileys session`);
+          redisData = {
+            provider: 'baileys',
+            userId: 'unknown', // Se actualizará cuando se use
+            webhookUrl: config.venom.defaultWebhookUrl || null,
+            createdAt: Date.now()
+          };
+        }
+
+        if (redisData.provider !== 'baileys') continue;
 
         logger.info(`Restoring Baileys session: ${dir}`);
 
@@ -464,7 +478,7 @@ export class SessionManager {
           this.sessions.set(dir, client);
           restored++;
 
-          logger.info(`Restored Baileys session: ${dir}`);
+          logger.info(`✅ Restored Baileys session: ${dir}`);
         } catch (error) {
           logger.error(`Failed to restore session ${dir}:`, error);
         }
