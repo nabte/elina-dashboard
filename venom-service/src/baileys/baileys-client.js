@@ -186,19 +186,26 @@ export class BaileysClient {
   async sendText(to, message) {
     if (!this.sock) throw new Error('Client not initialized');
 
+    // Verificar que la conexión esté activa
+    const state = await this.getConnectionState();
+    if (state !== 'open') {
+      throw new Error(`Cannot send message: connection state is ${state} (expected: open)`);
+    }
+
     try {
-      // Timeout de 15 segundos para evitar cuelgues indefinidos
+      // Timeout de 30 segundos para evitar cuelgues indefinidos
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Send timeout (15s)')), 15000)
+        setTimeout(() => reject(new Error('Send timeout (30s)')), 30000)
       );
 
+      logger.info(`Sending message to ${to} from ${this.sessionId}...`);
       const sendPromise = this.sock.sendMessage(to, { text: message });
 
       const result = await Promise.race([sendPromise, timeoutPromise]);
-      logger.info(`Message sent to ${to} from ${this.sessionId}`);
+      logger.info(`✅ Message sent successfully to ${to} from ${this.sessionId}`);
       return result;
     } catch (error) {
-      logger.error(`Send failed from ${this.sessionId}:`, error);
+      logger.error(`❌ Send failed from ${this.sessionId} to ${to}:`, error.message);
       throw error;
     }
   }
