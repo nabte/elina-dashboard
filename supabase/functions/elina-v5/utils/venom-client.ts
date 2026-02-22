@@ -59,7 +59,7 @@ export async function sendImage(
         to: remoteJid.replace('@s.whatsapp.net', ''),
         message: {
             path: imageUrl,
-            caption: caption || '',
+            caption: caption || ' ', // Espacio en lugar de string vacío (requerido por validator)
             filename: 'image.jpg'
         },
         type: 'image',
@@ -97,7 +97,7 @@ export async function sendVideo(
         to: remoteJid.replace('@s.whatsapp.net', ''),
         message: {
             path: videoUrl,
-            caption: caption || '',
+            caption: caption || ' ', // Espacio en lugar de string vacío
             filename: 'video.mp4'
         },
         type: 'video',
