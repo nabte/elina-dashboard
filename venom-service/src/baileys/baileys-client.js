@@ -193,15 +193,30 @@ export class BaileysClient {
     }
 
     try {
-      logger.info(`Sending message to ${to} from ${this.sessionId}...`);
+      logger.info(`📤 [BAILEYS] Sending to: "${to}" | Message: "${message.substring(0, 50)}..." | Session: ${this.sessionId}`);
 
-      // Dejar que Baileys maneje sus propios timeouts
+      // Enviar con Baileys
       const result = await this.sock.sendMessage(to, { text: message });
 
-      logger.info(`✅ Message sent successfully to ${to} from ${this.sessionId}`);
+      logger.info(`✅ [BAILEYS] Sent successfully | MessageID: ${result?.key?.id || 'unknown'}`);
       return result;
     } catch (error) {
-      logger.error(`❌ Send failed from ${this.sessionId} to ${to}:`, error.message);
+      logger.error(`❌ [BAILEYS] Send FAILED to ${to}:`, error.message);
+      logger.error(`   Error details:`, error);
+
+      // Fallback: intentar con formato alternativo (extraer solo número)
+      try {
+        const justNumber = to.replace(/@.*/, '');
+        if (justNumber !== to) {
+          logger.warn(`⚠️ [BAILEYS] Retrying with just number: ${justNumber}@s.whatsapp.net`);
+          const retryResult = await this.sock.sendMessage(`${justNumber}@s.whatsapp.net`, { text: message });
+          logger.info(`✅ [BAILEYS] Retry successful!`);
+          return retryResult;
+        }
+      } catch (retryError) {
+        logger.error(`❌ [BAILEYS] Retry also failed:`, retryError.message);
+      }
+
       throw error;
     }
   }
