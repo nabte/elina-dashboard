@@ -187,7 +187,14 @@ export class BaileysClient {
     if (!this.sock) throw new Error('Client not initialized');
 
     try {
-      const result = await this.sock.sendMessage(to, { text: message });
+      // Timeout de 15 segundos para evitar cuelgues indefinidos
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Send timeout (15s)')), 15000)
+      );
+
+      const sendPromise = this.sock.sendMessage(to, { text: message });
+
+      const result = await Promise.race([sendPromise, timeoutPromise]);
       logger.info(`Message sent to ${to} from ${this.sessionId}`);
       return result;
     } catch (error) {
